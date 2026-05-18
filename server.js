@@ -53,11 +53,17 @@ function getLobbySnapshot() {
     phase:          r.phase,
   }));
 }
+function getPlayerList() {
+  const list = [];
+  allClients.forEach((info) => { list.push({ name: info.name, status: info.state }); });
+  return list;
+}
 function pushLobbyState() {
   const msg = JSON.stringify({
     type:         'lobby_list',
     lobbies:      getLobbySnapshot(),
     totalPlayers: allClients.size,
+    playerList:   getPlayerList(),
   });
   allClients.forEach((_, ws) => { if (ws.readyState === 1) ws.send(msg); });
 }
@@ -70,7 +76,7 @@ wss.on('connection', (ws) => {
   const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby' };
   allClients.set(ws, info);
 
-  send(ws, { type: 'connected', name: info.name, totalPlayers: allClients.size, lobbies: getLobbySnapshot() });
+  send(ws, { type: 'connected', name: info.name, totalPlayers: allClients.size, lobbies: getLobbySnapshot(), playerList: getPlayerList() });
   pushLobbyState();
 
   ws.on('message', (raw) => {
