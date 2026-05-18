@@ -3,144 +3,211 @@
 <style type="text/css">
 
 /* ── reset & shell ── */
-* { margin:0; padding:0; box-sizing:border-box; font-family: Arial, sans-serif; }
-body {
-  background: #0d0d1a;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Courier New',monospace; }
+@keyframes scanlines {
+  0%   { background-position:0 0; }
+  100% { background-position:0 4px; }
 }
-#LobbyWrapper { display:flex; flex-direction:column; width:1040px; }
+@keyframes neonPulse {
+  0%,100% { opacity:1; } 50% { opacity:.7; }
+}
+body {
+  background:#020008;
+  background-image:
+    linear-gradient(rgba(0,255,200,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,200,.035) 1px, transparent 1px);
+  background-size:40px 40px;
+  display:flex; justify-content:center; align-items:flex-start; min-height:100vh;
+}
+#LobbyWrapper {
+  display:flex; flex-direction:column; width:1040px;
+  box-shadow:0 0 80px rgba(0,255,200,.12), 0 0 2px rgba(0,255,200,.3);
+}
 
 /* ── top bar ── */
 #TopBar {
-  background:#111; color:#777; padding:4px 10px;
+  background:linear-gradient(90deg,#06001a,#0e0030,#06001a);
+  color:#00ffcc; padding:5px 14px;
   display:flex; justify-content:space-between; align-items:center;
-  font-size:11px; border-bottom:1px solid #2a2a2a;
+  font-size:10px; border-bottom:1px solid rgba(0,255,200,.25);
+  letter-spacing:2px; text-transform:uppercase;
 }
-#AnnouncementText { color:#aaa; font-size:11px; letter-spacing:.5px; }
+#VersionText { color:rgba(0,255,200,.35); }
+#AnnouncementText {
+  color:rgba(0,255,200,.7); letter-spacing:3px;
+  animation:neonPulse 3s ease-in-out infinite;
+}
 
 /* ── middle row ── */
 #MiddleRow { display:flex; height:375px; }
 #ContentDiv { position:relative; width:750px; height:375px; flex-shrink:0; overflow:hidden; }
 
 /* ── sidebar ── */
-#Sidebar { width:290px; background:#1a1a2e; display:flex; flex-direction:column; border-left:2px solid #2a2a3e; }
+#Sidebar {
+  width:290px;
+  background:linear-gradient(180deg,#07001c,#050012);
+  display:flex; flex-direction:column;
+  border-left:1px solid rgba(0,255,200,.2);
+}
 #PlayerCountDiv {
-  background:#13131f; color:#4CAF50; padding:8px 12px;
-  font-size:13px; font-weight:bold; border-bottom:1px solid #2a2a3e;
-  letter-spacing:.5px; flex-shrink:0;
+  background:#040010; color:#00ffcc; padding:7px 12px;
+  font-size:11px; font-weight:bold; border-bottom:1px solid rgba(0,255,200,.15);
+  letter-spacing:2px; flex-shrink:0;
 }
-#ChatLog {
-  flex:1; overflow-y:auto; padding:8px;
-  display:flex; flex-direction:column; gap:3px; min-height:0;
-}
-#ChatLog::-webkit-scrollbar { width:4px; }
-#ChatLog::-webkit-scrollbar-track { background:#1a1a2e; }
-#ChatLog::-webkit-scrollbar-thumb { background:#3a3a5e; border-radius:2px; }
-.chat-msg  { font-size:12px; color:#bbb; word-break:break-word; line-height:1.5; }
-.chat-name { color:#7ec8e3; font-weight:bold; }
-.chat-sys  { color:#555; font-style:italic; font-size:11px; }
-#ChatInputRow {
-  display:flex; border-top:1px solid #2a2a3e; padding:6px; gap:5px;
-  background:#13131f; flex-shrink:0;
-}
-#ChatInput {
-  flex:1; background:#0d0d1a; border:1px solid #3a3a5e; color:#eee;
-  padding:5px 8px; border-radius:3px; font-size:12px;
-}
-#ChatInput:focus { outline:none; border-color:#7ec8e3; }
-#ChatSendBtn {
-  background:#2471a3; border:none; color:#fff;
-  padding:5px 10px; border-radius:3px; cursor:pointer; font-size:14px; font-weight:bold;
-}
-#ChatSendBtn:hover { background:#2e86c1; }
-
-/* ── bottom bar ── */
-#BottomBar {
-  background:#556068; display:flex; align-items:center; justify-content:center;
-  padding:14px 20px; gap:10px; border-top:3px solid #445058;
-}
-.bigBtn {
-  background:#5a6470; color:#fff; padding:14px 28px;
-  font-size:18px; font-weight:bold; letter-spacing:1.5px;
-  cursor:pointer; border:2px solid #6e7c88; text-transform:uppercase;
-  user-select:none; display:inline-block;
-}
-.bigBtn:hover  { background:#6a7480; }
-.bigBtn:active { background:#4a5460; }
-#OptionsBtn {
-  color:#ccc; font-size:13px; cursor:pointer; margin-left:12px;
-  letter-spacing:1.5px; text-transform:uppercase; user-select:none;
-}
-#OptionsBtn:hover { color:#fff; }
-
-/* ── lobby select overlay ── */
-.lobby-list-wrap { padding:6px 8px 0; }
-.lobby-title {
-  text-align:center; font-size:14px; font-weight:bold; letter-spacing:1.5px;
-  text-transform:uppercase; color:#222; margin-bottom:6px;
-  text-shadow:0 1px 3px rgba(255,255,255,.9);
-}
-.lobby-row {
-  background:rgba(255,255,255,.84); border:1px solid rgba(0,0,0,.12);
-  padding:7px 12px; margin-bottom:4px; cursor:pointer;
-  display:flex; align-items:center; gap:8px;
-  transition:background .1s;
-}
-.lobby-row:hover { background:rgba(255,255,255,.97); }
-.lobby-name   { flex:1; font-weight:bold; font-size:13px; color:#222; }
-.lobby-dots   { font-size:14px; letter-spacing:2px; }
-.lobby-spec   { font-size:11px; color:#888; white-space:nowrap; }
-.lobby-badge  { font-size:11px; font-weight:bold; white-space:nowrap; min-width:90px; text-align:right; }
-.badge-empty   { color:#999; }
-.badge-waiting { color:#d35400; }
-.badge-playing { color:#27ae60; }
-.lobby-back { text-align:center; margin-top:5px; }
 
 /* ── name change row ── */
 #PlayerNameDiv {
-  background:#13131f; color:#aaa; padding:6px 12px;
-  font-size:12px; border-bottom:1px solid #2a2a3e;
+  background:#040010; color:#666; padding:5px 12px;
+  font-size:11px; border-bottom:1px solid rgba(0,255,200,.12);
   display:flex; align-items:center; gap:6px; flex-shrink:0;
 }
-#PlayerNameDisplay { color:#7ec8e3; font-weight:bold; }
-#PlayerNameEditBtn {
-  cursor:pointer; color:#555; font-size:13px; margin-left:auto;
-}
-#PlayerNameEditBtn:hover { color:#7ec8e3; }
-#PlayerNameEditArea { display:none; flex:1; display:none; align-items:center; gap:4px; }
+#PlayerNameDisplay { color:#00ffcc; font-weight:bold; }
+#PlayerNameEditBtn { cursor:pointer; color:#333; font-size:12px; margin-left:auto; }
+#PlayerNameEditBtn:hover { color:#00ffcc; }
+#PlayerNameEditArea { display:none; flex:1; align-items:center; gap:4px; }
 #PlayerNameInput {
-  flex:1; background:#0d0d1a; border:1px solid #3a3a5e; color:#eee;
-  padding:3px 6px; border-radius:3px; font-size:12px;
+  flex:1; background:#020008; border:1px solid rgba(0,255,200,.35); color:#eee;
+  padding:3px 6px; font-size:11px; font-family:inherit;
 }
-#PlayerNameInput:focus { outline:none; border-color:#7ec8e3; }
-.name-btn { cursor:pointer; font-size:14px; padding:2px 6px; border-radius:3px; }
-.name-confirm { color:#4CAF50; } .name-confirm:hover { color:#6ee26e; }
-.name-cancel  { color:#e74c3c; } .name-cancel:hover  { color:#ff7070; }
+#PlayerNameInput:focus { outline:none; border-color:#00ffcc; box-shadow:0 0 6px rgba(0,255,200,.25); }
+.name-btn { cursor:pointer; font-size:13px; padding:1px 5px; }
+.name-confirm { color:#00ffcc; } .name-confirm:hover { color:#66ffdd; }
+.name-cancel  { color:#ff00cc; } .name-cancel:hover  { color:#ff66ee; }
 
-/* ── spectator badge on canvas ── */
+/* ── in-room leave button ── */
+#LeaveRoomBtn {
+  display:none; background:transparent; color:#ff3377;
+  border:none; border-bottom:1px solid rgba(255,51,119,.2);
+  padding:5px 12px; font-size:10px; font-family:inherit;
+  letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+  text-align:left; flex-shrink:0;
+}
+#LeaveRoomBtn:hover { background:rgba(255,51,119,.08); color:#ff66aa; }
+
+/* ── chat ── */
+#ChatLog {
+  flex:1; overflow-y:auto; padding:7px;
+  display:flex; flex-direction:column; gap:3px; min-height:0;
+}
+#ChatLog::-webkit-scrollbar { width:2px; }
+#ChatLog::-webkit-scrollbar-track { background:#040010; }
+#ChatLog::-webkit-scrollbar-thumb { background:#2a0044; }
+.chat-msg  { font-size:11px; color:#8876aa; word-break:break-word; line-height:1.5; }
+.chat-name { color:#00ffcc; font-weight:bold; }
+.chat-sys  { color:#332255; font-style:italic; font-size:10px; }
+#ChatInputRow {
+  display:flex; border-top:1px solid rgba(0,255,200,.12); padding:5px; gap:4px;
+  background:#040010; flex-shrink:0;
+}
+#ChatInput {
+  flex:1; background:#020008; border:1px solid #1a0033; color:#bbb;
+  padding:5px 7px; font-size:11px; font-family:inherit;
+}
+#ChatInput:focus { outline:none; border-color:rgba(0,255,200,.4); }
+#ChatSendBtn {
+  background:transparent; border:1px solid rgba(0,255,200,.3); color:#00ffcc;
+  padding:5px 9px; cursor:pointer; font-size:12px; font-family:inherit;
+}
+#ChatSendBtn:hover { background:rgba(0,255,200,.1); border-color:#00ffcc; }
+
+/* ── bottom bar ── */
+#BottomBar {
+  background:linear-gradient(90deg,#06001a,#0e0030,#06001a);
+  display:flex; align-items:center; justify-content:center;
+  padding:10px 16px; gap:6px;
+  border-top:1px solid rgba(0,255,200,.2);
+  position:relative;
+}
+#BottomBar::before {
+  content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+  background:linear-gradient(90deg,transparent,#00ffcc,#ff00cc,#00ffcc,transparent);
+}
+.bigBtn {
+  background:transparent; border:1px solid rgba(0,255,200,.4);
+  color:#00ffcc; padding:10px 18px;
+  font-size:11px; font-weight:bold; letter-spacing:2.5px;
+  cursor:pointer; text-transform:uppercase;
+  user-select:none; display:inline-block;
+  font-family:'Courier New',monospace; transition:all .15s;
+  position:relative; overflow:hidden;
+}
+.bigBtn::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(0,255,200,.06) 0%,transparent 70%);
+}
+.bigBtn:hover {
+  background:rgba(0,255,200,.1); border-color:#00ffcc;
+  box-shadow:0 0 18px rgba(0,255,200,.25),inset 0 0 12px rgba(0,255,200,.05);
+  color:#fff;
+}
+.bigBtn:active { background:rgba(0,255,200,.2); }
+.bigBtn.magenta { border-color:rgba(255,0,204,.4); color:#ff00cc; }
+.bigBtn.magenta:hover { background:rgba(255,0,204,.1); border-color:#ff00cc; box-shadow:0 0 18px rgba(255,0,204,.25); color:#fff; }
+.bigBtn.gold { border-color:rgba(255,200,0,.4); color:#ffc800; }
+.bigBtn.gold:hover { background:rgba(255,200,0,.1); border-color:#ffc800; box-shadow:0 0 18px rgba(255,200,0,.2); color:#fff; }
+#OptionsBtn {
+  color:rgba(0,255,200,.3); font-size:10px; cursor:pointer; margin-left:6px;
+  letter-spacing:2px; text-transform:uppercase; user-select:none;
+  font-family:'Courier New',monospace; background:none; border:none;
+  transition:color .15s;
+}
+#OptionsBtn:hover { color:#00ffcc; }
+
+/* ── lobby select ── */
+.lobby-list-wrap { padding:4px 8px 0; background:#07001c; min-height:100%; }
+.lobby-title {
+  text-align:center; font-size:12px; font-weight:bold; letter-spacing:4px;
+  text-transform:uppercase; color:#00ffcc; margin-bottom:8px; padding-top:10px;
+  text-shadow:0 0 14px rgba(0,255,200,.6);
+}
+.lobby-row {
+  border:1px solid rgba(255,255,255,.07);
+  padding:7px 10px; margin-bottom:3px; cursor:pointer;
+  display:flex; align-items:center; gap:7px;
+  transition:all .12s;
+}
+.lobby-row:hover { border-color:rgba(255,255,255,.2); filter:brightness(1.4); }
+.lobby-name  { flex:1; font-weight:bold; font-size:11px; letter-spacing:.5px; }
+.lobby-dots  { font-size:12px; letter-spacing:2px; }
+.lobby-spec  { font-size:10px; color:#666; white-space:nowrap; }
+.lobby-badge { font-size:10px; font-weight:bold; white-space:nowrap; min-width:80px; text-align:right; letter-spacing:.5px; }
+.badge-empty   { color:#333; }
+.badge-waiting { color:#ff9900; text-shadow:0 0 6px rgba(255,153,0,.5); }
+.badge-playing { color:#00ff88; text-shadow:0 0 6px rgba(0,255,136,.5); }
+.lobby-back { text-align:center; margin-top:6px; padding-bottom:4px; }
+
+/* ── spectator overlay ── */
 .spec-overlay {
-  position:absolute; top:6px; left:6px;
-  background:rgba(0,0,0,.55); color:#fff;
-  font-size:11px; font-weight:bold; letter-spacing:1px;
-  padding:3px 8px; border-radius:3px; pointer-events:none;
+  position:absolute; top:8px; left:8px;
+  background:rgba(0,0,16,.8); color:#00ffcc;
+  font-size:9px; font-weight:bold; letter-spacing:3px;
+  padding:4px 10px; border:1px solid rgba(0,255,200,.35); pointer-events:none;
+  text-transform:uppercase;
 }
 
-/* ── game ui helpers ── */
-h1 { font-size:70px; }
-h2 { margin:8px 0; }
-.SmallButton { text-decoration:none; cursor:pointer; color:#555; }
-.SmallButton:hover { color:#000; }
-.btn {
-  background:#3498db;
-  background-image:linear-gradient(to bottom,#3498db,#2980b9);
-  border-radius:15px; color:#fff; padding:10px 20px;
-  border:solid #1f628d 5px; text-decoration:none; cursor:pointer; user-select:none;
+/* ── options panel ── */
+#OptionsDiv {
+  background:#07001c !important;
+  border:1px solid rgba(0,255,200,.3) !important;
+  color:#aaa;
 }
-.btn:hover { background:#3cb0fd; background-image:linear-gradient(to bottom,#3cb0fd,#3498db); }
-input[type='checkbox'] { margin-right:1em; }
+#OptionsDiv h2,#OptionsDiv h3 { color:#00ffcc; letter-spacing:2px; }
+
+/* ── game ui ── */
+h1 { font-size:60px; }
+h2 { margin:8px 0; }
+.SmallButton { text-decoration:none; cursor:pointer; color:#444; letter-spacing:1px; }
+.SmallButton:hover { color:#00ffcc; }
+.btn {
+  background:transparent; border:1px solid rgba(0,255,200,.45);
+  color:#00ffcc; padding:10px 22px; font-family:'Courier New',monospace;
+  text-decoration:none; cursor:pointer; user-select:none;
+  letter-spacing:2px; font-size:13px; display:inline-block; transition:all .15s;
+}
+.btn:hover { background:rgba(0,255,200,.12); border-color:#00ffcc; box-shadow:0 0 14px rgba(0,255,200,.3); color:#fff; }
+.btn.pink { border-color:rgba(255,0,204,.45); color:#ff00cc; }
+.btn.pink:hover { background:rgba(255,0,204,.12); border-color:#ff00cc; box-shadow:0 0 14px rgba(255,0,204,.3); color:#fff; }
+input[type='checkbox'] { margin-right:1em; accent-color:#00ffcc; }
 
 </style>
 <script type="text/javascript" src="Input.js"></script>
@@ -618,9 +685,16 @@ function updateWindowSize(w, h) {
   courtYPix = 4 * viewHeight / 5;
 }
 
-// ── bottom bar helpers ────────────────────────────────────
+// ── bottom bar & leave helpers ────────────────────────────
 function showBottomBar() { var b = document.getElementById('BottomBar'); if(b) b.style.display='flex'; }
 function hideBottomBar() { var b = document.getElementById('BottomBar'); if(b) b.style.display='none'; }
+function showLeaveBtn(v) { var b = document.getElementById('LeaveRoomBtn'); if(b) b.style.display = v ? 'block' : 'none'; }
+
+// ── emote sender ─────────────────────────────────────────
+function sendEmote(idx) {
+  if (!onlineMode || !lobbySocket || lobbySocket.readyState !== 1) return;
+  lobbySocket.send(JSON.stringify({ type:'emote', emoji: EMOTE_LIST[idx] }));
+}
 
 // ── spectator badge ───────────────────────────────────────
 function showSpecBadge() {
@@ -687,8 +761,8 @@ function addChatMessage(name, text) {
   while (log.children.length > 100) log.removeChild(log.firstChild);
 }
 function updatePlayerCount(n) {
-  var el = document.getElementById('PlayerCountDiv');
-  if (el) el.textContent = '● ' + n + ' player' + (n === 1 ? '' : 's') + ' online';
+  var el = document.getElementById('PlayerCountNum');
+  if (el) el.textContent = n;
 }
 
 // ── online / spectator state ──────────────────────────────
@@ -699,6 +773,99 @@ var onlineInputInterval = null;
 var onlinePointText     = null;
 var showingLobbySelect  = false;
 var currentRoomId       = null;
+
+// ── online player info ────────────────────────────────────
+var playerNameLeft  = 'Player 1';
+var playerNameRight = 'Player 2';
+var leftStreak      = 0;
+var rightStreak     = 0;
+var rallyCount      = 0;
+var sessionWins     = 0;
+var sessionLosses   = 0;
+
+// ── emotes ────────────────────────────────────────────────
+var EMOTE_LIST = ['👋','🔥','💪','😎'];
+var emoteLeft = null, emoteRight = null;
+var emoteLeftEnd = 0, emoteRightEnd = 0;
+
+// ── screen shake ─────────────────────────────────────────
+var shakeFrames = 0, shakeAmt = 0;
+
+// ── particles ─────────────────────────────────────────────
+var particles = [];
+function spawnParticles(x, y, color) {
+  for (var i = 0; i < 10; i++) {
+    var a = (i / 10) * TWO_PI;
+    var sp = 2 + Math.random() * 4;
+    particles.push({
+      x:x*pixelsPerUnitX, y:courtYPix - y*pixelsPerUnitY,
+      vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 2,
+      life:1, col:color, r:3+Math.random()*3
+    });
+  }
+}
+function tickParticles() {
+  particles = particles.filter(function(p) {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.06;
+    return p.life > 0;
+  });
+}
+function drawParticles() {
+  particles.forEach(function(p) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.col;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life, 0, TWO_PI); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── name tag + streak drawing ─────────────────────────────
+function drawOnlineHUD() {
+  if (!playerNameLeft || currentRoomId === null) return;
+  var now = Date.now();
+  ctx.textAlign = 'center';
+
+  function drawTag(slime, name, streak, emote, emoteEnd) {
+    var xp = slime.x * pixelsPerUnitX;
+    var yp = courtYPix + 8;
+    // name pill
+    ctx.font = 'bold 10px Courier New';
+    var tw = ctx.measureText(name).width + 14;
+    ctx.fillStyle = 'rgba(0,0,0,.5)';
+    ctx.fillRect(xp - tw/2, yp, tw, 14);
+    ctx.fillStyle = slime.onLeft ? '#66ffcc' : '#ff66aa';
+    ctx.fillText(name, xp, yp + 10);
+    // streak
+    if (streak >= 2) {
+      var sc = streak >= 5 ? '#ff4400' : streak >= 3 ? '#ff9900' : '#ffcc00';
+      ctx.font = 'bold 9px Courier New';
+      ctx.fillStyle = sc;
+      ctx.fillText(streak + 'x STREAK', xp, yp + 23);
+    }
+    // emote bubble
+    if (emote && now < emoteEnd) {
+      ctx.font = '20px sans-serif';
+      ctx.fillText(emote, xp, courtYPix - slime.y*pixelsPerUnitY - slime.radius*pixelsPerUnitY - 14);
+    }
+  }
+
+  drawTag(slimeLeft,  playerNameLeft,  leftStreak,  emoteLeft,  emoteLeftEnd);
+  drawTag(slimeRight, playerNameRight, rightStreak, emoteRight, emoteRightEnd);
+
+  // rally counter
+  if (rallyCount >= 5) {
+    ctx.font = 'bold 11px Courier New';
+    ctx.fillStyle = rallyCount >= 15 ? '#ff0066' : rallyCount >= 10 ? '#ff6600' : '#ffcc00';
+    var rt = 'RALLY ' + rallyCount;
+    var rw = ctx.measureText(rt).width + 16;
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.fillRect(viewWidth/2 - rw/2, courtYPix - 36, rw, 16);
+    ctx.fillStyle = rallyCount >= 15 ? '#ff0066' : rallyCount >= 10 ? '#ff6600' : '#ffcc00';
+    ctx.fillText(rt, viewWidth/2, courtYPix - 24);
+  }
+
+  ctx.textAlign = 'left';
+}
 
 // ── name editing ──────────────────────────────────────────
 function startEditName() {
@@ -789,7 +956,7 @@ function cancelLobbySelect() {
 function leaveLobby() {
   showingLobbySelect = false; onlineMode = false; isSpectator = false;
   if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
-  hideSpecBadge();
+  hideSpecBadge(); showLeaveBtn(false);
   if (lobbySocket && lobbySocket.readyState === 1) {
     lobbySocket.send(JSON.stringify({ type: 'leave_room' }));
   }
@@ -819,52 +986,79 @@ function handleServerMessage(msg) {
 
   } else if (msg.type === 'room_joined') {
     currentRoomId = msg.roomId;
+    showLeaveBtn(true);
     if (msg.role === 'spectator') {
       isSpectator = true; onlineMode = false;
       canvas.style.display = 'none'; menuDiv.style.display = 'block';
       menuDiv.innerHTML =
         '<div style="text-align:center;padding-top:80px;">' +
-        '<h2 style="font-size:24px;margin-bottom:10px;">👁 Spectating</h2>' +
-        '<p style="color:#555;">Waiting for game to start...</p><br/>' +
-        '<span onclick="leaveLobby()" class="SmallButton" style="font-size:12px;">leave</span>' +
+        '<div style="font-size:32px;margin-bottom:12px;">👁</div>' +
+        '<div style="color:#00ffcc;letter-spacing:4px;font-size:13px;margin-bottom:8px;">SPECTATING</div>' +
+        '<div style="color:#444;font-size:11px;letter-spacing:1px;">Waiting for game to start...</div>' +
         '</div>';
     } else {
       onlineMode = true; mySide = msg.side; onlinePointText = null; isSpectator = false;
       if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
       canvas.style.display = 'none'; menuDiv.style.display = 'block';
+      var col = msg.side === 'left' ? '#66ffcc' : '#ff66aa';
       menuDiv.innerHTML =
         '<div style="text-align:center;padding-top:70px;">' +
-        '<h2 style="font-size:28px;margin-bottom:12px;">Waiting for opponent...</h2>' +
-        '<p style="color:#555;font-size:14px;">You are the ' +
-        (msg.side === 'left' ? '<b style="color:#27ae60">green</b>' : '<b style="color:#e74c3c">red</b>') +
-        ' slime</p><br/>' +
-        '<span onclick="leaveLobby()" class="SmallButton" style="font-size:12px;">leave</span>' +
+        '<div style="color:#00ffcc;letter-spacing:4px;font-size:13px;margin-bottom:14px;">READY TO FIGHT</div>' +
+        '<div style="font-size:38px;margin-bottom:10px;">' + (msg.side === 'left' ? '🟢' : '🔴') + '</div>' +
+        '<div style="color:' + col + ';font-size:11px;letter-spacing:2px;margin-bottom:24px;">YOU ARE ' + msg.side.toUpperCase() + '</div>' +
+        '<div style="color:#333;font-size:10px;letter-spacing:1px;">Waiting for opponent...</div>' +
         '</div>';
     }
 
   } else if (msg.type === 'start') {
     mySide = msg.side;
+    playerNameLeft  = msg.nameLeft  || 'Player 1';
+    playerNameRight = msg.nameRight || 'Player 2';
+    leftStreak = 0; rightStreak = 0; rallyCount = 0;
     launchOnlineGame();
 
   } else if (msg.type === 'game_started') {
-    // Spectator: game is now live
+    playerNameLeft  = msg.nameLeft  || 'Player 1';
+    playerNameRight = msg.nameRight || 'Player 2';
+    leftStreak = 0; rightStreak = 0; rallyCount = 0;
     launchSpectatorMode();
 
   } else if (msg.type === 'spectator_waiting') {
-    // Spectator joined but game hasn't started; waiting screen already shown
+    // already showing spectator waiting screen
 
   } else if (msg.type === 'state') {
+    // track rally from ball crossing net
+    var prevRally = rallyCount;
+    if (ball && msg.ball) {
+      var crossed = (ball.x < 500 && msg.ball.x >= 500) || (ball.x >= 500 && msg.ball.x < 500);
+      if (crossed) rallyCount++;
+    }
     applyServerState(msg);
 
   } else if (msg.type === 'point') {
-    if (!isSpectator) {
-      onlinePointText = (mySide === msg.scorer) ? 'You scored!' : 'Opponent scores!';
+    rallyCount = 0;
+    shakeFrames = 8; shakeAmt = 5;
+    if (msg.scorer === 'left') {
+      leftStreak++; rightStreak = 0;
+      spawnParticles(slimeLeft.x, slimeLeft.y + 80, '#66ffcc');
     } else {
-      onlinePointText = (msg.scorer === 'left' ? 'Green' : 'Red') + ' scores!';
+      rightStreak++; leftStreak = 0;
+      spawnParticles(slimeRight.x, slimeRight.y + 80, '#ff66aa');
+    }
+    if (!isSpectator) {
+      onlinePointText = (mySide === msg.scorer) ? 'YOU SCORED' : 'OPPONENT SCORES';
+    } else {
+      onlinePointText = (msg.scorer === 'left' ? playerNameLeft : playerNameRight) + ' SCORES';
     }
     setTimeout(function() { onlinePointText = null; }, 700);
 
+  } else if (msg.type === 'emote') {
+    var now = Date.now();
+    if (msg.side === 'left')  { emoteLeft  = msg.emoji; emoteLeftEnd  = now + 2200; }
+    else                      { emoteRight = msg.emoji; emoteRightEnd = now + 2200; }
+
   } else if (msg.type === 'game_over') {
+    showLeaveBtn(false);
     if (isSpectator) {
       finishSpectating(msg.winner);
     } else {
@@ -874,9 +1068,10 @@ function handleServerMessage(msg) {
   } else if (msg.type === 'opponent_disconnected') {
     clearInterval(onlineInputInterval); onlineInputInterval = null;
     onlineMode = false; isSpectator = false;
+    showLeaveBtn(false);
     hideSpecBadge(); canvas.style.display = 'none';
     menuDiv.style.display = 'none'; showBottomBar(); toInitialMenu();
-    addChatMessage(null, 'The other player disconnected.');
+    addChatMessage(null, 'Opponent disconnected.');
   }
 }
 
@@ -898,6 +1093,10 @@ function launchOnlineGame() {
     var mv = 0;
     if (keysDown[lk] && !keysDown[rk]) mv = 1;
     else if (keysDown[rk] && !keysDown[lk]) mv = 2;
+    // number keys 1-4 send emotes
+    [49,50,51,52].forEach(function(k,i) {
+      if (keysDown[k]) { sendEmote(i); keysDown[k] = false; }
+    });
     lobbySocket.send(JSON.stringify({ movement: mv, jump: !!keysDown[uk] }));
   }, 20);
 }
@@ -914,42 +1113,73 @@ function launchSpectatorMode() {
 }
 
 function applyServerState(msg) {
-  // Auto-launch spectator view if a state arrives before game_started
   if (isSpectator && canvas.style.display !== 'block') launchSpectatorMode();
+
+  var prevBallX = ball ? ball.x : msg.ball.x;
   ball.x = msg.ball.x; ball.y = msg.ball.y; ball.velocityX = msg.ball.velocityX;
   slimeLeft.x  = msg.slimeLeft.x;  slimeLeft.y  = msg.slimeLeft.y;
   slimeRight.x = msg.slimeRight.x; slimeRight.y = msg.slimeRight.y;
   slimeLeftScore = msg.scoreLeft; slimeRightScore = msg.scoreRight;
-  renderBackground(); ball.render(); slimeLeft.render(); slimeRight.render();
+
+  tickParticles();
+
+  // screen shake offset
+  var sx = 0, sy = 0;
+  if (shakeFrames > 0) {
+    sx = (Math.random()-.5)*shakeAmt*2; sy = (Math.random()-.5)*shakeAmt*2;
+    shakeFrames--;
+  }
+  if (sx || sy) { ctx.save(); ctx.translate(sx, sy); }
+  renderBackground();
+  ball.render(); slimeLeft.render(); slimeRight.render();
+  drawParticles();
+  drawOnlineHUD();
+  if (sx || sy) ctx.restore();
+
   if (onlinePointText) {
-    ctx.font = '20px Georgia'; ctx.fillStyle = '#000';
-    var w = ctx.measureText(onlinePointText).width;
-    ctx.fillText(onlinePointText, (viewWidth-w)/2, courtYPix + (viewHeight-courtYPix)/2);
+    ctx.font = 'bold 16px Courier New'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(0,0,0,.5)';
+    ctx.fillRect(viewWidth/2-90, courtYPix+8, 180, 22);
+    ctx.fillStyle = '#00ffcc';
+    ctx.fillText(onlinePointText, viewWidth/2, courtYPix+23);
+    ctx.textAlign = 'left';
   }
 }
 
 function finishOnlineGame(winner) {
   clearInterval(onlineInputInterval); onlineInputInterval = null;
-  onlineMode = false;
+  onlineMode = false; showLeaveBtn(false); particles = [];
   var iWon = (mySide === winner);
+  if (iWon) sessionWins++; else sessionLosses++;
+  var wName = winner === 'left' ? playerNameLeft : playerNameRight;
+  var lName = winner === 'left' ? playerNameRight : playerNameLeft;
+  var col   = iWon ? '#66ffcc' : '#ff66aa';
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
-    '<div style="text-align:center;padding-top:50px;">' +
-    '<h1 style="font-size:52px;margin-bottom:16px;">' + (iWon ? 'You won! 🎉' : 'You lost :(') + '</h1>' +
-    '<span onclick="showLobbySelect()" class="btn" style="display:inline-block;margin:10px 12px;font-size:22px;">Play Again</span>' +
-    '<span onclick="toInitialMenu()" class="btn" style="display:inline-block;margin:10px 12px;font-size:22px;">Menu</span>' +
+    '<div style="text-align:center;padding-top:42px;background:#05000f;height:100%;position:relative;">' +
+    '<div style="font-size:11px;color:#444;letter-spacing:3px;margin-bottom:10px;">MATCH OVER</div>' +
+    '<div style="font-size:44px;font-weight:bold;color:' + col + ';letter-spacing:3px;' +
+    'text-shadow:0 0 24px ' + col + ';margin-bottom:6px;">' + (iWon ? 'VICTORY' : 'DEFEAT') + '</div>' +
+    '<div style="font-size:11px;color:#555;letter-spacing:2px;margin-bottom:20px;">' + wName + ' defeats ' + lName + '</div>' +
+    '<div style="font-size:10px;color:#333;letter-spacing:2px;margin-bottom:22px;">' +
+    'SESSION &nbsp; <span style="color:#66ffcc;">' + sessionWins + 'W</span> / <span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>' +
+    '<span onclick="showLobbySelect()" class="btn" style="margin:6px 10px;">PLAY AGAIN</span>' +
+    '<span onclick="toInitialMenu()" class="btn pink" style="margin:6px 10px;">MENU</span>' +
     '</div>';
   showBottomBar();
 }
 
 function finishSpectating(winner) {
-  isSpectator = false; hideSpecBadge();
+  isSpectator = false; hideSpecBadge(); showLeaveBtn(false); particles = [];
+  var wName = winner === 'left' ? playerNameLeft : playerNameRight;
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
-    '<div style="text-align:center;padding-top:70px;">' +
-    '<h2 style="font-size:30px;margin-bottom:16px;">' +
-    (winner === 'left' ? '🟢 Green' : '🔴 Red') + ' wins!</h2>' +
-    '<span onclick="showLobbySelect()" class="btn" style="display:inline-block;margin:10px;font-size:20px;">Back to Lobbies</span>' +
+    '<div style="text-align:center;padding-top:60px;background:#05000f;height:100%;">' +
+    '<div style="font-size:10px;color:#444;letter-spacing:3px;margin-bottom:10px;">MATCH OVER</div>' +
+    '<div style="font-size:36px;font-weight:bold;color:#00ffcc;letter-spacing:2px;' +
+    'text-shadow:0 0 20px rgba(0,255,200,.7);margin-bottom:8px;">' + wName + '</div>' +
+    '<div style="font-size:11px;color:#555;letter-spacing:3px;margin-bottom:28px;">WINS THE MATCH</div>' +
+    '<span onclick="showLobbySelect()" class="btn" style="margin:6px 10px;">BACK TO LOBBIES</span>' +
     '</div>';
   showBottomBar();
 }
@@ -993,9 +1223,30 @@ function start(startAsOnePlayer) {
 }
 
 function toInitialMenu() {
-  onlineMode = false; isSpectator = false; showingLobbySelect = false;
-  hideSpecBadge();
-  canvas.style.display = 'none'; menuDiv.style.display = 'block'; menuDiv.innerHTML = '';
+  onlineMode = false; isSpectator = false; showingLobbySelect = false; currentRoomId = null;
+  hideSpecBadge(); showLeaveBtn(false); particles = [];
+  canvas.style.display = 'none'; menuDiv.style.display = 'block';
+  menuDiv.innerHTML =
+    '<div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;' +
+    'align-items:center;justify-content:center;background:#05000f;overflow:hidden;">' +
+    // grid lines
+    '<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,200,.03) 1px,transparent 1px),' +
+    'linear-gradient(90deg,rgba(0,255,200,.03) 1px,transparent 1px);background-size:30px 30px;"></div>' +
+    // title
+    '<div style="position:relative;font-size:54px;font-weight:bold;color:#00ffcc;letter-spacing:6px;' +
+    'text-shadow:0 0 30px rgba(0,255,200,.8),0 0 60px rgba(0,255,200,.3);margin-bottom:4px;">SLIME</div>' +
+    '<div style="position:relative;font-size:11px;color:#ff00cc;letter-spacing:10px;text-transform:uppercase;' +
+    'text-shadow:0 0 12px rgba(255,0,204,.6);margin-bottom:28px;">VOLLEYBALL</div>' +
+    // session stats
+    (sessionWins + sessionLosses > 0
+      ? '<div style="position:relative;font-size:10px;color:#444;letter-spacing:2px;margin-bottom:10px;">' +
+        'SESSION: <span style="color:#66ffcc;">' + sessionWins + 'W</span> / ' +
+        '<span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>'
+      : '') +
+    '<div style="position:relative;font-size:10px;color:rgba(0,255,200,.25);letter-spacing:4px;text-transform:uppercase;">' +
+    'Use keys 1-4 during game for emotes</div>' +
+    '<div style="position:absolute;bottom:12px;font-size:9px;color:#222;letter-spacing:3px;text-transform:uppercase;">Quick Play to start</div>' +
+    '</div>';
   showBottomBar();
 }
 
@@ -1033,7 +1284,7 @@ function bodyload() {
   menuDiv = document.createElement('div');
   menuDiv.style.position = 'absolute'; menuDiv.style.left = '0'; menuDiv.style.top = '0';
   menuDiv.style.width = '750px'; menuDiv.style.height = '375px';
-  menuDiv.style.background = "#ca6 url('sky2.jpg') no-repeat";
+  menuDiv.style.background = '#05000f';
   contentDiv.appendChild(menuDiv);
 
   logString = ''; nextSlimeIndex = 0;
@@ -1062,39 +1313,42 @@ function bodyload() {
 <div id="LobbyWrapper">
 
   <div id="TopBar">
-    <span id="VersionText">v1.0</span>
-    <span id="AnnouncementText">Slime Volleyball &mdash; Play online with friends!</span>
+    <span id="VersionText">v2.0</span>
+    <span id="AnnouncementText">// SLIME VOLLEYBALL // ONLINE MULTIPLAYER //</span>
+    <span style="color:rgba(0,255,200,.25);font-size:9px;letter-spacing:1px;">KEYS 1-4 EMOTES</span>
   </div>
 
   <div id="MiddleRow">
 
     <div id="ContentDiv">
       <div id="GameContentDiv"></div>
-      <div id="OptionsDiv" style="position:absolute;width:400px;height:360px;top:0;left:175px;background:#eee;display:none;border:3px solid #ca6;z-index:10;">
-        <h2>Options</h2><hr/><br/>
-        <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:5px;right:5px;font-weight:bold;">close</span>
-        <div style="text-align:left;margin:10px;">
-          <input id="LegacyGraphics" type="checkbox"> Legacy Graphics<br/><br/>
-          <h3>Debug</h3><br/>
-          <input id="PhysicsLog" type="checkbox"> Enable Physics Log<br/><br/>
-          <h3>Cheats</h3><br/>
-          <input id="SlowMotion" type="checkbox"> Slow Motion
+      <div id="OptionsDiv" style="position:absolute;width:380px;height:340px;top:0;left:185px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:18px 20px;">
+        <div style="color:#00ffcc;letter-spacing:3px;font-size:12px;margin-bottom:12px;text-transform:uppercase;">Options</div>
+        <div style="border-bottom:1px solid rgba(0,255,200,.15);margin-bottom:12px;"></div>
+        <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:12px;right:14px;font-size:12px;letter-spacing:1px;">[ close ]</span>
+        <div style="text-align:left;color:#777;font-size:12px;line-height:2;">
+          <input id="LegacyGraphics" type="checkbox"> <span style="letter-spacing:1px;">Legacy Graphics</span><br/>
+          <div style="color:rgba(0,255,200,.3);font-size:10px;letter-spacing:2px;margin:8px 0 4px;">DEBUG</div>
+          <input id="PhysicsLog" type="checkbox"> <span style="letter-spacing:1px;">Physics Log</span><br/>
+          <div style="color:rgba(0,255,200,.3);font-size:10px;letter-spacing:2px;margin:8px 0 4px;">CHEATS</div>
+          <input id="SlowMotion" type="checkbox"> <span style="letter-spacing:1px;">Slow Motion</span>
         </div>
       </div>
     </div>
 
     <div id="Sidebar">
-      <div id="PlayerCountDiv">● 0 players online</div>
+      <div id="PlayerCountDiv">&#11044; <span id="PlayerCountNum">0</span> online</div>
       <div id="PlayerNameDiv">
-        <span id="PlayerNameLabel">You: <b id="PlayerNameDisplay">...</b></span>
+        <span id="PlayerNameLabel">ID: <b id="PlayerNameDisplay">...</b></span>
         <span id="PlayerNameEditBtn" onclick="startEditName()" title="Change name">✏</span>
         <span id="PlayerNameEditArea" style="display:none;flex:1;align-items:center;gap:4px;">
           <input id="PlayerNameInput" type="text" maxlength="20"
                  onkeydown="if(event.key==='Enter')saveName();else if(event.key==='Escape')cancelEditName()">
-          <span class="name-btn name-confirm" onclick="saveName()" title="Save">✓</span>
-          <span class="name-btn name-cancel"  onclick="cancelEditName()" title="Cancel">✗</span>
+          <span class="name-btn name-confirm" onclick="saveName()">✓</span>
+          <span class="name-btn name-cancel"  onclick="cancelEditName()">✗</span>
         </span>
       </div>
+      <button id="LeaveRoomBtn" onclick="leaveLobby()">⬅ Leave Room</button>
       <div id="ChatLog"></div>
       <div id="ChatInputRow">
         <input id="ChatInput" type="text" placeholder="Chat..." maxlength="200"
@@ -1106,10 +1360,10 @@ function bodyload() {
   </div>
 
   <div id="BottomBar">
-    <span class="bigBtn" onclick="showLobbySelect()">QUICK PLAY</span>
-    <span class="bigBtn" onclick="start(false)">PRIVATE MATCH</span>
-    <span class="bigBtn" onclick="start(true)">ONE PLAYER</span>
-    <span id="OptionsBtn" onclick="showOptions()">OPTIONS</span>
+    <span class="bigBtn" onclick="showLobbySelect()">&#9654; QUICK PLAY</span>
+    <span class="bigBtn magenta" onclick="start(false)">&#128101; 2 PLAYER</span>
+    <span class="bigBtn gold" onclick="start(true)">&#129302; VS CPU</span>
+    <button id="OptionsBtn" onclick="showOptions()">[ OPTIONS ]</button>
   </div>
 
 </div>

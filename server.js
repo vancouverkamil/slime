@@ -192,9 +192,10 @@ function startRoomGame(room) {
   room.phase = 'playing';
 
   const [left, right] = room.players;
-  send(left.ws,  { type: 'start', side: 'left'  });
-  send(right.ws, { type: 'start', side: 'right' });
-  room.spectators.forEach(({ ws }) => send(ws, { type: 'game_started' }));
+  const names = { nameLeft: left.info.name, nameRight: right.info.name, roomName: room.name };
+  send(left.ws,  { type: 'start', side: 'left',  ...names });
+  send(right.ws, { type: 'start', side: 'right', ...names });
+  room.spectators.forEach(({ ws }) => send(ws, { type: 'game_started', ...names }));
 
   function bcast(msg) { broadcastRoom(room, msg); }
   function broadcastState() { bcast(buildStateMsg(room.state)); }
@@ -249,8 +250,20 @@ function startRoomGame(room) {
 
   left.info.state        = 'playing';
   right.info.state       = 'playing';
-  left.info.gameHandler  = (msg) => handleInput('left',  msg);
-  right.info.gameHandler = (msg) => handleInput('right', msg);
+  left.info.gameHandler  = (msg) => {
+    handleInput('left', msg);
+    if (msg.type === 'emote') {
+      const e = String(msg.emoji || '').slice(0, 4);
+      if (e) bcast({ type: 'emote', side: 'left', emoji: e });
+    }
+  };
+  right.info.gameHandler = (msg) => {
+    handleInput('right', msg);
+    if (msg.type === 'emote') {
+      const e = String(msg.emoji || '').slice(0, 4);
+      if (e) bcast({ type: 'emote', side: 'right', emoji: e });
+    }
+  };
 
   let cleaned = false;
   function cleanup() {
