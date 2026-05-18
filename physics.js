@@ -7,6 +7,27 @@ const MAX_VELOCITY_X = 15;
 const MAX_VELOCITY_Y = 22;
 const FUDGE = 5;
 
+// Physical barriers per map (game coordinates, y=0 at ground, y increases upward)
+const MAP_BARRIERS = {
+  11: [{x1:160, y1:214, x2:840, y2:232}],
+  12: [{x1:50,  y1:196, x2:400, y2:214}, {x1:600, y1:196, x2:950, y2:214}],
+  13: [{x1:150, y1:208, x2:850, y2:226}, {x1:488, y1:226, x2:512, y2:344}],
+  14: [{x1:80,  y1:244, x2:370, y2:262}, {x1:630, y1:244, x2:920, y2:262}, {x1:388, y1:162, x2:612, y2:180}],
+};
+
+function applyBarrierPhysics(ball, b) {
+  const r = ball.radius;
+  if (ball.x + r <= b.x1 || ball.x - r >= b.x2) return;
+  if (ball.y + r <= b.y1 || ball.y - r >= b.y2) return;
+  if (b.x2 - b.x1 >= b.y2 - b.y1) {
+    if (ball.velocityY > 0) { ball.velocityY = -ball.velocityY; ball.y = b.y1 - r; }
+    else                    { ball.velocityY = -ball.velocityY; ball.y = b.y2 + r; }
+  } else {
+    if (ball.velocityX > 0) { ball.velocityX = -ball.velocityX; ball.x = b.x1 - r; }
+    else                    { ball.velocityX = -ball.velocityX; ball.x = b.x2 + r; }
+  }
+}
+
 function newBall() {
   return { x: 0, y: 0, velocityX: 0, velocityY: 0, radius: 25 };
 }
@@ -93,6 +114,9 @@ function stepBall(state) {
     }
   }
 
+  const barriers = MAP_BARRIERS[state.mapId];
+  if (barriers) for (let i = 0; i < barriers.length; i++) applyBarrierPhysics(ball, barriers[i]);
+
   if (ball.y < 0) return ball.x > 500 ? 1 : 2;
   return 0;
 }
@@ -107,4 +131,4 @@ function tick(state) {
   return stepBall(state);
 }
 
-module.exports = { newBall, newSlime, initRound, tick, gameWidth, gameHeight };
+module.exports = { newBall, newSlime, initRound, tick, gameWidth, gameHeight, MAP_BARRIERS };

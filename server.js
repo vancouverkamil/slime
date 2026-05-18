@@ -10,7 +10,8 @@ const TICK_MS    = 20;
 const ROOM_NAMES = [
   'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
   'Jungle Court', 'Frozen Court', 'Desert Court', 'Neon Court',
-  'Space Court', 'Volcano Court', 'Ocean Court'
+  'Space Court', 'Volcano Court', 'Ocean Court',
+  'Overpass Court', 'Bunker Court', 'Reactor Court', 'Void Court',
 ];
 
 const app = express();
@@ -53,6 +54,7 @@ function getLobbySnapshot() {
     playerCount:    r.players.length,
     spectatorCount: r.spectators.length,
     phase:          r.phase,
+    restricted:     r.id >= 11,
   }));
 }
 function getPlayerList() {
@@ -228,6 +230,7 @@ function leaveRoom(ws, info, disconnecting) {
 // ── game ──────────────────────────────────────────────────
 function startRoomGame(room) {
   room.state = createState();
+  room.state.mapId = room.id;
   room.phase = 'playing';
 
   const [left, right] = room.players;

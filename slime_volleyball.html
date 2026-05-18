@@ -258,9 +258,11 @@ body {
 }
 .lobby-card:hover { border-color:rgba(0,255,200,.55); box-shadow:0 0 12px rgba(0,255,200,.15); }
 .lobby-card-thumb {
-  width:100%; height:46px; background-size:cover; background-position:center;
+  width:100%; height:38px; background-size:cover; background-position:center;
   position:relative;
 }
+.lobby-card.lobby-locked { border-color:rgba(180,140,0,.18) !important; }
+.lobby-card.lobby-locked:hover { border-color:rgba(255,200,0,.35) !important; box-shadow:0 0 12px rgba(255,180,0,.12) !important; }
 .lobby-card-overlay {
   position:absolute; inset:0;
   background:linear-gradient(to bottom, transparent 20%, rgba(0,0,18,.65));
@@ -384,6 +386,38 @@ var final4Mode = false, final4Index = 0, final4WinPending = false;
 var localMapId = null;
 var gameScale = (typeof localStorage !== 'undefined' && localStorage.getItem('slime_scale')) || 'compact';
 
+// ── barrier physics (client-side, local modes only) ───────
+var MAP_BARRIERS_CLIENT = {
+  11: [{x1:160, y1:214, x2:840, y2:232}],
+  12: [{x1:50,  y1:196, x2:400, y2:214}, {x1:600, y1:196, x2:950, y2:214}],
+  13: [{x1:150, y1:208, x2:850, y2:226}, {x1:488, y1:226, x2:512, y2:344}],
+  14: [{x1:80,  y1:244, x2:370, y2:262}, {x1:630, y1:244, x2:920, y2:262}, {x1:388, y1:162, x2:612, y2:180}],
+};
+var totalWins = 0;
+try { totalWins = parseInt(localStorage.getItem('slime_totalWins') || '0') || 0; } catch(e) {}
+function recordWin() { totalWins++; try { localStorage.setItem('slime_totalWins', totalWins); } catch(e){} }
+function getPlayerRank() {
+  if (totalWins >= 10) return 'LIEUTENANT';
+  if (totalWins >= 6)  return 'SERGEANT';
+  if (totalWins >= 3)  return 'CORPORAL';
+  return 'PRIVATE';
+}
+function applyBarrierClient(b) {
+  var r = ball.radius;
+  if (ball.x + r <= b.x1 || ball.x - r >= b.x2) return;
+  if (ball.y + r <= b.y1 || ball.y - r >= b.y2) return;
+  if (b.x2 - b.x1 >= b.y2 - b.y1) {
+    if (ball.velocityY > 0) { ball.velocityY = -ball.velocityY; ball.y = b.y1 - r; }
+    else                    { ball.velocityY = -ball.velocityY; ball.y = b.y2 + r; }
+  } else {
+    if (ball.velocityX > 0) { ball.velocityX = -ball.velocityX; ball.x = b.x1 - r; }
+    else                    { ball.velocityX = -ball.velocityX; ball.x = b.x2 + r; }
+  }
+}
+function showLockedNotice(need) {
+  addChatMessage(null, 'Classified court — earn ' + need + ' more win' + (need !== 1 ? 's' : '') + ' to reach Lieutenant rank.');
+}
+
 function log(msg) { logString += msg + '\n'; }
 
 // ── local game physics ────────────────────────────────────
@@ -437,6 +471,8 @@ function updateBall() {
     else if (ball.x < 500) { ball.x = 480; ball.velocityX = ball.velocityX >= 0 ? -ball.velocityX : ball.velocityX; }
     else                   { ball.x = 520; ball.velocityX = ball.velocityX <= 0 ? -ball.velocityX : ball.velocityX; }
   }
+  var _bars = MAP_BARRIERS_CLIENT[localMapId];
+  if (_bars) for (var _bi = 0; _bi < _bars.length; _bi++) applyBarrierClient(_bars[_bi]);
   if (ball.y < 0) {
     leftWon = ball.x > 500; (leftWon ? slimeLeftScore++ : slimeRightScore++);
     endPoint(); return true;
@@ -1085,6 +1121,206 @@ function drawMapBackground(id) {
       cx.shadowBlur=0; cx.lineWidth=1;
       backTextColor='#00ccff'; break;
     }
+
+    case 11: { // Overpass Court — military industrial complex
+      var sx11=w/1000, sy11=gy/800;
+      // Dark concrete walls
+      var bg11=cx.createLinearGradient(0,0,0,gy);
+      bg11.addColorStop(0,'#090807'); bg11.addColorStop(0.6,'#141210'); bg11.addColorStop(1,'#1c1916');
+      cx.fillStyle=bg11; cx.fillRect(0,0,w,gy);
+      // Concrete block texture
+      cx.fillStyle='rgba(255,200,80,0.025)';
+      for(var ci11=0;ci11<28;ci11++){cx.fillRect((ci11*139)%w,(ci11*83)%(gy*.92),24+ci11%18,5+ci11%7);}
+      // Amber searchlight beams from corners
+      cx.save(); cx.globalAlpha=0.06; cx.fillStyle='#ffaa00';
+      cx.beginPath(); cx.moveTo(0,0); cx.lineTo(w*0.22,gy); cx.lineTo(0,gy); cx.fill();
+      cx.beginPath(); cx.moveTo(w,0); cx.lineTo(w*0.78,gy); cx.lineTo(w,gy); cx.fill();
+      cx.restore();
+      // Side amber glow
+      var al11=cx.createRadialGradient(0,gy*.35,0,0,gy*.35,w*.32);
+      al11.addColorStop(0,'rgba(255,150,0,0.13)'); al11.addColorStop(1,'transparent');
+      cx.fillStyle=al11; cx.fillRect(0,0,w,gy);
+      var ar11=cx.createRadialGradient(w,gy*.35,0,w,gy*.35,w*.32);
+      ar11.addColorStop(0,'rgba(255,150,0,0.13)'); ar11.addColorStop(1,'transparent');
+      cx.fillStyle=ar11; cx.fillRect(0,0,w,gy);
+      // Ground — reinforced concrete grid
+      var grd11=cx.createLinearGradient(0,gy,0,h);
+      grd11.addColorStop(0,'#1a1815'); grd11.addColorStop(1,'#0c0a08');
+      cx.fillStyle=grd11; cx.fillRect(0,gy,w,h-gy);
+      cx.strokeStyle='rgba(60,50,35,0.45)'; cx.lineWidth=0.7;
+      for(var gxi=0;gxi<w;gxi+=38){cx.beginPath();cx.moveTo(gxi,gy);cx.lineTo(gxi,h);cx.stroke();}
+      // Barrier — steel I-beam
+      var b11=MAP_BARRIERS_CLIENT[11][0];
+      var bx11=b11.x1*sx11, bw11=(b11.x2-b11.x1)*sx11, byt11=gy-b11.y2*sy11, bh11=(b11.y2-b11.y1)*sy11;
+      var bmg=cx.createLinearGradient(0,byt11,0,byt11+bh11);
+      bmg.addColorStop(0,'#3a3228'); bmg.addColorStop(0.5,'#4e453a'); bmg.addColorStop(1,'#2e2820');
+      cx.fillStyle=bmg; cx.fillRect(bx11,byt11,bw11,bh11);
+      // Flanges
+      cx.fillStyle='#524840'; cx.fillRect(bx11-3,byt11-2,bw11+6,2.5); cx.fillRect(bx11-3,byt11+bh11,bw11+6,2.5);
+      // Hazard stripes on ends
+      for(var hs=0;hs<4;hs++){
+        cx.fillStyle=hs%2===0?'rgba(255,200,0,0.7)':'rgba(0,0,0,0.8)';
+        cx.fillRect(bx11+hs*8,byt11,8,bh11+2); cx.fillRect(bx11+bw11-32+hs*8,byt11,8,bh11+2);
+      }
+      // Amber warning lights
+      cx.shadowColor='#ffaa00'; cx.shadowBlur=10;
+      [bx11+bw11*.15, bx11+bw11*.5, bx11+bw11*.85].forEach(function(lx){
+        cx.fillStyle='#ffcc22'; cx.beginPath(); cx.arc(lx,byt11+bh11/2,2,0,TWO_PI); cx.fill();
+      });
+      cx.shadowBlur=0;
+      // Beam edge glow
+      cx.strokeStyle='rgba(255,140,0,0.3)'; cx.lineWidth=1;
+      cx.strokeRect(bx11,byt11,bw11,bh11); cx.lineWidth=1;
+      backTextColor='#ffcc44'; break;
+    }
+
+    case 12: { // Bunker Court — underground military compound
+      var sx12=w/1000, sy12=gy/800;
+      // Dark olive walls
+      var bg12=cx.createLinearGradient(0,0,0,gy);
+      bg12.addColorStop(0,'#060a06'); bg12.addColorStop(0.5,'#0c120a'); bg12.addColorStop(1,'#141a10');
+      cx.fillStyle=bg12; cx.fillRect(0,0,w,gy);
+      // Camo texture blobs
+      ['rgba(14,22,8,0.55)','rgba(8,16,6,0.45)','rgba(20,30,12,0.4)'].forEach(function(col,ci){
+        for(var j=0;j<12;j++){
+          var cx12=((ci*170+j*73)%w), cy12=((ci*90+j*97)%(gy*.88));
+          ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(cx12,cy12,18+j%14,9+j%8,j*.4,0,TWO_PI); ctx.fill();
+        }
+      });
+      // Red emergency lighting along top
+      var rg12=cx.createLinearGradient(0,0,0,gy*.4);
+      rg12.addColorStop(0,'rgba(200,0,0,0.09)'); rg12.addColorStop(1,'transparent');
+      cx.fillStyle=rg12; cx.fillRect(0,0,w,gy*.4);
+      // Ground — cracked dark concrete
+      cx.fillStyle='#0e0f0c'; cx.fillRect(0,gy,w,h-gy);
+      cx.strokeStyle='rgba(30,40,20,0.6)'; cx.lineWidth=1;
+      for(var ci12=0;ci12<6;ci12++){
+        cx.beginPath(); cx.moveTo((ci12*183)%w,gy); cx.lineTo(((ci12*183+40)%w),h); cx.stroke();
+      }
+      // Barriers — two concrete bunker slab ceilings
+      [MAP_BARRIERS_CLIENT[12][0], MAP_BARRIERS_CLIENT[12][1]].forEach(function(b,bi){
+        var bx=b.x1*sx12, bw=(b.x2-b.x1)*sx12, byt=gy-b.y2*sy12, bh=(b.y2-b.y1)*sy12;
+        var slg=cx.createLinearGradient(0,byt,0,byt+bh);
+        slg.addColorStop(0,'#1e2418'); slg.addColorStop(1,'#2e361e');
+        cx.fillStyle=slg; cx.fillRect(bx,byt,bw,bh);
+        // Concrete surface cracks
+        cx.strokeStyle='rgba(5,10,3,0.7)'; cx.lineWidth=0.6;
+        for(var cr=0;cr<5;cr++){
+          var crx=bx+bw*(0.1+cr*.18);
+          cx.beginPath(); cx.moveTo(crx,byt); cx.lineTo(crx+5,byt+bh); cx.stroke();
+        }
+        // Red drip lights
+        cx.shadowColor='#cc0000'; cx.shadowBlur=8;
+        for(var rl=0;rl<3;rl++){
+          cx.fillStyle='rgba(200,0,0,0.75)';
+          cx.fillRect(bx+bw*(0.15+rl*.35)-1,byt+bh,2,4+rl%3);
+        }
+        cx.shadowBlur=0;
+        // Edge line
+        cx.strokeStyle='rgba(180,0,0,0.3)'; cx.lineWidth=1;
+        cx.strokeRect(bx,byt,bw,bh); cx.lineWidth=1;
+      });
+      // Red warning light blips on ceiling
+      cx.shadowColor='#cc0000'; cx.shadowBlur=12;
+      [w*.2, w*.5, w*.8].forEach(function(lx){
+        cx.fillStyle='rgba(220,0,0,0.6)'; cx.beginPath(); cx.arc(lx,gy*.04,3,0,TWO_PI); cx.fill();
+      });
+      cx.shadowBlur=0;
+      backTextColor='#cc3333'; break;
+    }
+
+    case 13: { // Reactor Court — nuclear containment chamber
+      var sx13=w/1000, sy13=gy/800;
+      // Dark teal/nuclear background
+      var bg13=cx.createLinearGradient(0,0,0,gy);
+      bg13.addColorStop(0,'#020c08'); bg13.addColorStop(0.5,'#041410'); bg13.addColorStop(1,'#081c12');
+      cx.fillStyle=bg13; cx.fillRect(0,0,w,gy);
+      // Reactor rod glow columns
+      [[w*.12,gy*.6],[w*.28,gy*.45],[w*.72,gy*.45],[w*.88,gy*.6]].forEach(function(rod){
+        var rg=cx.createRadialGradient(rod[0],rod[1],0,rod[0],rod[1],w*.06);
+        rg.addColorStop(0,'rgba(80,255,120,0.18)'); rg.addColorStop(1,'transparent');
+        cx.fillStyle=rg; cx.fillRect(rod[0]-w*.08,0,w*.16,gy);
+        cx.fillStyle='rgba(50,200,80,0.35)'; cx.fillRect(rod[0]-3,0,6,rod[1]);
+        cx.strokeStyle='rgba(40,180,70,0.5)'; cx.lineWidth=1;
+        cx.beginPath(); cx.moveTo(rod[0],0); cx.lineTo(rod[0],rod[1]); cx.stroke();
+        cx.lineWidth=1;
+      });
+      // Radiation symbol (simplified)
+      cx.save(); cx.globalAlpha=0.06; cx.fillStyle='#88ff44';
+      var ryc=gy*.22, rxc=w*.5;
+      for(var ra=0;ra<3;ra++){
+        cx.save(); cx.translate(rxc,ryc); cx.rotate(ra*Math.PI*2/3);
+        cx.beginPath(); cx.moveTo(5,0); cx.arc(0,0,14,-.4,.4); cx.lineTo(5,0); cx.fill();
+        cx.restore();
+      }
+      cx.beginPath(); cx.arc(rxc,ryc,5,0,TWO_PI); cx.fill();
+      cx.restore();
+      // Toxic floor
+      cx.fillStyle='#03120a'; cx.fillRect(0,gy,w,h-gy);
+      cx.strokeStyle='rgba(50,160,60,0.25)'; cx.lineWidth=0.7;
+      for(var fg=0;fg<w;fg+=32){cx.beginPath();cx.moveTo(fg,gy);cx.lineTo(fg,h);cx.stroke();}
+      // Horizontal barrier
+      var bh13=MAP_BARRIERS_CLIENT[13][0];
+      var bhx=bh13.x1*sx13, bhw=(bh13.x2-bh13.x1)*sx13, bhyt=gy-bh13.y2*sy13, bhh=(bh13.y2-bh13.y1)*sy13;
+      var hbg=cx.createLinearGradient(0,bhyt,0,bhyt+bhh);
+      hbg.addColorStop(0,'rgba(40,200,80,0.5)'); hbg.addColorStop(1,'rgba(20,140,50,0.4)');
+      cx.shadowColor='#44ff66'; cx.shadowBlur=14;
+      cx.fillStyle=hbg; cx.fillRect(bhx,bhyt,bhw,bhh);
+      cx.strokeStyle='rgba(60,255,100,0.6)'; cx.lineWidth=1; cx.strokeRect(bhx,bhyt,bhw,bhh);
+      cx.lineWidth=1;
+      // Vertical barrier (containment column)
+      var bv13=MAP_BARRIERS_CLIENT[13][1];
+      var bvx=bv13.x1*sx13, bvw=(bv13.x2-bv13.x1)*sx13, bvyt=gy-bv13.y2*sy13, bvh=(bv13.y2-bv13.y1)*sy13;
+      var vbg=cx.createLinearGradient(bvx,0,bvx+bvw,0);
+      vbg.addColorStop(0,'rgba(20,160,50,0.35)'); vbg.addColorStop(0.5,'rgba(60,220,90,0.55)'); vbg.addColorStop(1,'rgba(20,160,50,0.35)');
+      cx.fillStyle=vbg; cx.fillRect(bvx,bvyt,bvw,bvh);
+      cx.strokeStyle='rgba(80,255,120,0.5)'; cx.lineWidth=1; cx.strokeRect(bvx,bvyt,bvw,bvh);
+      cx.lineWidth=1; cx.shadowBlur=0;
+      backTextColor='#44ff66'; break;
+    }
+
+    case 14: { // Void Court — corrupted digital void
+      var sx14=w/1000, sy14=gy/800;
+      // Pure black void
+      cx.fillStyle='#000'; cx.fillRect(0,0,w,h);
+      // Glitch scan lines (neon, thin, horizontal)
+      var glitchCols=['#00ffff','#ff00ff','#ffff00','#ff4444','#44ffaa'];
+      for(var gli=0;gli<40;gli++){
+        var gy14=(_sr(gli*7+1)*gy*.94)|0;
+        cx.fillStyle=glitchCols[gli%glitchCols.length];
+        cx.globalAlpha=0.04+_sr(gli*3)*.06;
+        cx.fillRect(0,gy14,w*(_sr(gli*11)*.6+0.4),1+(_sr(gli*13)>.8?1:0));
+      }
+      cx.globalAlpha=1;
+      // Data particle rain
+      cx.fillStyle='rgba(0,255,200,0.3)';
+      for(var dp=0;dp<60;dp++){
+        var dpx=(_sr(dp*17)*w)|0, dpy=(_sr(dp*31)*gy*.88)|0;
+        cx.fillRect(dpx,dpy,1,2+(_sr(dp*5)>0.85?2:0));
+      }
+      // Void ground
+      cx.globalAlpha=1; cx.fillStyle='#000'; cx.fillRect(0,gy,w,h-gy);
+      cx.strokeStyle='rgba(150,0,255,0.15)'; cx.lineWidth=0.5;
+      cx.beginPath(); cx.moveTo(0,gy); cx.lineTo(w,gy); cx.stroke(); cx.lineWidth=1;
+      // Three floating platform barriers — each a different neon color
+      var voidPlatforms=[
+        {b:MAP_BARRIERS_CLIENT[14][0], col:'#00ffff', glow:'rgba(0,255,255,0.5)'},
+        {b:MAP_BARRIERS_CLIENT[14][1], col:'#ff00ff', glow:'rgba(255,0,255,0.5)'},
+        {b:MAP_BARRIERS_CLIENT[14][2], col:'#ffff00', glow:'rgba(255,255,0,0.5)'},
+      ];
+      voidPlatforms.forEach(function(p){
+        var pb=p.b, px=pb.x1*sx14, pw=(pb.x2-pb.x1)*sx14, pyt=gy-pb.y2*sy14, ph=(pb.y2-pb.y1)*sy14;
+        cx.shadowColor=p.col; cx.shadowBlur=16;
+        cx.fillStyle=p.glow; cx.fillRect(px,pyt,pw,ph);
+        cx.strokeStyle=p.col; cx.lineWidth=1.5; cx.strokeRect(px,pyt,pw,ph);
+        // Pixel dots along platform
+        cx.fillStyle=p.col; cx.lineWidth=1;
+        for(var pd=0;pd<Math.floor(pw/12);pd++){cx.fillRect(px+pd*12,pyt+ph/2-.5,4,1);}
+        cx.shadowBlur=0;
+      });
+      backTextColor='#cc44ff'; break;
+    }
+
   }
 }
 
@@ -1206,6 +1442,7 @@ function endMatch() {
 
   if (onePlayer) {
     if (leftWon) {
+      recordWin();
       nextSlimeIndex++;
       msg = nextSlimeIndex >= slimeAIs.length
         ? '<h1>You beat everyone!</h1><p>Press space to go again!</p>'
@@ -1504,7 +1741,7 @@ function getMapPreview(id, pw, ph) {
   return offC.toDataURL();
 }
 function buildMapPreviews() {
-  for (var i = 0; i < 11; i++) mapPreviews[i] = getMapPreview(i, 284, 148);
+  for (var i = 0; i < 15; i++) mapPreviews[i] = getMapPreview(i, 284, 148);
 }
 
 // ── online player list ────────────────────────────────────
@@ -1532,40 +1769,55 @@ function showLobbySelect() {
   renderLobbySelect(currentLobbies);
 }
 
-var MAP_ICONS  = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆','🌙','🌋','🌊'];
-var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028','#050a1a','#2a0400','#001428'];
-var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc','#aaddff','#ff6622','#00ccff'];
+var MAP_ICONS  = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆','🌙','🌋','🌊','🏗️','🏰','☢️','💀'];
+var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028','#050a1a','#2a0400','#001428','#0a0a0a','#060a04','#021008','#000000'];
+var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc','#aaddff','#ff6622','#00ccff','#ffcc44','#cc3333','#44ff66','#cc44ff'];
 
 function renderLobbySelect(lobbies) {
   if (!showingLobbySelect) return;
+  var rank = getPlayerRank();
+  var rankCol = totalWins >= 10 ? '#ffcc00' : totalWins >= 6 ? '#aaaaff' : '#666';
   var html =
     '<div style="padding:8px 8px 6px;background:#06001a;height:100%;box-sizing:border-box;overflow:hidden;">' +
-    '<div style="text-align:center;font-size:10px;font-weight:bold;letter-spacing:4px;text-transform:uppercase;' +
-      'color:#00ffcc;margin-bottom:8px;text-shadow:0 0 12px rgba(0,255,200,.5);">Select a Court</div>' +
+    '<div style="display:flex;align-items:center;margin-bottom:7px;">' +
+      '<div style="font-size:10px;font-weight:bold;letter-spacing:4px;text-transform:uppercase;' +
+        'color:#00ffcc;flex:1;text-shadow:0 0 12px rgba(0,255,200,.5);">Select a Court</div>' +
+      '<div style="font-size:7px;letter-spacing:1.5px;color:' + rankCol + ';white-space:nowrap;">' +
+        rank + ' · ' + totalWins + ' WIN' + (totalWins !== 1 ? 'S' : '') + '</div>' +
+    '</div>' +
     '<div class="lobby-grid">';
 
   lobbies.forEach(function(r) {
+    var isLocked = r.restricted && totalWins < 10;
     var badge, badgeCol;
-    if (r.phase === 'playing')       { badge = '▶ WATCH';      badgeCol = '#00ff88'; }
-    else if (r.playerCount === 1)    { badge = '⚡ 1 waiting'; badgeCol = '#ff9900'; }
-    else                             { badge = 'OPEN';          badgeCol = '#444'; }
+    if (isLocked)                  { badge = '🔒 LT. LV.10';  badgeCol = '#886600'; }
+    else if (r.phase==='playing')  { badge = '▶ WATCH';        badgeCol = '#00ff88'; }
+    else if (r.playerCount===1)    { badge = '⚡ 1 waiting';   badgeCol = '#ff9900'; }
+    else                           { badge = 'OPEN';            badgeCol = '#444'; }
     var spec = r.spectatorCount > 0 ? '  👁' + r.spectatorCount : '';
     var txtCol = MAP_TEXT[r.id] || '#fff';
     var prev = mapPreviews[r.id] ? 'url(\'' + mapPreviews[r.id] + '\')' : 'linear-gradient(#111,#222)';
     var dots = (r.playerCount >= 1 ? '●' : '○') + (r.playerCount >= 2 ? '●' : '○');
+    var clickFn = isLocked ? 'showLockedNotice(' + (10-totalWins) + ')' : 'joinRoom(' + r.id + ')';
+
+    if (r.id === 11) {
+      html += '<div style="grid-column:1/-1;border-top:1px solid rgba(255,180,0,.12);' +
+              'margin:2px 0;padding:3px 0 2px;font-size:7px;letter-spacing:2px;' +
+              'color:rgba(255,180,0,.38);text-align:center;">— CLASSIFIED COURTS —</div>';
+    }
 
     html +=
-      '<div class="lobby-card" onclick="joinRoom(' + r.id + ')" ' +
-        'onmouseover="this.style.borderColor=\'' + txtCol + '55\';this.style.boxShadow=\'0 0 16px ' + txtCol + '28\'" ' +
-        'onmouseout="this.style.borderColor=\'rgba(255,255,255,.1)\';this.style.boxShadow=\'\'">' +
+      '<div class="lobby-card' + (isLocked ? ' lobby-locked' : '') + '" onclick="' + clickFn + '" ' +
+        'onmouseover="this.style.borderColor=\'' + (isLocked ? 'rgba(255,200,0,.35)' : txtCol+'55') + '\';this.style.boxShadow=\'0 0 14px ' + (isLocked ? 'rgba(255,180,0,.12)' : txtCol+'28') + '\'" ' +
+        'onmouseout="this.style.borderColor=\'' + (isLocked ? 'rgba(180,140,0,.18)' : 'rgba(255,255,255,.1)') + '\';this.style.boxShadow=\'\'">' +
         '<div class="lobby-card-thumb" style="background:' + prev + ';background-size:cover;background-position:center;">' +
-          '<div class="lobby-card-overlay"></div>' +
+          '<div class="lobby-card-overlay"' + (isLocked ? ' style="background:rgba(0,0,0,.4)"' : '') + '></div>' +
           '<div class="lobby-card-icon">' + MAP_ICONS[r.id] + '</div>' +
           '<div class="lobby-card-badge" style="color:' + badgeCol + ';">' + badge + spec + '</div>' +
         '</div>' +
         '<div class="lobby-card-body">' +
-          '<div class="lobby-card-name" style="color:' + txtCol + ';">' + r.name + '</div>' +
-          '<div class="lobby-card-info">' + dots + ' ' + r.playerCount + '/2 players</div>' +
+          '<div class="lobby-card-name" style="color:' + (isLocked ? 'rgba(255,180,0,.5)' : txtCol) + ';">' + r.name + '</div>' +
+          '<div class="lobby-card-info">' + (isLocked ? totalWins+'/10 wins' : dots+' '+r.playerCount+'/2') + '</div>' +
         '</div>' +
       '</div>';
   });
@@ -1856,7 +2108,7 @@ function applyServerState(msg) {
 function finishOnlineGame(winner) {
   onlineMode = false; showLeaveBtn(false); particles = [];
   var iWon = (mySide === winner);
-  if (iWon) sessionWins++; else sessionLosses++;
+  if (iWon) { sessionWins++; recordWin(); } else sessionLosses++;
   var wName = winner === 'left' ? playerNameLeft : playerNameRight;
   var lName = winner === 'left' ? playerNameRight : playerNameLeft;
   var col   = iWon ? '#66ffcc' : '#ff66aa';
