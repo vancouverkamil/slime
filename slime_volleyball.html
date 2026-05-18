@@ -145,6 +145,22 @@ body {
 .bigBtn.magenta:hover { background:rgba(255,0,204,.1); border-color:#ff00cc; box-shadow:0 0 18px rgba(255,0,204,.25); color:#fff; }
 .bigBtn.gold { border-color:rgba(255,200,0,.4); color:#ffc800; }
 .bigBtn.gold:hover { background:rgba(255,200,0,.1); border-color:#ffc800; box-shadow:0 0 18px rgba(255,200,0,.2); color:#fff; }
+
+/* ── The Final 4 fire button ── */
+@keyframes firePulse {
+  0%,100% { box-shadow:0 0 8px rgba(255,60,0,.3); text-shadow:0 0 8px rgba(255,80,0,.45); }
+  50%     { box-shadow:0 0 24px rgba(255,90,0,.55); text-shadow:0 0 18px rgba(255,110,0,.8); }
+}
+.bigBtn.fire { border-color:rgba(255,60,0,.5); color:#ff3300; animation:firePulse 1.3s ease-in-out infinite; }
+.bigBtn.fire:hover { background:rgba(255,60,0,.12); border-color:#ff4400; box-shadow:0 0 30px rgba(255,60,0,.45); color:#fff; animation:none; }
+
+/* ── Fullscreen mode ── */
+body.full-mode { overflow:hidden; }
+body.full-mode #LobbyWrapper { position:fixed; top:0; left:0; width:100vw; max-width:none; min-height:100vh; }
+body.full-mode #MiddleRow { flex:1; height:0; }
+body.full-mode #ContentDiv { flex:1; width:auto; height:100%; }
+body.full-mode #OptionsDiv { left:50% !important; transform:translateX(-50%); max-height:calc(100vh - 100px); }
+
 #OptionsBtn {
   color:rgba(0,255,200,.3); font-size:10px; cursor:pointer; margin-left:6px;
   letter-spacing:2px; text-transform:uppercase; user-select:none;
@@ -302,6 +318,7 @@ input[type='checkbox'] { margin-right:1em; accent-color:#00ffcc; }
 </style>
 <script type="text/javascript" src="Input.js"></script>
 <script type="text/javascript" src="SlimeAI.js"></script>
+<script type="text/javascript" src="MentalSlimeAI.js"></script>
 <script type="text/javascript">
 
 var physicsLog = 0;
@@ -368,6 +385,9 @@ var backImage, backTextColor, backImages = {}, ballImage, gameIntervalObject, en
 var greenSlimeImage, redSlimeImage, legacyGraphics;
 var gameWidth, gameHeight, ball, slimeLeft, slimeRight, slimeLeftScore, slimeRightScore;
 var slimeAI, updateCount, leftWon, slowMotion, logString;
+var final4Mode = false, final4Index = 0, final4WinPending = false;
+var localMapId = null;
+var gameScale = (typeof localStorage !== 'undefined' && localStorage.getItem('slime_scale')) || 'compact';
 
 function log(msg) { logString += msg + '\n'; }
 
@@ -931,6 +951,145 @@ function drawMapBackground(id) {
       cx.shadowBlur=0; cx.lineWidth=1;
       backTextColor = '#00ffcc'; break;
     }
+
+    case 8: { // Space Court — moonbase under a star-filled void
+      cx.fillStyle='#000005'; cx.fillRect(0,0,w,h);
+      // Stars (varied size & brightness)
+      for(var si=0;si<130;si++){
+        var stx=(si*179+13)%w, sty=(si*113+7)%(gy*0.96);
+        var str=0.25+(si%4)*0.35, sta=0.35+_sr(si)*0.65;
+        cx.fillStyle='rgba(255,255,255,'+sta+')';
+        cx.beginPath(); cx.arc(stx,sty,str,0,TWO_PI); cx.fill();
+      }
+      // Purple nebula cloud
+      var nebG=cx.createRadialGradient(w*0.68,gy*0.28,10,w*0.68,gy*0.28,150);
+      nebG.addColorStop(0,'rgba(110,0,255,0.2)'); nebG.addColorStop(0.4,'rgba(60,0,160,0.09)');
+      nebG.addColorStop(0.75,'rgba(0,80,180,0.05)'); nebG.addColorStop(1,'transparent');
+      cx.fillStyle=nebG; cx.fillRect(w*0.25,0,w*0.75,gy*0.7);
+      // Moon
+      var mgG=cx.createRadialGradient(62,58,8,62,58,50);
+      mgG.addColorStop(0,'#d8d8cc'); mgG.addColorStop(0.65,'#a8a898'); mgG.addColorStop(1,'#727060');
+      cx.fillStyle=mgG; cx.beginPath(); cx.arc(62,58,50,0,TWO_PI); cx.fill();
+      [[52,42,15],[88,70,9],[70,82,6]].forEach(function(c){
+        cx.fillStyle='rgba(0,0,0,0.2)'; cx.beginPath(); cx.arc(c[0],c[1],c[2],0,TWO_PI); cx.fill();
+      });
+      var msh=cx.createRadialGradient(88,46,0,88,46,68);
+      msh.addColorStop(0,'transparent'); msh.addColorStop(0.55,'transparent'); msh.addColorStop(1,'rgba(0,0,12,0.52)');
+      cx.fillStyle=msh; cx.beginPath(); cx.arc(62,58,50,0,TWO_PI); cx.fill();
+      // Ground — moonrock with craters
+      var mgrd=cx.createLinearGradient(0,gy,0,h);
+      mgrd.addColorStop(0,'#1c1c20'); mgrd.addColorStop(0.5,'#131316'); mgrd.addColorStop(1,'#0a0a0d');
+      cx.fillStyle=mgrd; cx.fillRect(0,gy,w,h-gy);
+      [[110,9,22],[310,7,16],[530,11,20],[720,8,14],[890,10,17]].forEach(function(c){
+        cx.strokeStyle='rgba(255,255,255,0.06)'; cx.lineWidth=1;
+        cx.beginPath(); cx.ellipse(c[0],gy+c[1],c[2],c[2]*0.35,0,0,TWO_PI); cx.stroke();
+      });
+      cx.lineWidth=1;
+      cx.shadowColor='#aaddff'; cx.shadowBlur=10;
+      cx.strokeStyle='rgba(160,210,255,0.45)'; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(0,gy); cx.lineTo(w,gy); cx.stroke();
+      cx.shadowBlur=0; cx.lineWidth=1;
+      backTextColor='#aaddff'; break;
+    }
+
+    case 9: { // Volcano Court — hellscape of lava and ash
+      var vSky=cx.createLinearGradient(0,0,0,gy);
+      vSky.addColorStop(0,'#0a0000'); vSky.addColorStop(0.45,'#1e0100');
+      vSky.addColorStop(0.78,'#420700'); vSky.addColorStop(1,'#6e1100');
+      cx.fillStyle=vSky; cx.fillRect(0,0,w,gy);
+      // Ash clouds
+      for(var ac=0;ac<6;ac++){
+        var acx=(ac*167)%w, acy=25+(ac*71)%(gy*0.4), acR=38+(ac*37)%55;
+        var aG=cx.createRadialGradient(acx,acy,0,acx,acy,acR);
+        aG.addColorStop(0,'rgba(28,8,0,0.65)'); aG.addColorStop(1,'transparent');
+        cx.fillStyle=aG; cx.fillRect(acx-acR,acy-acR,acR*2,acR*2);
+      }
+      // Background volcanoes
+      cx.fillStyle='#0f0200';
+      cx.beginPath(); cx.moveTo(w*0.7,gy); cx.lineTo(w*0.795,gy*0.32); cx.lineTo(w*0.89,gy); cx.closePath(); cx.fill();
+      cx.fillStyle='#160300';
+      cx.beginPath(); cx.moveTo(w*0.1,gy); cx.lineTo(w*0.205,gy*0.46); cx.lineTo(w*0.31,gy); cx.closePath(); cx.fill();
+      // Lava glow at crater
+      var lavG=cx.createRadialGradient(w*0.795,gy*0.32,2,w*0.795,gy*0.32,55);
+      lavG.addColorStop(0,'rgba(255,130,0,0.85)'); lavG.addColorStop(0.38,'rgba(220,40,0,0.28)'); lavG.addColorStop(1,'transparent');
+      cx.fillStyle=lavG; cx.fillRect(w*0.5,0,w*0.5,gy*0.65);
+      // Embers / sparks
+      for(var em=0;em<35;em++){
+        var emx=(em*193)%w, emy=(em*127)%(gy*0.9);
+        var emc='rgba('+(195+(em%60))+','+(em%110)+',0,'+(0.35+_sr(em)*0.55)+')';
+        cx.fillStyle=emc; cx.beginPath(); cx.arc(emx,emy,0.8+(em%3)*0.55,0,TWO_PI); cx.fill();
+      }
+      // Ground — basalt with lava cracks
+      var vGrd=cx.createLinearGradient(0,gy,0,h);
+      vGrd.addColorStop(0,'#3e0800'); vGrd.addColorStop(0.3,'#220400'); vGrd.addColorStop(1,'#0e0100');
+      cx.fillStyle=vGrd; cx.fillRect(0,gy,w,h-gy);
+      [[45,10,175,14],[255,7,405,11],[490,13,650,8],[695,10,848,13],[820,9,978,7]].forEach(function(c){
+        var lcG=cx.createLinearGradient(c[0],gy+c[1],c[2],gy+c[3]);
+        lcG.addColorStop(0,'rgba(255,80,0,0)'); lcG.addColorStop(0.5,'rgba(255,120,0,0.72)'); lcG.addColorStop(1,'rgba(255,80,0,0)');
+        cx.strokeStyle=lcG; cx.lineWidth=2;
+        cx.beginPath(); cx.moveTo(c[0],gy+c[1]); cx.lineTo(c[2],gy+c[3]); cx.stroke();
+      });
+      cx.lineWidth=1;
+      var lavH=cx.createLinearGradient(0,gy-6,0,gy+22);
+      lavH.addColorStop(0,'rgba(255,85,0,0.48)'); lavH.addColorStop(1,'rgba(200,30,0,0)');
+      cx.fillStyle=lavH; cx.fillRect(0,gy-6,w,28);
+      cx.shadowColor='#ff4400'; cx.shadowBlur=15;
+      cx.strokeStyle='rgba(255,80,0,0.72)'; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(0,gy); cx.lineTo(w,gy); cx.stroke();
+      cx.shadowBlur=0; cx.lineWidth=1;
+      backTextColor='#ff6622'; break;
+    }
+
+    case 10: { // Ocean Court — bioluminescent deep sea
+      var ocnG=cx.createLinearGradient(0,0,0,gy);
+      ocnG.addColorStop(0,'#001428'); ocnG.addColorStop(0.35,'#00203e');
+      ocnG.addColorStop(0.72,'#003054'); ocnG.addColorStop(1,'#004468');
+      cx.fillStyle=ocnG; cx.fillRect(0,0,w,gy);
+      // Caustic ripples near surface
+      for(var ca=0;ca<16;ca++){
+        var cax=(ca*73)%w, cay=8+(ca*47)%(gy*0.22), caR=18+(ca%5)*8;
+        var caG=cx.createRadialGradient(cax,cay,0,cax,cay,caR);
+        caG.addColorStop(0,'rgba(0,200,255,0.09)'); caG.addColorStop(1,'transparent');
+        cx.fillStyle=caG; cx.fillRect(cax-caR,cay-caR,caR*2,caR*2);
+      }
+      // Bioluminescent glows
+      for(var bp=0;bp<20;bp++){
+        var bpx=(bp*137)%w, bpy=18+(bp*97)%(gy*0.85);
+        var bpR=6+(bp%4)*5;
+        var bpC=bp%3===0?'0,255,200':bp%3===1?'0,140,255':'140,0,255';
+        var bpG=cx.createRadialGradient(bpx,bpy,0,bpx,bpy,bpR);
+        bpG.addColorStop(0,'rgba('+bpC+',0.38)'); bpG.addColorStop(1,'transparent');
+        cx.fillStyle=bpG; cx.beginPath(); cx.arc(bpx,bpy,bpR,0,TWO_PI); cx.fill();
+      }
+      // Rising bubbles
+      cx.fillStyle='rgba(200,240,255,0.18)';
+      for(var bu=0;bu<28;bu++){
+        var bux=(bu*157)%w, buy=12+(bu*89)%(gy*0.92);
+        cx.beginPath(); cx.arc(bux,buy,0.8+(bu%3)*1.1,0,TWO_PI); cx.fill();
+      }
+      // Sandy seabed
+      var seaGrd=cx.createLinearGradient(0,gy,0,h);
+      seaGrd.addColorStop(0,'#1a4a30'); seaGrd.addColorStop(0.4,'#0d3020'); seaGrd.addColorStop(1,'#051a10');
+      cx.fillStyle=seaGrd; cx.fillRect(0,gy,w,h-gy);
+      // Kelp
+      [[55,58],[170,42],[625,52],[755,36],[910,48]].forEach(function(k){
+        cx.fillStyle='rgba(0,180,80,0.38)';
+        cx.fillRect(k[0]-3,gy-k[1],6,k[1]);
+        cx.beginPath(); cx.arc(k[0],gy-k[1],11,0,TWO_PI); cx.fill();
+      });
+      // Coral
+      [[285,0],[460,0],[815,0]].forEach(function(c,ci){
+        cx.fillStyle=ci%2===0?'rgba(255,80,80,0.42)':'rgba(255,140,0,0.38)';
+        cx.beginPath(); cx.arc(c[0],gy-12,14,Math.PI,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(c[0]-13,gy-8,10,Math.PI,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(c[0]+13,gy-8,10,Math.PI,TWO_PI); cx.fill();
+      });
+      cx.shadowColor='#00ccff'; cx.shadowBlur=10;
+      cx.strokeStyle='rgba(0,180,255,0.55)'; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(0,gy); cx.lineTo(w,gy); cx.stroke();
+      cx.shadowBlur=0; cx.lineWidth=1;
+      backTextColor='#00ccff'; break;
+    }
   }
 }
 
@@ -951,6 +1110,8 @@ function renderBackground() {
     ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
   } else if (currentRoomId !== null) {
     drawMapBackground(currentRoomId);
+  } else if (localMapId !== null) {
+    drawMapBackground(localMapId);
   } else if (backImage) {
     ctx.drawImage(backImage, 0, 0);
     ctx.fillStyle = newGroundColor;
@@ -968,6 +1129,20 @@ function renderGame() {
   if (updatesToPaint === 0) return;
   renderBackground(); ball.render(); slimeLeft.render(); slimeRight.render();
   drawHat(slimeLeft, { hat: playerHat, drawing: playerHatDrawing });
+  if (final4Mode && slimeAI) {
+    var boss = final4AIs[final4Index] || {};
+    var bname = slimeAI.name.toUpperCase();
+    ctx.save();
+    ctx.font = 'bold 10px Courier New';
+    var bw = ctx.measureText('BOSS ' + (final4Index+1) + '/4: ' + bname).width + 16;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(viewWidth/2 - bw/2, 40, bw, 18);
+    ctx.fillStyle = boss.backTextColor || '#ff4400';
+    ctx.textAlign = 'center';
+    ctx.fillText('BOSS ' + (final4Index+1) + '/4: ' + bname, viewWidth/2, 53);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
   updatesToPaint = 0;
 }
 function renderEndOfPoint() {
@@ -1005,6 +1180,35 @@ function endMatch() {
   gameState = GAME_STATE_SHOW_WINNER;
   clearInterval(gameIntervalObject);
   var msg;
+
+  if (final4Mode) {
+    if (leftWon) {
+      sessionWins++;
+      final4Index++;
+      if (final4Index >= final4AIs.length) {
+        final4Mode = false; final4WinPending = true; localMapId = null;
+        msg = '<div style="font-size:44px;font-weight:bold;color:#ff3300;text-shadow:0 0 32px rgba(255,60,0,.9),0 0 70px rgba(255,80,0,.4);letter-spacing:5px;margin-bottom:12px;">CHAMPION</div>' +
+              '<div style="font-size:13px;color:#ffaa44;letter-spacing:4px;margin-bottom:6px;">THE FINAL 4 CONQUERED</div>' +
+              '<div style="font-size:9px;color:rgba(0,255,200,.3);letter-spacing:2px;margin-top:22px;">PRESS SPACE to return to menu</div>';
+      } else {
+        var nb = final4AIs[final4Index];
+        msg = '<div style="font-size:11px;color:#555;letter-spacing:4px;margin-bottom:16px;margin-top:8px;">BOSS DEFEATED</div>' +
+              '<div style="font-size:9px;color:#444;letter-spacing:3px;margin-bottom:14px;">NEXT CHALLENGER</div>' +
+              '<div style="font-size:22px;font-weight:bold;letter-spacing:3px;color:' + nb.color + ';text-shadow:0 0 14px ' + nb.color + ';margin-bottom:22px;">' + nb.name + '</div>' +
+              '<div style="font-size:9px;color:#444;letter-spacing:2px;">PRESS SPACE to face them</div>';
+      }
+    } else {
+      sessionLosses++;
+      final4Index = 0;
+      msg = '<div style="font-size:32px;font-weight:bold;color:#ff3366;text-shadow:0 0 22px rgba(255,51,102,.8);letter-spacing:3px;margin-bottom:12px;">ELIMINATED</div>' +
+            '<div style="font-size:12px;color:#aa4455;letter-spacing:2px;margin-bottom:6px;">by ' + slimeAI.name + '</div>' +
+            '<div style="font-size:9px;color:#444;letter-spacing:2px;margin-top:22px;">PRESS SPACE to try again from the start</div>';
+    }
+    menuDiv.innerHTML = '<div style="text-align:center;padding:52px 20px 20px;">' + msg + '</div>';
+    menuDiv.style.display = 'block'; canvas.style.display = 'none'; showBottomBar();
+    return;
+  }
+
   if (onePlayer) {
     if (leftWon) {
       nextSlimeIndex++;
@@ -1698,6 +1902,8 @@ function finishSpectating(winner) {
 function spaceKeyDown() {
   if (onlineMode || isSpectator || showingLobbySelect) return;
   if (gameState === GAME_STATE_SHOW_WINNER) {
+    if (final4WinPending) { final4WinPending = false; toInitialMenu(); return; }
+    if (final4Mode) { startFinal4Round(); return; }
     if (onePlayer && nextSlimeIndex >= slimeAIs.length) {
       nextSlimeIndex = 0; toInitialMenu();
     } else {
@@ -1708,7 +1914,8 @@ function spaceKeyDown() {
 
 // ── local game start ──────────────────────────────────────
 function start(startAsOnePlayer) {
-  currentRoomId = null;
+  currentRoomId = null; localMapId = null;
+  final4Mode = false; final4WinPending = false;
   onePlayer = startAsOnePlayer;
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage;
@@ -1735,7 +1942,9 @@ function start(startAsOnePlayer) {
 }
 
 function toInitialMenu() {
-  onlineMode = false; isSpectator = false; showingLobbySelect = false; currentRoomId = null;
+  onlineMode = false; isSpectator = false; showingLobbySelect = false;
+  currentRoomId = null; localMapId = null;
+  final4Mode = false; final4WinPending = false;
   hideSpecBadge(); showLeaveBtn(false); particles = [];
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
@@ -1777,6 +1986,66 @@ function hideOptions() {
   if (gameState === GAME_STATE_MENU_PAUSE) { updateCount = 0; gameState = GAME_STATE_RUNNING; }
   else if (gameState === GAME_STATE_MENU_PAUSE_BETWEEN_POINTS) startNextPoint();
   loadOptions();
+}
+
+// ── Game scale / fullscreen ────────────────────────────────
+function setGameScale(s) {
+  gameScale = s;
+  try { localStorage.setItem('slime_scale', s); } catch(e){}
+  var fb = document.getElementById('ScaleFull'), cb = document.getElementById('ScaleCompact');
+  if (fb) { fb.classList.toggle('active', s === 'full'); cb.classList.toggle('active', s === 'compact'); }
+  applyGameScale();
+}
+function applyGameScale() {
+  var isFull = gameScale === 'full';
+  document.body.classList.toggle('full-mode', isFull);
+  if (isFull) {
+    requestAnimationFrame(function() {
+      var cd = document.getElementById('ContentDiv');
+      var nw = cd.clientWidth || 750, nh = cd.clientHeight || 375;
+      if (canvas && (canvas.width !== nw || canvas.height !== nh)) {
+        canvas.width = nw; canvas.height = nh;
+        updateWindowSize(nw, nh);
+        if (gameState === GAME_STATE_RUNNING) renderBackground();
+      }
+    });
+  } else {
+    if (canvas && canvas.width !== 750) {
+      canvas.width = 750; canvas.height = 375;
+      updateWindowSize(750, 375);
+    }
+  }
+}
+function _onWindowResize() { if (gameScale === 'full') applyGameScale(); }
+
+// ── The Final 4 ───────────────────────────────────────────
+function startFinal4() {
+  final4Mode = true; final4WinPending = false; final4Index = 0;
+  startFinal4Round();
+}
+function startFinal4Round() {
+  var boss = final4AIs[final4Index];
+  currentRoomId = null;
+  localMapId          = boss.mapId;
+  newGroundColor      = boss.newGroundColor;
+  backTextColor       = boss.backTextColor;
+  onePlayer           = true;
+  slimeLeftScore      = 0; slimeRightScore = 0;
+  slimeLeft.img       = greenSlimeImage;
+  slimeLeft.color     = playerBodyColor;
+  slimeLeft.tintColor = playerBodyColor;
+  slimeRight.color    = boss.color;
+  slimeRight.img      = null;
+  slimeRight.tintColor = null;
+  legacySkyColor      = '#000'; legacyGroundColor = '#111'; legacyBallColor = '#fff';
+  slimeAI             = newSlimeAI(false, boss.name);
+  setMentalSlime(slimeAI, boss.level);
+  initRound(true); updatesToPaint = 0; updateCount = 0;
+  loadOptions(); gameState = GAME_STATE_RUNNING;
+  renderBackground();
+  canvas.style.display = 'block'; menuDiv.style.display = 'none'; hideBottomBar();
+  if (gameIntervalObject) clearInterval(gameIntervalObject);
+  gameIntervalObject = setInterval(gameIteration, 20);
 }
 
 // ── replay buffer ─────────────────────────────────────────
@@ -2242,6 +2511,7 @@ function stopPreviewAnim() {
 function endMatchEarly() {
   clearInterval(gameIntervalObject); gameIntervalObject = null;
   gameState = GAME_STATE_MENU_PAUSE;
+  final4Mode = false; final4WinPending = false; final4Index = 0; localMapId = null;
   toInitialMenu(); showBottomBar();
 }
 
@@ -2483,6 +2753,13 @@ function bodyload() {
   // Init audio context on first click (browser policy)
   document.addEventListener('click', function() { initAC(); }, { once: true });
 
+  // Game scale (fullscreen toggle) — resize canvas if preference is saved
+  window.addEventListener('resize', _onWindowResize);
+  applyGameScale();
+  // Sync scale buttons to saved preference
+  var fb = document.getElementById('ScaleFull'), cb = document.getElementById('ScaleCompact');
+  if (fb && cb) { fb.classList.toggle('active', gameScale === 'full'); cb.classList.toggle('active', gameScale === 'compact'); }
+
   toInitialMenu();
   connectLobby();
 }
@@ -2549,6 +2826,11 @@ function bodyload() {
         <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;margin-bottom:4px;"></select>
         <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:10px;letter-spacing:2px;padding:4px 12px;cursor:pointer;font-family:inherit;margin-bottom:14px;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
 
+        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">GAME SIZE</div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;">
+          <button id="ScaleFull" onclick="setGameScale('full')" class="hat-opt">Fullscreen</button>
+          <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active">Compact</button>
+        </div>
         <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">DISPLAY</div>
         <div style="color:#777;font-size:11px;line-height:2.2;">
           <input id="LegacyGraphics" type="checkbox"> <span style="letter-spacing:1px;">Legacy Graphics</span><br/>
@@ -2595,6 +2877,7 @@ function bodyload() {
     <span class="bigBtn" onclick="showLobbySelect()">&#9654; QUICK PLAY</span>
     <span class="bigBtn magenta" onclick="start(false)">&#128101; 2 PLAYER</span>
     <span class="bigBtn gold" onclick="start(true)">&#129302; VS CPU</span>
+    <span class="bigBtn fire" onclick="startFinal4()">&#128293; THE FINAL 4</span>
     <span class="bigBtn" style="border-color:rgba(150,50,255,.4);color:#aa44ff;" onmouseover="this.style.background='rgba(150,50,255,.1)';this.style.borderColor='#aa44ff';this.style.boxShadow='0 0 18px rgba(150,50,255,.25)';" onmouseout="this.style.background='';this.style.borderColor='rgba(150,50,255,.4)';this.style.boxShadow='';" onclick="showOptions()">&#9881; OPTIONS</span>
   </div>
 

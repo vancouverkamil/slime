@@ -14,6 +14,7 @@ const ROOM_NAMES = [
 
 const app = express();
 app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'slime_volleyball.html')));
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
