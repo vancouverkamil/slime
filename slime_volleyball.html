@@ -2803,53 +2803,58 @@ function bodyload() {
         </div>
       </div>
 
-      <div id="OptionsDiv" style="position:absolute;width:420px;height:375px;top:0;left:165px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:18px 22px;overflow-y:auto;box-sizing:border-box;">
-        <div style="color:#00ffcc;letter-spacing:4px;font-size:11px;margin-bottom:10px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.5);">&#9881; Options</div>
-        <div style="border-bottom:1px solid rgba(0,255,200,.15);margin-bottom:12px;"></div>
-        <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:12px;right:14px;font-size:11px;letter-spacing:1px;">[ ESC / CLOSE ]</span>
+      <div id="OptionsDiv" style="position:absolute;width:718px;height:auto;top:14px;left:16px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:12px 16px 14px;box-sizing:border-box;">
 
-        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
-          <div style="flex:1;">
-            <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">SLIME COLOR</div>
-            <div id="ColorSwatches" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;"></div>
-            <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">HAT</div>
-            <div id="HatPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"></div>
-            <div id="HatDrawSection" style="display:none;margin-top:8px;">
-              <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">Draw your hat (drag to draw):</div>
-              <canvas id="HatDrawCanvas" width="140" height="164" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:5px;"></canvas>
-              <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:9px;padding:3px 8px;">✕ Clear</button>
+        <!-- header -->
+        <div style="display:flex;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(0,255,200,.15);">
+          <span style="color:#00ffcc;letter-spacing:4px;font-size:10px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.5);">&#9881; Options</span>
+          <span class="SmallButton" onclick="hideOptions()" style="margin-left:auto;font-size:10px;letter-spacing:1px;">[ ESC / CLOSE ]</span>
+        </div>
+
+        <!-- 3-column body -->
+        <div style="display:flex;gap:20px;align-items:flex-start;">
+
+          <!-- col 1: slime customization -->
+          <div style="flex:1;min-width:0;">
+            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">SLIME COLOR</div>
+            <div id="ColorSwatches" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;"></div>
+            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">HAT</div>
+            <div id="HatPicker" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"></div>
+            <div id="HatDrawSection" style="display:none;margin-top:6px;">
+              <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">Draw your hat:</div>
+              <canvas id="HatDrawCanvas" width="120" height="140" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:4px;"></canvas>
+              <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:2px 7px;">✕ Clear</button>
             </div>
-            <div id="HatAnimSection" style="display:none;margin-top:8px;">
+            <div id="HatAnimSection" style="display:none;margin-top:6px;">
               <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">HAT ANIMATION</div>
-              <div id="HatAnimPicker" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+              <div id="HatAnimPicker" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
             </div>
           </div>
-          <div style="flex-shrink:0;text-align:center;">
-            <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">PREVIEW</div>
-            <canvas id="SlimePreview" width="110" height="100" style="border:1px solid rgba(0,255,200,.18);display:block;"></canvas>
+
+          <!-- col 2: preview + music -->
+          <div style="flex-shrink:0;width:150px;">
+            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">PREVIEW</div>
+            <canvas id="SlimePreview" width="100" height="90" style="border:1px solid rgba(0,255,200,.18);display:block;margin-bottom:10px;"></canvas>
+            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">VICTORY MUSIC</div>
+            <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:4px 6px;font-family:'Courier New',monospace;font-size:10px;margin-bottom:5px;"></select>
+            <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:9px;letter-spacing:2px;padding:3px 10px;cursor:pointer;font-family:inherit;width:100%;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
           </div>
-        </div>
 
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">VICTORY MUSIC &mdash; plays on match end</div>
-        <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;margin-bottom:4px;"></select>
-        <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:10px;letter-spacing:2px;padding:4px 12px;cursor:pointer;font-family:inherit;margin-bottom:14px;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
+          <!-- col 3: settings -->
+          <div style="flex-shrink:0;width:148px;">
+            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">GAME SIZE</div>
+            <div style="display:flex;gap:4px;margin-bottom:12px;">
+              <button id="ScaleFull" onclick="setGameScale('full')" class="hat-opt" style="flex:1;">Fullscreen</button>
+              <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active" style="flex:1;">Compact</button>
+            </div>
+            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:6px;">DISPLAY / DEBUG</div>
+            <div style="color:#666;font-size:10px;line-height:1.9;letter-spacing:.5px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input id="LegacyGraphics" type="checkbox"> Legacy Graphics</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input id="PhysicsLog" type="checkbox"> Physics Log</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input id="SlowMotion" type="checkbox"> Slow Motion</label>
+            </div>
+          </div>
 
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">GAME SIZE</div>
-        <div style="display:flex;gap:6px;margin-bottom:14px;">
-          <button id="ScaleFull" onclick="setGameScale('full')" class="hat-opt">Fullscreen</button>
-          <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active">Compact</button>
-        </div>
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">DISPLAY</div>
-        <div style="color:#777;font-size:11px;line-height:2.2;">
-          <input id="LegacyGraphics" type="checkbox"> <span style="letter-spacing:1px;">Legacy Graphics</span><br/>
-        </div>
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin:10px 0 6px;">DEBUG</div>
-        <div style="color:#777;font-size:11px;line-height:2.2;">
-          <input id="PhysicsLog" type="checkbox"> <span style="letter-spacing:1px;">Physics Log</span><br/>
-        </div>
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin:10px 0 6px;">CHEATS</div>
-        <div style="color:#777;font-size:11px;line-height:2.2;">
-          <input id="SlowMotion" type="checkbox"> <span style="letter-spacing:1px;">Slow Motion</span>
         </div>
       </div>
     </div>
