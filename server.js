@@ -82,7 +82,7 @@ function chatAllowed(info) {
 
 // ── connection ────────────────────────────────────────────
 wss.on('connection', (ws) => {
-  const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby', chatCount: 0, chatReset: 0, hat: 'none', bodyColor: '#00ff00', hatDrawing: [] };
+  const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby', chatCount: 0, chatReset: 0, hat: 'none', hatAnim: 'none', bodyColor: '#00ff00', hatDrawing: [] };
   allClients.set(ws, info);
 
   send(ws, { type: 'connected', name: info.name, totalPlayers: allClients.size, lobbies: getLobbySnapshot(), playerList: getPlayerList() });
@@ -135,13 +135,14 @@ function handleCustomize(ws, info, msg) {
   if (!info.room) return;
   const room = info.room;
   const hat     = String(msg.hat      || 'none').slice(0, 20);
+  const hatAnim = String(msg.hatAnim  || 'none').slice(0, 20);
   const color   = String(msg.color    || '#00ff00').slice(0, 20);
   const drawing = Array.isArray(msg.hatDrawing) ? msg.hatDrawing.slice(0, 300) : [];
-  info.hat = hat; info.bodyColor = color; info.hatDrawing = drawing;
+  info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing;
   const sideIdx = room.players.findIndex(p => p.ws === ws);
   if (sideIdx === -1) return;
   const side = sideIdx === 0 ? 'left' : 'right';
-  broadcastRoom(room, { type: 'customize', side, hat, color, hatDrawing: drawing });
+  broadcastRoom(room, { type: 'customize', side, hat, hatAnim, color, hatDrawing: drawing });
 }
 
 function relayChat(info, msg) {
@@ -187,8 +188,8 @@ function handleJoinRoom(ws, info, roomId) {
       send(ws, { type: 'spectator_waiting' });
     }
     // Send current player customizations to spectator
-    if (room.players[0]) send(ws, { type: 'customize', side: 'left',  hat: room.players[0].info.hat, color: room.players[0].info.bodyColor, hatDrawing: room.players[0].info.hatDrawing });
-    if (room.players[1]) send(ws, { type: 'customize', side: 'right', hat: room.players[1].info.hat, color: room.players[1].info.bodyColor, hatDrawing: room.players[1].info.hatDrawing });
+    if (room.players[0]) send(ws, { type: 'customize', side: 'left',  hat: room.players[0].info.hat, hatAnim: room.players[0].info.hatAnim, color: room.players[0].info.bodyColor, hatDrawing: room.players[0].info.hatDrawing });
+    if (room.players[1]) send(ws, { type: 'customize', side: 'right', hat: room.players[1].info.hat, hatAnim: room.players[1].info.hatAnim, color: room.players[1].info.bodyColor, hatDrawing: room.players[1].info.hatDrawing });
   }
   pushLobbyState();
 }
@@ -232,12 +233,12 @@ function startRoomGame(room) {
   send(left.ws,  { type: 'start', side: 'left',  ...names });
   send(right.ws, { type: 'start', side: 'right', ...names });
   room.spectators.forEach(({ ws }) => send(ws, { type: 'game_started', ...names }));
-  // Exchange customizations so each player sees the opponent's hat/color
-  send(left.ws,  { type: 'customize', side: 'right', hat: right.info.hat, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing });
-  send(right.ws, { type: 'customize', side: 'left',  hat: left.info.hat,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing  });
+  // Exchange customizations so each player sees the opponent's hat/color/anim
+  send(left.ws,  { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing });
+  send(right.ws, { type: 'customize', side: 'left',  hat: left.info.hat,  hatAnim: left.info.hatAnim,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing  });
   room.spectators.forEach(({ ws: sw }) => {
-    send(sw, { type: 'customize', side: 'left',  hat: left.info.hat,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing  });
-    send(sw, { type: 'customize', side: 'right', hat: right.info.hat, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing });
+    send(sw, { type: 'customize', side: 'left',  hat: left.info.hat,  hatAnim: left.info.hatAnim,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing  });
+    send(sw, { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing });
   });
 
   function bcast(msg) { broadcastRoom(room, msg); }

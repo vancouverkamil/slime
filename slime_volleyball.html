@@ -1065,12 +1065,24 @@ var myPlayerName   = '';
 var currentLobbies = [];
 var playerBodyColor  = '#00ff00';
 var playerHat        = 'none';
+var playerHatAnim    = 'none';
 var playerHatDrawing = [];
 var hatConfigs = {
-  left:  { hat: 'none', color: '#00ff00', drawing: [] },
-  right: { hat: 'none', color: '#ff0000', drawing: [] }
+  left:  { hat: 'none', color: '#00ff00', drawing: [], anim: 'none' },
+  right: { hat: 'none', color: '#ff0000', drawing: [], anim: 'none' }
 };
 var _tintCache = {};
+var waitingInterval = null;
+var previewAnimInterval = null;
+var HAT_ANIM_OPTIONS = [
+  { id: 'none',    label: 'None'    },
+  { id: 'glow',   label: 'Glow'    },
+  { id: 'chaser', label: 'Chaser'  },
+  { id: 'rainbow',label: 'Rainbow' },
+  { id: 'pulse',  label: 'Pulse'   },
+  { id: 'sparkle',label: 'Sparkle' },
+  { id: 'wave',   label: 'Wave'    },
+];
 var BODY_COLORS = ['#00ff00','#00ffcc','#0066ff','#aa00ff','#ff2200','#ff8800','#ff00aa','#eeeeee'];
 var HAT_OPTIONS = [
   { id:'none',   label:'None'    },
@@ -1380,6 +1392,7 @@ function cancelLobbySelect() {
 
 function leaveLobby() {
   showingLobbySelect = false; onlineMode = false; isSpectator = false;
+  if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
   if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
   hideSpecBadge(); showLeaveBtn(false);
   if (lobbySocket && lobbySocket.readyState === 1) {
@@ -1431,17 +1444,9 @@ function handleServerMessage(msg) {
         '<div style="color:#444;font-size:11px;letter-spacing:1px;">Waiting for game to start...</div>' +
         '</div>';
     } else {
-      onlineMode = true; mySide = msg.side; onlinePointText = null; isSpectator = false;
+      isSpectator = false; onlinePointText = null;
       if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
-      canvas.style.display = 'none'; menuDiv.style.display = 'block';
-      var col = msg.side === 'left' ? '#66ffcc' : '#ff66aa';
-      menuDiv.innerHTML =
-        '<div style="text-align:center;padding-top:70px;">' +
-        '<div style="color:#00ffcc;letter-spacing:4px;font-size:13px;margin-bottom:14px;">READY TO FIGHT</div>' +
-        '<div style="font-size:38px;margin-bottom:10px;">' + (msg.side === 'left' ? '🟢' : '🔴') + '</div>' +
-        '<div style="color:' + col + ';font-size:11px;letter-spacing:2px;margin-bottom:24px;">YOU ARE ' + msg.side.toUpperCase() + '</div>' +
-        '<div style="color:#333;font-size:10px;letter-spacing:1px;">Waiting for opponent...</div>' +
-        '</div>';
+      launchWaitingMode(msg.side);
     }
 
   } else if (msg.type === 'start') {
@@ -1488,7 +1493,7 @@ function handleServerMessage(msg) {
 
   } else if (msg.type === 'customize') {
     var side = msg.side === 'left' ? 'left' : 'right';
-    hatConfigs[side] = { hat: msg.hat || 'none', color: msg.color || (side==='left'?'#00ff00':'#ff0000'), drawing: msg.hatDrawing || [] };
+    hatConfigs[side] = { hat: msg.hat || 'none', anim: msg.hatAnim || 'none', color: msg.color || (side==='left'?'#00ff00':'#ff0000'), drawing: msg.hatDrawing || [] };
     if (side === 'left'  && slimeLeft)  slimeLeft.tintColor  = hatConfigs.left.color;
     if (side === 'right' && slimeRight) slimeRight.tintColor = hatConfigs.right.color;
 
@@ -1507,6 +1512,7 @@ function handleServerMessage(msg) {
     });
 
   } else if (msg.type === 'opponent_disconnected') {
+    if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
     clearInterval(onlineInputInterval); onlineInputInterval = null;
     onlineMode = false; isSpectator = false;
     showLeaveBtn(false);
@@ -1518,9 +1524,10 @@ function handleServerMessage(msg) {
 
 // ── online game (player) ──────────────────────────────────
 function launchOnlineGame() {
+  if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
   replayBuffer = [];
   // Seed own side's config from local settings
-  hatConfigs[mySide] = { hat: playerHat, color: playerBodyColor, drawing: playerHatDrawing };
+  hatConfigs[mySide] = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing };
   slimeLeft  = newLegacySlime(true,  100, '#0f0');
   slimeRight = newLegacySlime(false, 100, '#f00');
   slimeLeft.tintColor  = hatConfigs.left.color;
@@ -1544,6 +1551,65 @@ function launchOnlineGame() {
       if (keysDown[k]) { sendEmote(i); keysDown[k] = false; }
     });
     lobbySocket.send(JSON.stringify({ movement: mv, jump: !!keysDown[uk] }));
+  }, 20);
+}
+
+// ── waiting mode (1 player in room, opponent not yet joined) ─
+function launchWaitingMode(side) {
+  if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
+  onlineMode = true; mySide = side;
+  slimeLeft  = newLegacySlime(true,  100, '#0f0');
+  slimeRight = newLegacySlime(false, 100, '#f00');
+  ball       = newLegacyBall(25, '#ff0');
+  slimeLeft.img  = greenSlimeImage; slimeRight.img  = redSlimeImage;
+  slimeLeft.tintColor  = hatConfigs.left.color;
+  slimeRight.tintColor = hatConfigs.right.color;
+  legacyGraphics = false;
+  slimeLeftScore = 0; slimeRightScore = 0;
+  // Ball starts on player's side with a gentle serve
+  ball.x = side === 'left' ? 250 : 750;
+  ball.y = 300; ball.velocityX = (side === 'left' ? 1 : -1) * (2 + Math.random() * 2); ball.velocityY = 8;
+  canvas.style.display = 'block'; menuDiv.style.display = 'none';
+  sendCustomization();
+
+  var mySlime  = side === 'left' ? slimeLeft  : slimeRight;
+  var myLLimit = side === 'left' ? 50  : 555;
+  var myRLimit = side === 'left' ? 445 : 950;
+  var myLKey   = side === 'left' ? KEY_A    : KEY_LEFT;
+  var myRKey   = side === 'left' ? KEY_D    : KEY_RIGHT;
+  var myUKey   = side === 'left' ? KEY_W    : KEY_UP;
+
+  function waitRender() {
+    if (currentRoomId !== null) drawMapBackground(currentRoomId);
+    else { ctx.fillStyle = '#88ccff'; ctx.fillRect(0, 0, viewWidth, courtYPix); ctx.fillStyle = '#ca6'; ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix); }
+    ctx.fillStyle = '#fff'; ctx.fillRect(viewWidth/2 - 2, 7*viewHeight/10, 4, viewHeight/10 + 5);
+    ball.render(); mySlime.render();
+    drawHat(mySlime, hatConfigs[side]);
+    ctx.textAlign = 'center'; ctx.font = 'bold 13px Courier New';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(viewWidth/2 - 140, courtYPix + 8, 280, 22);
+    ctx.fillStyle = '#00ffcc'; ctx.fillText('WAITING FOR OPPONENT...', viewWidth/2, courtYPix + 23);
+    ctx.textAlign = 'left';
+  }
+
+  waitingInterval = setInterval(function() {
+    if (!waitingInterval) return;
+    updateSlimeVelocitiesWithKeys(mySlime, myLKey, myRKey, myUKey);
+    updateSlime(mySlime, myLLimit, myRLimit);
+    ball.velocityY = Math.max(ball.velocityY - 1, -22);
+    ball.x += ball.velocityX; ball.y += ball.velocityY;
+    collisionBallSlime(mySlime);
+    if (ball.x < 15)  { ball.x = 15;  ball.velocityX = -ball.velocityX; }
+    if (ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
+    if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
+      if (ball.velocityY < 0 && ball.y > 130) { ball.velocityY *= -1; ball.y = 130; }
+      else if (ball.x < 500) { ball.x = 480; ball.velocityX = ball.velocityX >= 0 ? -ball.velocityX : ball.velocityX; }
+      else                   { ball.x = 520; ball.velocityX = ball.velocityX <= 0 ? -ball.velocityX : ball.velocityX; }
+    }
+    if (ball.y < 0) {
+      ball.x = side === 'left' ? 250 : 750; ball.y = 300;
+      ball.velocityX = (side === 'left' ? 1 : -1) * (2 + Math.random() * 2); ball.velocityY = 8;
+    }
+    requestAnimationFrame(waitRender);
   }, 20);
 }
 
@@ -1850,16 +1916,21 @@ function getMySlime() {
 
 function sendCustomization() {
   if (!lobbySocket || lobbySocket.readyState !== 1) return;
-  lobbySocket.send(JSON.stringify({ type: 'customize', hat: playerHat, color: playerBodyColor, hatDrawing: playerHatDrawing }));
+  lobbySocket.send(JSON.stringify({ type: 'customize', hat: playerHat, hatAnim: playerHatAnim, color: playerBodyColor, hatDrawing: playerHatDrawing }));
 }
 
 // drawHatAt: context-independent hat renderer used by game rendering and preview
 function drawHatAt(pctx, cx, topY, rPix, cfg) {
-  var hat     = cfg ? cfg.hat     : playerHat;
+  var hat     = cfg ? cfg.hat  : playerHat;
+  var anim    = cfg ? (cfg.anim || 'none') : playerHatAnim;
   var drawing = cfg ? (cfg.drawing || cfg.hatDrawing || []) : playerHatDrawing;
   if (!hat || hat === 'none') return;
   pctx.save();
   pctx.translate(cx, topY);
+  if (anim === 'pulse') {
+    var ps = 1 + 0.12 * Math.sin(Date.now() / 280);
+    pctx.scale(ps, ps);
+  }
   if (hat === 'crown') {
     pctx.fillStyle = '#ffd700'; pctx.strokeStyle = '#b8960c'; pctx.lineWidth = 1;
     var cw = rPix * 1.1, ch = rPix * 0.55;
@@ -1897,23 +1968,73 @@ function drawHatAt(pctx, cx, topY, rPix, cfg) {
     pctx.beginPath(); pctx.moveTo(0,-ph); pctx.lineTo(-pw2/2,0); pctx.lineTo(pw2/2,0); pctx.closePath(); pctx.fill();
     pctx.strokeStyle = '#ffff00'; pctx.lineWidth = 1.5;
     for (var pi=1; pi<=2; pi++) {
-      var t = pi/3;
-      pctx.beginPath(); pctx.moveTo(-pw2/2*t, -ph*(1-t)); pctx.lineTo(pw2/2*t, -ph*(1-t)); pctx.stroke();
+      var t2 = pi/3;
+      pctx.beginPath(); pctx.moveTo(-pw2/2*t2, -ph*(1-t2)); pctx.lineTo(pw2/2*t2, -ph*(1-t2)); pctx.stroke();
     }
     pctx.fillStyle = '#ffff00'; pctx.beginPath(); pctx.arc(0, -ph, rPix*0.11, 0, TWO_PI); pctx.fill();
   } else if (hat === 'custom') {
     if (!drawing || drawing.length === 0) { pctx.restore(); return; }
-    pctx.strokeStyle = '#ffffff'; pctx.lineWidth = Math.max(1.5, rPix * 0.06);
-    pctx.lineCap = 'round'; pctx.lineJoin = 'round';
-    drawing.forEach(function(stroke) {
+    var T = Date.now();
+    var lw = Math.max(1.5, rPix * 0.06);
+    pctx.lineWidth = lw; pctx.lineCap = 'round'; pctx.lineJoin = 'round';
+
+    // Glow: oscillating shadow
+    if (anim === 'glow') {
+      pctx.shadowColor = '#00ffcc';
+      pctx.shadowBlur = 3 + 10 * (0.5 + 0.5 * Math.sin(T / 350));
+    }
+
+    // Collect all points for chaser
+    var allPts = [];
+    if (anim === 'chaser') drawing.forEach(function(s){ s.forEach(function(p){ allPts.push(p); }); });
+
+    drawing.forEach(function(stroke, si) {
       if (!stroke || stroke.length < 2) return;
+      if (anim === 'rainbow') {
+        pctx.strokeStyle = 'hsl(' + ((si / Math.max(drawing.length,1) * 360 + T / 18) % 360) + ',100%,68%)';
+      } else {
+        pctx.strokeStyle = '#ffffff';
+      }
       pctx.beginPath();
-      pctx.moveTo((stroke[0].x - 0.5) * 2.5 * rPix, -(1 - stroke[0].y) * 2.5 * rPix);
-      for (var si = 1; si < stroke.length; si++) {
-        pctx.lineTo((stroke[si].x - 0.5) * 2.5 * rPix, -(1 - stroke[si].y) * 2.5 * rPix);
+      for (var i = 0; i < stroke.length; i++) {
+        var hx = (stroke[i].x - 0.5) * 2.5 * rPix;
+        var hy = -(1 - stroke[i].y) * 2.5 * rPix;
+        if (anim === 'wave') hy += Math.sin(hx / (rPix * 0.45) + T / 420) * rPix * 0.09;
+        if (i === 0) pctx.moveTo(hx, hy); else pctx.lineTo(hx, hy);
       }
       pctx.stroke();
     });
+
+    pctx.shadowBlur = 0;
+
+    // Light chaser overlay
+    if (anim === 'chaser' && allPts.length > 1) {
+      var ci = Math.floor(T / 40) % allPts.length;
+      var cp = allPts[ci];
+      var cpx = (cp.x - 0.5) * 2.5 * rPix, cpy = -(1 - cp.y) * 2.5 * rPix;
+      pctx.save();
+      pctx.shadowColor = '#fff'; pctx.shadowBlur = 10;
+      pctx.fillStyle = '#ffffff';
+      pctx.beginPath(); pctx.arc(cpx, cpy, Math.max(2.5, rPix * 0.09), 0, TWO_PI); pctx.fill();
+      pctx.shadowBlur = 0; pctx.restore();
+    }
+
+    // Sparkle overlay
+    if (anim === 'sparkle' && drawing.length > 0) {
+      pctx.save(); pctx.shadowColor = '#ffe800'; pctx.shadowBlur = 5;
+      for (var sk = 0; sk < 4; sk++) {
+        var seed = Math.floor((T + sk * 977) / 220);
+        var r1 = ((seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+        var r2 = (((seed+3) * 1664525 + 1013904223) >>> 0) / 4294967296;
+        var r3 = (((seed+7) * 1664525 + 1013904223) >>> 0) / 4294967296;
+        var ds = drawing[Math.floor(r1 * drawing.length)];
+        if (!ds || !ds.length) continue;
+        var dp = ds[Math.floor(r2 * ds.length)];
+        pctx.fillStyle = 'hsl(' + Math.floor(40 + r3*70) + ',100%,80%)';
+        pctx.beginPath(); pctx.arc((dp.x-0.5)*2.5*rPix, -(1-dp.y)*2.5*rPix, Math.max(1.5, rPix*0.07)*(0.5+r3*0.5), 0, TWO_PI); pctx.fill();
+      }
+      pctx.shadowBlur = 0; pctx.restore();
+    }
   }
   pctx.restore();
 }
@@ -1927,6 +2048,8 @@ function drawHat(s, cfg) {
 }
 
 // ── slime preview ─────────────────────────────────────────
+// r=22 chosen so that 2.5*r=55px fits within the 110px preview width
+var PREV_R = 22;
 function updateSlimePreview() {
   var pc = document.getElementById('SlimePreview');
   if (!pc) return;
@@ -1934,69 +2057,93 @@ function updateSlimePreview() {
   var pctx = pc.getContext('2d');
   pctx.clearRect(0, 0, pw, ph);
   pctx.fillStyle = '#080018'; pctx.fillRect(0, 0, pw, ph);
+  var cx = pw / 2;
+  var r  = PREV_R;
+  var cy = ph - 22;      // slime base sits here
+  var topY = cy - r;     // top of slime arc = hat anchor
   // court floor
   pctx.strokeStyle = 'rgba(0,255,200,0.18)'; pctx.lineWidth = 1;
-  pctx.beginPath(); pctx.moveTo(0, ph*0.78); pctx.lineTo(pw, ph*0.78); pctx.stroke();
-  var cx = pw/2, cy = ph*0.78, r = pw*0.28, topY = cy - r;
+  pctx.beginPath(); pctx.moveTo(0, cy); pctx.lineTo(pw, cy); pctx.stroke();
   // slime body
   if (greenSlimeImage && greenSlimeImage.complete) {
     var tc = getTintedCanvas(greenSlimeImage, playerBodyColor);
-    var sw = tc.width, sh = tc.height;
-    var sc2 = (r * 2) / sw;
-    pctx.drawImage(tc, cx - r, cy - sh * sc2 * 0.72, sw * sc2, sh * sc2);
+    var sc2 = (r * 2) / tc.width;
+    pctx.drawImage(tc, cx - r, cy - tc.height * sc2 * 0.72, tc.width * sc2, tc.height * sc2);
   } else {
     pctx.fillStyle = playerBodyColor;
     pctx.beginPath(); pctx.arc(cx, cy, r, Math.PI, 0); pctx.fill();
   }
-  // eye (right-facing)
+  // eye
   var eyeX = cx + r*0.26, eyeY = cy - r*0.38;
   pctx.fillStyle = '#fff'; pctx.beginPath(); pctx.arc(eyeX, eyeY, r*0.19, 0, TWO_PI); pctx.fill();
   pctx.fillStyle = '#000'; pctx.beginPath(); pctx.arc(eyeX+r*0.05, eyeY, r*0.095, 0, TWO_PI); pctx.fill();
-  // hat
-  drawHatAt(pctx, cx, topY, r, { hat: playerHat, drawing: playerHatDrawing });
+  // hat — topY is the exact same anchor drawHatAt uses in-game
+  drawHatAt(pctx, cx, topY, r, { hat: playerHat, anim: playerHatAnim, drawing: playerHatDrawing });
 }
 
 // ── custom hat drawing ────────────────────────────────────
 var _drawCtx = null, _drawing = false, _currentStroke = [];
 
+// GUIDE_Y = the y position in the drawing canvas that maps to the slime top (hat anchor = 0).
+// The canvas is DW×(GUIDE_Y+SLIME_REF) so the drawing area above GUIDE_Y is exactly square (DW×DW... adjusted).
+// Hat coordinate: x in [0,1] → [-1.25*r, 1.25*r]; y in [0,1] where 1=slime top, 0=topmost point.
+var DRAW_W   = 140;
+var GUIDE_Y  = 140;  // drawing area is 140×140 — matches hat x/y extents (both 2.5*r units)
+var SLIME_REF = 24;  // extra pixels below guide to show slime silhouette
+
 function normalizeDrawPt(e, dc) {
   var rect = dc.getBoundingClientRect();
   var ex = e.touches ? e.touches[0].clientX : e.clientX;
   var ey = e.touches ? e.touches[0].clientY : e.clientY;
-  return { x: Math.max(0, Math.min(1, (ex - rect.left) / dc.width)), y: Math.max(0, Math.min(1, (ey - rect.top) / dc.height)) };
+  // x: [0, DW] → [0, 1]; y: [0, GUIDE_Y] → [0, 1] (clamp to drawing area only)
+  return {
+    x: Math.max(0, Math.min(1, (ex - rect.left)  / DRAW_W)),
+    y: Math.max(0, Math.min(1, (ey - rect.top)   / GUIDE_Y))
+  };
 }
 
 function redrawHatCanvas() {
   var dc = document.getElementById('HatDrawCanvas');
   if (!dc) return;
   _drawCtx = _drawCtx || dc.getContext('2d');
-  var w = dc.width, h = dc.height;
+  var w = DRAW_W, h = dc.height;
   _drawCtx.clearRect(0, 0, w, h);
   _drawCtx.fillStyle = '#040012'; _drawCtx.fillRect(0, 0, w, h);
-  // grid
-  _drawCtx.strokeStyle = 'rgba(0,255,200,0.07)'; _drawCtx.lineWidth = 0.5;
-  for (var gx=0; gx<w; gx+=18) { _drawCtx.beginPath(); _drawCtx.moveTo(gx,0); _drawCtx.lineTo(gx,h); _drawCtx.stroke(); }
-  for (var gy=0; gy<h; gy+=18) { _drawCtx.beginPath(); _drawCtx.moveTo(0,gy); _drawCtx.lineTo(w,gy); _drawCtx.stroke(); }
-  // slime silhouette reference
-  var slimeCx=w/2, slimeCy=h-14, slimeR=w*0.21;
-  _drawCtx.fillStyle='rgba(0,200,100,0.18)'; _drawCtx.beginPath(); _drawCtx.arc(slimeCx,slimeCy,slimeR,Math.PI,0); _drawCtx.fill();
-  // guide line at slime top
-  var slTopY = slimeCy - slimeR;
-  _drawCtx.strokeStyle='rgba(0,255,200,0.28)'; _drawCtx.lineWidth=1; _drawCtx.setLineDash([4,3]);
-  _drawCtx.beginPath(); _drawCtx.moveTo(0,slTopY); _drawCtx.lineTo(w,slTopY); _drawCtx.stroke();
+  // fine grid
+  _drawCtx.strokeStyle = 'rgba(0,255,200,0.06)'; _drawCtx.lineWidth = 0.5;
+  for (var gx=0; gx<=w; gx+=14) { _drawCtx.beginPath(); _drawCtx.moveTo(gx,0); _drawCtx.lineTo(gx,GUIDE_Y); _drawCtx.stroke(); }
+  for (var gy=0; gy<=GUIDE_Y; gy+=14) { _drawCtx.beginPath(); _drawCtx.moveTo(0,gy); _drawCtx.lineTo(w,gy); _drawCtx.stroke(); }
+  // center crosshair
+  _drawCtx.strokeStyle = 'rgba(0,255,200,0.12)'; _drawCtx.lineWidth = 0.5;
+  _drawCtx.beginPath(); _drawCtx.moveTo(w/2, 0); _drawCtx.lineTo(w/2, GUIDE_Y); _drawCtx.stroke();
+  // guide line at slime top (GUIDE_Y)
+  _drawCtx.strokeStyle = 'rgba(0,255,200,0.45)'; _drawCtx.lineWidth = 1.5; _drawCtx.setLineDash([5,3]);
+  _drawCtx.beginPath(); _drawCtx.moveTo(0, GUIDE_Y); _drawCtx.lineTo(w, GUIDE_Y); _drawCtx.stroke();
   _drawCtx.setLineDash([]);
-  // stored strokes
-  _drawCtx.strokeStyle='#ffffff'; _drawCtx.lineWidth=2; _drawCtx.lineCap='round'; _drawCtx.lineJoin='round';
+  // slime silhouette below guide
+  var slimeCx = w/2, slimeCy = h - 2;
+  var slimeR = (h - GUIDE_Y) * 1.1;
+  _drawCtx.fillStyle = 'rgba(0,200,100,0.22)';
+  _drawCtx.beginPath(); _drawCtx.arc(slimeCx, slimeCy, slimeR, Math.PI, 0); _drawCtx.fill();
+  _drawCtx.strokeStyle = 'rgba(0,255,150,0.3)'; _drawCtx.lineWidth = 1;
+  _drawCtx.beginPath(); _drawCtx.arc(slimeCx, slimeCy, slimeR, Math.PI, 0); _drawCtx.stroke();
+  // stored strokes — map normalized coords back to canvas pixels
+  _drawCtx.strokeStyle = '#ffffff'; _drawCtx.lineWidth = 2; _drawCtx.lineCap = 'round'; _drawCtx.lineJoin = 'round';
   playerHatDrawing.forEach(function(stroke) {
-    if (!stroke||stroke.length<2) return;
-    _drawCtx.beginPath(); _drawCtx.moveTo(stroke[0].x*w, stroke[0].y*h);
-    stroke.slice(1).forEach(function(p){_drawCtx.lineTo(p.x*w,p.y*h);}); _drawCtx.stroke();
+    if (!stroke || stroke.length < 2) return;
+    _drawCtx.beginPath();
+    _drawCtx.moveTo(stroke[0].x * DRAW_W, stroke[0].y * GUIDE_Y);
+    stroke.slice(1).forEach(function(p) { _drawCtx.lineTo(p.x * DRAW_W, p.y * GUIDE_Y); });
+    _drawCtx.stroke();
   });
-  if (_currentStroke.length>1) {
-    _drawCtx.beginPath(); _drawCtx.moveTo(_currentStroke[0].x*w,_currentStroke[0].y*h);
-    _currentStroke.slice(1).forEach(function(p){_drawCtx.lineTo(p.x*w,p.y*h);}); _drawCtx.stroke();
+  if (_currentStroke.length > 1) {
+    _drawCtx.beginPath();
+    _drawCtx.moveTo(_currentStroke[0].x * DRAW_W, _currentStroke[0].y * GUIDE_Y);
+    _currentStroke.slice(1).forEach(function(p) { _drawCtx.lineTo(p.x * DRAW_W, p.y * GUIDE_Y); });
+    _drawCtx.stroke();
   }
-  _drawCtx.fillStyle='rgba(0,255,200,0.2)'; _drawCtx.font='8px Courier New'; _drawCtx.fillText('draw your hat above the line',6,11);
+  _drawCtx.fillStyle = 'rgba(0,255,200,0.18)'; _drawCtx.font = '8px Courier New';
+  _drawCtx.fillText('draw above the line · center = ' + String.fromCharCode(8593), 5, 10);
 }
 
 function initHatDrawCanvas() {
@@ -2064,6 +2211,34 @@ function syncCustomizationUI() {
   }
   var ds = document.getElementById('HatDrawSection');
   if (ds) { ds.style.display = playerHat === 'custom' ? 'block' : 'none'; if (playerHat==='custom') initHatDrawCanvas(); }
+
+  var as = document.getElementById('HatAnimSection');
+  if (as) as.style.display = (playerHat !== 'none') ? 'block' : 'none';
+  var ap = document.getElementById('HatAnimPicker');
+  if (ap) {
+    ap.innerHTML = '';
+    HAT_ANIM_OPTIONS.forEach(function(a) {
+      var b = document.createElement('button');
+      b.className = 'hat-opt' + (a.id === playerHatAnim ? ' active' : '');
+      b.textContent = a.label;
+      b.onclick = function() {
+        playerHatAnim = a.id; localStorage.setItem('slimeHatAnim', a.id);
+        syncCustomizationUI(); sendCustomization();
+      };
+      ap.appendChild(b);
+    });
+  }
+
+  if (playerHatAnim !== 'none' && playerHat !== 'none') startPreviewAnim();
+  else stopPreviewAnim();
+}
+
+function startPreviewAnim() {
+  if (previewAnimInterval) return;
+  previewAnimInterval = setInterval(updateSlimePreview, 50);
+}
+function stopPreviewAnim() {
+  if (previewAnimInterval) { clearInterval(previewAnimInterval); previewAnimInterval = null; }
   updateSlimePreview();
 }
 
@@ -2283,8 +2458,9 @@ function bodyload() {
   // Load persisted customization
   playerBodyColor = localStorage.getItem('slimeBodyColor') || '#00ff00';
   playerHat       = localStorage.getItem('slimeHat')       || 'none';
+  playerHatAnim   = localStorage.getItem('slimeHatAnim')   || 'none';
   try { playerHatDrawing = JSON.parse(localStorage.getItem('slimeHatDrawing') || '[]'); } catch(e) { playerHatDrawing = []; }
-  hatConfigs.left.color = playerBodyColor; hatConfigs.left.hat = playerHat; hatConfigs.left.drawing = playerHatDrawing;
+  hatConfigs.left.color = playerBodyColor; hatConfigs.left.hat = playerHat; hatConfigs.left.drawing = playerHatDrawing; hatConfigs.left.anim = playerHatAnim;
   syncCustomizationUI();
 
   // Pre-render map preview thumbnails for lobby select
@@ -2358,8 +2534,12 @@ function bodyload() {
             <div id="HatPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"></div>
             <div id="HatDrawSection" style="display:none;margin-top:8px;">
               <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">Draw your hat (drag to draw):</div>
-              <canvas id="HatDrawCanvas" width="172" height="100" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:5px;"></canvas>
+              <canvas id="HatDrawCanvas" width="140" height="164" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:5px;"></canvas>
               <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:9px;padding:3px 8px;">✕ Clear</button>
+            </div>
+            <div id="HatAnimSection" style="display:none;margin-top:8px;">
+              <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">HAT ANIMATION</div>
+              <div id="HatAnimPicker" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
             </div>
           </div>
           <div style="flex-shrink:0;text-align:center;">
