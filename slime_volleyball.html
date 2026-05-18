@@ -336,9 +336,10 @@ function newLegacySlime(onLeft, radius, color) {
       var yPix = courtYPix - (this.y * pixelsPerUnitY);
       var rPix = this.radius * pixelsPerUnitY;
       if (this.img && !legacyGraphics) {
-        ctx.drawImage(this.img, xPix - rPix, yPix - 38);
+        var drawSrc = this.tintColor ? getTintedCanvas(this.img, this.tintColor) : this.img;
+        ctx.drawImage(drawSrc, xPix - rPix, yPix - 38);
       } else {
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = this.tintColor || this.color;
         ctx.beginPath(); ctx.arc(xPix, yPix, rPix, Math.PI, TWO_PI); ctx.fill();
       }
       var eyeX = this.x + (this.onLeft ? 1 : -1) * this.radius / 4;
@@ -966,7 +967,7 @@ function renderBackground() {
 function renderGame() {
   if (updatesToPaint === 0) return;
   renderBackground(); ball.render(); slimeLeft.render(); slimeRight.render();
-  drawHat(slimeLeft);
+  drawHat(slimeLeft, { hat: playerHat, drawing: playerHatDrawing });
   updatesToPaint = 0;
 }
 function renderEndOfPoint() {
@@ -1062,8 +1063,14 @@ function hideSpecBadge() {
 var lobbySocket    = null;
 var myPlayerName   = '';
 var currentLobbies = [];
-var playerBodyColor = '#00ff00';
-var playerHat       = 'none';
+var playerBodyColor  = '#00ff00';
+var playerHat        = 'none';
+var playerHatDrawing = [];
+var hatConfigs = {
+  left:  { hat: 'none', color: '#00ff00', drawing: [] },
+  right: { hat: 'none', color: '#ff0000', drawing: [] }
+};
+var _tintCache = {};
 var BODY_COLORS = ['#00ff00','#00ffcc','#0066ff','#aa00ff','#ff2200','#ff8800','#ff00aa','#eeeeee'];
 var HAT_OPTIONS = [
   { id:'none',   label:'None'    },
@@ -1072,7 +1079,26 @@ var HAT_OPTIONS = [
   { id:'cowboy', label:'Cowboy'  },
   { id:'halo',   label:'Halo'    },
   { id:'party',  label:'Party'   },
+  { id:'custom', label:'Custom'  },
 ];
+
+function getTintedCanvas(img, color) {
+  var key = (img.src || '') + '|' + color;
+  if (_tintCache[key]) return _tintCache[key];
+  var oc = document.createElement('canvas');
+  oc.width  = img.naturalWidth  || img.width  || 175;
+  oc.height = img.naturalHeight || img.height || 175;
+  var oc2 = oc.getContext('2d');
+  oc2.drawImage(img, 0, 0);
+  oc2.globalCompositeOperation = 'source-atop';
+  oc2.globalAlpha = 0.62;
+  oc2.fillStyle = color;
+  oc2.fillRect(0, 0, oc.width, oc.height);
+  oc2.globalCompositeOperation = 'source-over';
+  oc2.globalAlpha = 1;
+  _tintCache[key] = oc;
+  return oc;
+}
 
 function connectLobby() {
   var wsUrl = window.SLIME_WS_URL ||
@@ -1344,6 +1370,7 @@ function joinRoom(roomId) {
   if (!lobbySocket || lobbySocket.readyState !== 1) return;
   showingLobbySelect = false;
   lobbySocket.send(JSON.stringify({ type: 'join_room', roomId: roomId }));
+  sendCustomization();
 }
 
 function cancelLobbySelect() {
@@ -1459,6 +1486,12 @@ function handleServerMessage(msg) {
     }
     setTimeout(function() { onlinePointText = null; }, 700);
 
+  } else if (msg.type === 'customize') {
+    var side = msg.side === 'left' ? 'left' : 'right';
+    hatConfigs[side] = { hat: msg.hat || 'none', color: msg.color || (side==='left'?'#00ff00':'#ff0000'), drawing: msg.hatDrawing || [] };
+    if (side === 'left'  && slimeLeft)  slimeLeft.tintColor  = hatConfigs.left.color;
+    if (side === 'right' && slimeRight) slimeRight.tintColor = hatConfigs.right.color;
+
   } else if (msg.type === 'emote') {
     var now = Date.now();
     if (msg.side === 'left')  { emoteLeft  = msg.emoji; emoteLeftEnd  = now + 2200; }
@@ -1486,8 +1519,12 @@ function handleServerMessage(msg) {
 // ── online game (player) ──────────────────────────────────
 function launchOnlineGame() {
   replayBuffer = [];
+  // Seed own side's config from local settings
+  hatConfigs[mySide] = { hat: playerHat, color: playerBodyColor, drawing: playerHatDrawing };
   slimeLeft  = newLegacySlime(true,  100, '#0f0');
   slimeRight = newLegacySlime(false, 100, '#f00');
+  slimeLeft.tintColor  = hatConfigs.left.color;
+  slimeRight.tintColor = hatConfigs.right.color;
   ball       = newLegacyBall(25, '#ff0');
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage; slimeRight.img = redSlimeImage;
@@ -1542,7 +1579,7 @@ function applyServerState(msg) {
   if (sx || sy) { ctx.save(); ctx.translate(sx, sy); }
   renderBackground();
   ball.render(); slimeLeft.render(); slimeRight.render();
-  drawHat(getMySlime());
+  drawHat(slimeLeft, hatConfigs.left); drawHat(slimeRight, hatConfigs.right);
   drawParticles();
   drawOnlineHUD();
   if (sx || sy) ctx.restore();
@@ -1613,6 +1650,7 @@ function start(startAsOnePlayer) {
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage;
   slimeLeft.color = playerBodyColor;
+  slimeLeft.tintColor = playerBodyColor;
   if (onePlayer) {
     var p = slimeAIs[nextSlimeIndex];
     slimeRight.color = p.color; legacySkyColor = p.legacySkyColor;
@@ -1755,7 +1793,7 @@ function playHighlights(winner, onComplete) {
     ctx.translate(-focX, -focY);
     renderBackground();
     ball.render(); slimeLeft.render(); slimeRight.render();
-    drawHat(getMySlime());
+    drawHat(slimeLeft, hatConfigs.left); drawHat(slimeRight, hatConfigs.right);
     ctx.restore();
 
     // vignette
@@ -1810,56 +1848,188 @@ function getMySlime() {
   return slimeLeft;
 }
 
-function drawHat(s) {
-  if (!s || !playerHat || playerHat === 'none') return;
+function sendCustomization() {
+  if (!lobbySocket || lobbySocket.readyState !== 1) return;
+  lobbySocket.send(JSON.stringify({ type: 'customize', hat: playerHat, color: playerBodyColor, hatDrawing: playerHatDrawing }));
+}
+
+// drawHatAt: context-independent hat renderer used by game rendering and preview
+function drawHatAt(pctx, cx, topY, rPix, cfg) {
+  var hat     = cfg ? cfg.hat     : playerHat;
+  var drawing = cfg ? (cfg.drawing || cfg.hatDrawing || []) : playerHatDrawing;
+  if (!hat || hat === 'none') return;
+  pctx.save();
+  pctx.translate(cx, topY);
+  if (hat === 'crown') {
+    pctx.fillStyle = '#ffd700'; pctx.strokeStyle = '#b8960c'; pctx.lineWidth = 1;
+    var cw = rPix * 1.1, ch = rPix * 0.55;
+    pctx.beginPath();
+    pctx.moveTo(-cw/2, 0); pctx.lineTo(-cw/2, -ch*0.55);
+    pctx.lineTo(-cw/4, -ch); pctx.lineTo(0, -ch*0.45);
+    pctx.lineTo(cw/4, -ch); pctx.lineTo(cw/2, -ch*0.55);
+    pctx.lineTo(cw/2, 0); pctx.closePath();
+    pctx.fill(); pctx.stroke();
+    [['#ff3355',-cw/4],['#33ddff',0],['#33ff88',cw/4]].forEach(function(g) {
+      pctx.fillStyle = g[0];
+      pctx.beginPath(); pctx.arc(g[1], -ch*0.18, rPix*0.09, 0, TWO_PI); pctx.fill();
+    });
+  } else if (hat === 'tophat') {
+    pctx.fillStyle = '#111'; pctx.strokeStyle = '#444'; pctx.lineWidth = 1;
+    var bw = rPix*1.4, bh = rPix*0.14, hw = rPix*0.78, hh = rPix*0.85;
+    pctx.fillRect(-bw/2, -bh, bw, bh); pctx.fillRect(-hw/2, -bh-hh, hw, hh);
+    pctx.strokeRect(-hw/2, -bh-hh, hw, hh);
+    pctx.fillStyle = '#8b0000'; pctx.fillRect(-hw/2, -bh-hh*0.24, hw, hh*0.17);
+  } else if (hat === 'cowboy') {
+    pctx.fillStyle = '#8B5E3C'; pctx.strokeStyle = '#5a3a1a'; pctx.lineWidth = 1;
+    var bw2 = rPix*1.6, hw2 = rPix*0.95, hh2 = rPix*0.72;
+    pctx.beginPath(); pctx.ellipse(0, -hh2*0.3, hw2/2, hh2*0.68, 0, 0, TWO_PI); pctx.fill(); pctx.stroke();
+    pctx.beginPath(); pctx.ellipse(0, -1, bw2/2, rPix*0.17, 0, 0, TWO_PI); pctx.fill();
+    pctx.strokeStyle = '#333'; pctx.lineWidth = 2;
+    pctx.beginPath(); pctx.ellipse(0, -hh2*0.25, hw2/2-1, hh2*0.13, 0, 0, TWO_PI); pctx.stroke();
+  } else if (hat === 'halo') {
+    pctx.strokeStyle = '#ffe800'; pctx.lineWidth = rPix*0.17;
+    pctx.shadowColor = '#ffe800'; pctx.shadowBlur = rPix*0.5;
+    pctx.beginPath(); pctx.ellipse(0, -rPix*0.38, rPix*0.52, rPix*0.19, 0, 0, TWO_PI); pctx.stroke();
+    pctx.shadowBlur = 0;
+  } else if (hat === 'party') {
+    var ph = rPix*0.98, pw2 = rPix*0.68;
+    pctx.fillStyle = '#ff00cc';
+    pctx.beginPath(); pctx.moveTo(0,-ph); pctx.lineTo(-pw2/2,0); pctx.lineTo(pw2/2,0); pctx.closePath(); pctx.fill();
+    pctx.strokeStyle = '#ffff00'; pctx.lineWidth = 1.5;
+    for (var pi=1; pi<=2; pi++) {
+      var t = pi/3;
+      pctx.beginPath(); pctx.moveTo(-pw2/2*t, -ph*(1-t)); pctx.lineTo(pw2/2*t, -ph*(1-t)); pctx.stroke();
+    }
+    pctx.fillStyle = '#ffff00'; pctx.beginPath(); pctx.arc(0, -ph, rPix*0.11, 0, TWO_PI); pctx.fill();
+  } else if (hat === 'custom') {
+    if (!drawing || drawing.length === 0) { pctx.restore(); return; }
+    pctx.strokeStyle = '#ffffff'; pctx.lineWidth = Math.max(1.5, rPix * 0.06);
+    pctx.lineCap = 'round'; pctx.lineJoin = 'round';
+    drawing.forEach(function(stroke) {
+      if (!stroke || stroke.length < 2) return;
+      pctx.beginPath();
+      pctx.moveTo((stroke[0].x - 0.5) * 2.5 * rPix, -(1 - stroke[0].y) * 2.5 * rPix);
+      for (var si = 1; si < stroke.length; si++) {
+        pctx.lineTo((stroke[si].x - 0.5) * 2.5 * rPix, -(1 - stroke[si].y) * 2.5 * rPix);
+      }
+      pctx.stroke();
+    });
+  }
+  pctx.restore();
+}
+
+function drawHat(s, cfg) {
+  if (!s) return;
   var xPix = s.x * pixelsPerUnitX;
   var yPix = courtYPix - (s.y * pixelsPerUnitY);
   var rPix = s.radius * pixelsPerUnitY;
-  ctx.save();
-  ctx.translate(xPix, yPix - rPix + 1);
-  if (playerHat === 'crown') {
-    ctx.fillStyle = '#ffd700'; ctx.strokeStyle = '#b8960c'; ctx.lineWidth = 1;
-    var cw = rPix * 1.1, ch = rPix * 0.55;
-    ctx.beginPath();
-    ctx.moveTo(-cw/2, 0); ctx.lineTo(-cw/2, -ch*0.55);
-    ctx.lineTo(-cw/4, -ch); ctx.lineTo(0, -ch*0.45);
-    ctx.lineTo(cw/4, -ch); ctx.lineTo(cw/2, -ch*0.55);
-    ctx.lineTo(cw/2, 0); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    [['#ff3355',-cw/4],['#33ddff',0],['#33ff88',cw/4]].forEach(function(g) {
-      ctx.fillStyle = g[0];
-      ctx.beginPath(); ctx.arc(g[1], -ch*0.18, rPix*0.09, 0, TWO_PI); ctx.fill();
-    });
-  } else if (playerHat === 'tophat') {
-    ctx.fillStyle = '#111'; ctx.strokeStyle = '#444'; ctx.lineWidth = 1;
-    var bw = rPix*1.4, bh = rPix*0.14, hw = rPix*0.78, hh = rPix*0.85;
-    ctx.fillRect(-bw/2, -bh, bw, bh); ctx.fillRect(-hw/2, -bh-hh, hw, hh);
-    ctx.strokeRect(-hw/2, -bh-hh, hw, hh);
-    ctx.fillStyle = '#8b0000'; ctx.fillRect(-hw/2, -bh-hh*0.24, hw, hh*0.17);
-  } else if (playerHat === 'cowboy') {
-    ctx.fillStyle = '#8B5E3C'; ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 1;
-    var bw2 = rPix*1.6, hw2 = rPix*0.95, hh2 = rPix*0.72;
-    ctx.beginPath(); ctx.ellipse(0, -hh2*0.3, hw2/2, hh2*0.68, 0, 0, TWO_PI); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(0, -1, bw2/2, rPix*0.17, 0, 0, TWO_PI); ctx.fill();
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(0, -hh2*0.25, hw2/2-1, hh2*0.13, 0, 0, TWO_PI); ctx.stroke();
-  } else if (playerHat === 'halo') {
-    ctx.strokeStyle = '#ffe800'; ctx.lineWidth = rPix*0.17;
-    ctx.shadowColor = '#ffe800'; ctx.shadowBlur = rPix*0.5;
-    ctx.beginPath(); ctx.ellipse(0, -rPix*0.38, rPix*0.52, rPix*0.19, 0, 0, TWO_PI); ctx.stroke();
-    ctx.shadowBlur = 0;
-  } else if (playerHat === 'party') {
-    var ph = rPix*0.98, pw = rPix*0.68;
-    ctx.fillStyle = '#ff00cc';
-    ctx.beginPath(); ctx.moveTo(0,-ph); ctx.lineTo(-pw/2,0); ctx.lineTo(pw/2,0); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 1.5;
-    for (var pi=1; pi<=2; pi++) {
-      var t = pi/3;
-      ctx.beginPath(); ctx.moveTo(-pw/2*t, -ph*(1-t)); ctx.lineTo(pw/2*t, -ph*(1-t)); ctx.stroke();
-    }
-    ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(0, -ph, rPix*0.11, 0, TWO_PI); ctx.fill();
+  drawHatAt(ctx, xPix, yPix - rPix + 1, rPix, cfg || { hat: playerHat, drawing: playerHatDrawing });
+}
+
+// ── slime preview ─────────────────────────────────────────
+function updateSlimePreview() {
+  var pc = document.getElementById('SlimePreview');
+  if (!pc) return;
+  var pw = pc.width, ph = pc.height;
+  var pctx = pc.getContext('2d');
+  pctx.clearRect(0, 0, pw, ph);
+  pctx.fillStyle = '#080018'; pctx.fillRect(0, 0, pw, ph);
+  // court floor
+  pctx.strokeStyle = 'rgba(0,255,200,0.18)'; pctx.lineWidth = 1;
+  pctx.beginPath(); pctx.moveTo(0, ph*0.78); pctx.lineTo(pw, ph*0.78); pctx.stroke();
+  var cx = pw/2, cy = ph*0.78, r = pw*0.28, topY = cy - r;
+  // slime body
+  if (greenSlimeImage && greenSlimeImage.complete) {
+    var tc = getTintedCanvas(greenSlimeImage, playerBodyColor);
+    var sw = tc.width, sh = tc.height;
+    var sc2 = (r * 2) / sw;
+    pctx.drawImage(tc, cx - r, cy - sh * sc2 * 0.72, sw * sc2, sh * sc2);
+  } else {
+    pctx.fillStyle = playerBodyColor;
+    pctx.beginPath(); pctx.arc(cx, cy, r, Math.PI, 0); pctx.fill();
   }
-  ctx.restore();
+  // eye (right-facing)
+  var eyeX = cx + r*0.26, eyeY = cy - r*0.38;
+  pctx.fillStyle = '#fff'; pctx.beginPath(); pctx.arc(eyeX, eyeY, r*0.19, 0, TWO_PI); pctx.fill();
+  pctx.fillStyle = '#000'; pctx.beginPath(); pctx.arc(eyeX+r*0.05, eyeY, r*0.095, 0, TWO_PI); pctx.fill();
+  // hat
+  drawHatAt(pctx, cx, topY, r, { hat: playerHat, drawing: playerHatDrawing });
+}
+
+// ── custom hat drawing ────────────────────────────────────
+var _drawCtx = null, _drawing = false, _currentStroke = [];
+
+function normalizeDrawPt(e, dc) {
+  var rect = dc.getBoundingClientRect();
+  var ex = e.touches ? e.touches[0].clientX : e.clientX;
+  var ey = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: Math.max(0, Math.min(1, (ex - rect.left) / dc.width)), y: Math.max(0, Math.min(1, (ey - rect.top) / dc.height)) };
+}
+
+function redrawHatCanvas() {
+  var dc = document.getElementById('HatDrawCanvas');
+  if (!dc) return;
+  _drawCtx = _drawCtx || dc.getContext('2d');
+  var w = dc.width, h = dc.height;
+  _drawCtx.clearRect(0, 0, w, h);
+  _drawCtx.fillStyle = '#040012'; _drawCtx.fillRect(0, 0, w, h);
+  // grid
+  _drawCtx.strokeStyle = 'rgba(0,255,200,0.07)'; _drawCtx.lineWidth = 0.5;
+  for (var gx=0; gx<w; gx+=18) { _drawCtx.beginPath(); _drawCtx.moveTo(gx,0); _drawCtx.lineTo(gx,h); _drawCtx.stroke(); }
+  for (var gy=0; gy<h; gy+=18) { _drawCtx.beginPath(); _drawCtx.moveTo(0,gy); _drawCtx.lineTo(w,gy); _drawCtx.stroke(); }
+  // slime silhouette reference
+  var slimeCx=w/2, slimeCy=h-14, slimeR=w*0.21;
+  _drawCtx.fillStyle='rgba(0,200,100,0.18)'; _drawCtx.beginPath(); _drawCtx.arc(slimeCx,slimeCy,slimeR,Math.PI,0); _drawCtx.fill();
+  // guide line at slime top
+  var slTopY = slimeCy - slimeR;
+  _drawCtx.strokeStyle='rgba(0,255,200,0.28)'; _drawCtx.lineWidth=1; _drawCtx.setLineDash([4,3]);
+  _drawCtx.beginPath(); _drawCtx.moveTo(0,slTopY); _drawCtx.lineTo(w,slTopY); _drawCtx.stroke();
+  _drawCtx.setLineDash([]);
+  // stored strokes
+  _drawCtx.strokeStyle='#ffffff'; _drawCtx.lineWidth=2; _drawCtx.lineCap='round'; _drawCtx.lineJoin='round';
+  playerHatDrawing.forEach(function(stroke) {
+    if (!stroke||stroke.length<2) return;
+    _drawCtx.beginPath(); _drawCtx.moveTo(stroke[0].x*w, stroke[0].y*h);
+    stroke.slice(1).forEach(function(p){_drawCtx.lineTo(p.x*w,p.y*h);}); _drawCtx.stroke();
+  });
+  if (_currentStroke.length>1) {
+    _drawCtx.beginPath(); _drawCtx.moveTo(_currentStroke[0].x*w,_currentStroke[0].y*h);
+    _currentStroke.slice(1).forEach(function(p){_drawCtx.lineTo(p.x*w,p.y*h);}); _drawCtx.stroke();
+  }
+  _drawCtx.fillStyle='rgba(0,255,200,0.2)'; _drawCtx.font='8px Courier New'; _drawCtx.fillText('draw your hat above the line',6,11);
+}
+
+function initHatDrawCanvas() {
+  var dc = document.getElementById('HatDrawCanvas');
+  if (!dc || dc._init) return;
+  dc._init = true;
+  _drawCtx = dc.getContext('2d');
+  redrawHatCanvas();
+  function start(e) { _drawing=true; _currentStroke=[normalizeDrawPt(e,dc)]; e.preventDefault(); }
+  function move(e)  {
+    if(!_drawing) return;
+    _currentStroke.push(normalizeDrawPt(e,dc)); redrawHatCanvas(); e.preventDefault();
+  }
+  function end(e) {
+    if(!_drawing) return; _drawing=false;
+    if(_currentStroke.length>1) { playerHatDrawing.push(_currentStroke); saveHatDrawing(); }
+    _currentStroke=[]; redrawHatCanvas(); updateSlimePreview();
+  }
+  dc.addEventListener('mousedown',start); dc.addEventListener('mousemove',move);
+  dc.addEventListener('mouseup',end); dc.addEventListener('mouseleave',end);
+  dc.addEventListener('touchstart',start,{passive:false}); dc.addEventListener('touchmove',move,{passive:false});
+  dc.addEventListener('touchend',end);
+}
+
+function saveHatDrawing() {
+  try { localStorage.setItem('slimeHatDrawing', JSON.stringify(playerHatDrawing)); } catch(e) {}
+  sendCustomization();
+}
+
+function clearHatDrawing() {
+  playerHatDrawing = []; _currentStroke = [];
+  try { localStorage.removeItem('slimeHatDrawing'); } catch(e) {}
+  redrawHatCanvas(); updateSlimePreview(); sendCustomization();
 }
 
 function syncCustomizationUI() {
@@ -1871,7 +2041,10 @@ function syncCustomizationUI() {
       d.className = 'swatch' + (col === playerBodyColor ? ' active' : '');
       d.style.background = col;
       d.title = col;
-      d.onclick = function() { playerBodyColor = col; localStorage.setItem('slimeBodyColor', col); syncCustomizationUI(); };
+      d.onclick = function() {
+        playerBodyColor = col; localStorage.setItem('slimeBodyColor', col);
+        syncCustomizationUI(); sendCustomization();
+      };
       sc.appendChild(d);
     });
   }
@@ -1882,10 +2055,16 @@ function syncCustomizationUI() {
       var b = document.createElement('button');
       b.className = 'hat-opt' + (h.id === playerHat ? ' active' : '');
       b.textContent = h.label;
-      b.onclick = function() { playerHat = h.id; localStorage.setItem('slimeHat', h.id); syncCustomizationUI(); };
+      b.onclick = function() {
+        playerHat = h.id; localStorage.setItem('slimeHat', h.id);
+        syncCustomizationUI(); sendCustomization();
+      };
       hp.appendChild(b);
     });
   }
+  var ds = document.getElementById('HatDrawSection');
+  if (ds) { ds.style.display = playerHat === 'custom' ? 'block' : 'none'; if (playerHat==='custom') initHatDrawCanvas(); }
+  updateSlimePreview();
 }
 
 function endMatchEarly() {
@@ -2104,6 +2283,8 @@ function bodyload() {
   // Load persisted customization
   playerBodyColor = localStorage.getItem('slimeBodyColor') || '#00ff00';
   playerHat       = localStorage.getItem('slimeHat')       || 'none';
+  try { playerHatDrawing = JSON.parse(localStorage.getItem('slimeHatDrawing') || '[]'); } catch(e) { playerHatDrawing = []; }
+  hatConfigs.left.color = playerBodyColor; hatConfigs.left.hat = playerHat; hatConfigs.left.drawing = playerHatDrawing;
   syncCustomizationUI();
 
   // Pre-render map preview thumbnails for lobby select
@@ -2169,11 +2350,23 @@ function bodyload() {
         <div style="border-bottom:1px solid rgba(0,255,200,.15);margin-bottom:12px;"></div>
         <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:12px;right:14px;font-size:11px;letter-spacing:1px;">[ ESC / CLOSE ]</span>
 
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">SLIME COLOR</div>
-        <div id="ColorSwatches" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;"></div>
-
-        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">HAT</div>
-        <div id="HatPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;"></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
+          <div style="flex:1;">
+            <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">SLIME COLOR</div>
+            <div id="ColorSwatches" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;"></div>
+            <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">HAT</div>
+            <div id="HatPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"></div>
+            <div id="HatDrawSection" style="display:none;margin-top:8px;">
+              <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">Draw your hat (drag to draw):</div>
+              <canvas id="HatDrawCanvas" width="172" height="100" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:5px;"></canvas>
+              <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:9px;padding:3px 8px;">✕ Clear</button>
+            </div>
+          </div>
+          <div style="flex-shrink:0;text-align:center;">
+            <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">PREVIEW</div>
+            <canvas id="SlimePreview" width="110" height="100" style="border:1px solid rgba(0,255,200,.18);display:block;"></canvas>
+          </div>
+        </div>
 
         <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">VICTORY MUSIC &mdash; plays on match end</div>
         <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;margin-bottom:4px;"></select>
