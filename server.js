@@ -7,186 +7,282 @@ const { newBall, newSlime, initRound, tick } = require('./physics');
 const WIN_AMOUNT = 7;
 const TICK_MS    = 20;
 
+const ROOM_NAMES = [
+  'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
+  'Jungle Court', 'Frozen Court', 'Desert Court', 'Neon Court'
+];
+
 const app = express();
 app.use(express.static(path.join(__dirname)));
-
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
-// All connected clients: ws -> { name, state, gameHandler }
-const lobby = new Map();
-let waitingPlayer = null;
+// All connected clients: ws -> info object
+const allClients = new Map();
 
+// 8 persistent rooms
+const rooms = ROOM_NAMES.map((name, id) => ({
+  id, name,
+  players:    [], // [{ ws, info }], max 2
+  spectators: [], // [{ ws, info }], unlimited
+  state:      null,
+  interval:   null,
+  phase:      'empty', // 'empty' | 'waiting' | 'playing'
+}));
+
+// ── helpers ──────────────────────────────────────────────
 function send(ws, msg) {
   if (ws.readyState === 1) ws.send(JSON.stringify(msg));
 }
-
-function broadcast(msg) {
+function broadcastAll(msg) {
   const str = JSON.stringify(msg);
-  lobby.forEach((_, ws) => { if (ws.readyState === 1) ws.send(str); });
+  allClients.forEach((_, ws) => { if (ws.readyState === 1) ws.send(str); });
 }
-
-function broadcastPlayerCount() {
-  broadcast({ type: 'player_count', count: lobby.size });
+function broadcastRoom(room, msg) {
+  const str = JSON.stringify(msg);
+  [...room.players, ...room.spectators].forEach(({ ws }) => {
+    if (ws.readyState === 1) ws.send(str);
+  });
 }
-
+function getLobbySnapshot() {
+  return rooms.map(r => ({
+    id:             r.id,
+    name:           r.name,
+    playerCount:    r.players.length,
+    spectatorCount: r.spectators.length,
+    phase:          r.phase,
+  }));
+}
+function pushLobbyState() {
+  const msg = JSON.stringify({
+    type:         'lobby_list',
+    lobbies:      getLobbySnapshot(),
+    totalPlayers: allClients.size,
+  });
+  allClients.forEach((_, ws) => { if (ws.readyState === 1) ws.send(msg); });
+}
 function randomName() {
   return 'Player' + (Math.floor(Math.random() * 9000) + 1000);
 }
 
-function escapeText(str) {
-  return String(str || '').replace(/[<>&"]/g, c =>
-    ({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;' }[c])
-  );
-}
-
+// ── connection ────────────────────────────────────────────
 wss.on('connection', (ws) => {
-  const info = { name: randomName(), state: 'lobby', gameHandler: null };
-  lobby.set(ws, info);
+  const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby' };
+  allClients.set(ws, info);
 
-  send(ws, { type: 'connected', name: info.name, playerCount: lobby.size });
-  broadcastPlayerCount();
+  send(ws, { type: 'connected', name: info.name, totalPlayers: allClients.size, lobbies: getLobbySnapshot() });
+  pushLobbyState();
 
   ws.on('message', (raw) => {
     try {
       const msg = JSON.parse(raw);
-      // In-game messages routed to game handler
+      // In-game inputs route to game handler; chat still handled normally
       if (info.state === 'playing' && info.gameHandler) {
         info.gameHandler(msg);
+        if (msg.type === 'chat') relayChat(info, msg);
         return;
       }
-      handleLobbyMsg(ws, info, msg);
+      handleMsg(ws, info, msg);
     } catch (_) {}
   });
 
   ws.on('close', () => {
-    lobby.delete(ws);
-    if (waitingPlayer === ws) waitingPlayer = null;
-    broadcastPlayerCount();
+    leaveRoom(ws, info, true);
+    allClients.delete(ws);
+    pushLobbyState();
   });
 });
 
-function handleLobbyMsg(ws, info, msg) {
+// ── message routing ───────────────────────────────────────
+function handleMsg(ws, info, msg) {
   if (msg.type === 'chat') {
-    const text = String(msg.message || '').slice(0, 200).trim();
-    if (text) broadcast({ type: 'chat', name: escapeText(info.name), message: escapeText(text) });
-  } else if (msg.type === 'queue') {
-    joinQueue(ws, info);
-  } else if (msg.type === 'cancel_queue') {
-    if (waitingPlayer === ws) waitingPlayer = null;
+    relayChat(info, msg);
+  } else if (msg.type === 'join_room') {
+    handleJoinRoom(ws, info, msg.roomId);
+  } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
+    leaveRoom(ws, info, false);
     info.state = 'lobby';
+    pushLobbyState();
   }
 }
 
-function joinQueue(ws, info) {
-  if (waitingPlayer && waitingPlayer !== ws && waitingPlayer.readyState === 1) {
-    const leftWs   = waitingPlayer;
-    const leftInfo = lobby.get(leftWs);
-    waitingPlayer  = null;
-    startGame(leftWs, leftInfo, ws, info);
+function relayChat(info, msg) {
+  const text = String(msg.message || '').slice(0, 200).trim();
+  if (text) broadcastAll({ type: 'chat', name: info.name, message: text });
+}
+
+// ── room join ─────────────────────────────────────────────
+function handleJoinRoom(ws, info, roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+  leaveRoom(ws, info, false);
+
+  if (room.players.length < 2) {
+    // ── join as player ──
+    const side = room.players.length === 0 ? 'left' : 'right';
+    room.players.push({ ws, info });
+    info.room  = room;
+    info.role  = 'player';
+    info.state = 'in_room';
+    room.phase = room.players.length === 1 ? 'waiting' : 'playing';
+
+    send(ws, { type: 'room_joined', roomId: room.id, role: 'player', side });
+
+    if (room.players.length === 2) {
+      startRoomGame(room);
+    }
   } else {
-    info.state    = 'queued';
-    waitingPlayer = ws;
-    send(ws, { type: 'waiting' });
+    // ── join as spectator ──
+    room.spectators.push({ ws, info });
+    info.room  = room;
+    info.role  = 'spectator';
+    info.state = 'spectating';
+
+    send(ws, { type: 'room_joined', roomId: room.id, role: 'spectator', side: null });
+
+    // Push current game state immediately so spectator sees live action
+    if (room.state) {
+      send(ws, buildStateMsg(room.state));
+    } else {
+      send(ws, { type: 'spectator_waiting' });
+    }
   }
+  pushLobbyState();
 }
 
-function createState() {
-  const state = {
-    ball: newBall(), slimeLeft: newSlime(true), slimeRight: newSlime(false),
-    scoreLeft: 0, scoreRight: 0,
-    inputLeft: { movement: 0, jump: false },
-    inputRight: { movement: 0, jump: false },
-    phase: 'playing', leftServes: true,
-  };
-  initRound(state, true);
-  return state;
+// ── leave room ────────────────────────────────────────────
+function leaveRoom(ws, info, disconnecting) {
+  if (!info.room) return;
+  const room = info.room;
+
+  if (info.role === 'player') {
+    room.players = room.players.filter(p => p.ws !== ws);
+    if (room.interval) {
+      clearInterval(room.interval);
+      room.interval = null;
+      room.state    = null;
+      if (!disconnecting) {
+        broadcastRoom(room, { type: 'opponent_disconnected' });
+      }
+      // Reset remaining player back to in_room state
+      room.players.forEach(({ info: i }) => {
+        i.gameHandler = null;
+        i.state = 'in_room';
+      });
+    }
+    room.phase = room.players.length === 0 ? 'empty' : 'waiting';
+  } else if (info.role === 'spectator') {
+    room.spectators = room.spectators.filter(s => s.ws !== ws);
+  }
+
+  info.room  = null;
+  info.role  = null;
 }
 
-function startGame(leftWs, leftInfo, rightWs, rightInfo) {
-  leftInfo.state  = 'playing';
-  rightInfo.state = 'playing';
-  broadcastPlayerCount();
+// ── game ──────────────────────────────────────────────────
+function startRoomGame(room) {
+  room.state = createState();
+  room.phase = 'playing';
 
-  const state = createState();
+  const [left, right] = room.players;
+  send(left.ws,  { type: 'start', side: 'left'  });
+  send(right.ws, { type: 'start', side: 'right' });
+  room.spectators.forEach(({ ws }) => send(ws, { type: 'game_started' }));
 
-  function bcast(msg) { send(leftWs, msg); send(rightWs, msg); }
-  function broadcastState() {
-    bcast({
-      type: 'state',
-      ball:       { x: state.ball.x, y: state.ball.y, velocityX: state.ball.velocityX },
-      slimeLeft:  { x: state.slimeLeft.x,  y: state.slimeLeft.y  },
-      slimeRight: { x: state.slimeRight.x, y: state.slimeRight.y },
-      scoreLeft: state.scoreLeft, scoreRight: state.scoreRight,
+  function bcast(msg) { broadcastRoom(room, msg); }
+  function broadcastState() { bcast(buildStateMsg(room.state)); }
+
+  function endRoomGame() {
+    clearInterval(room.interval);
+    room.interval = null;
+    room.state    = null;
+    room.phase    = 'empty';
+    [...room.players, ...room.spectators].forEach(({ info }) => {
+      info.room = null; info.role = null; info.state = 'lobby'; info.gameHandler = null;
     });
-  }
-
-  send(leftWs,  { type: 'start', side: 'left'  });
-  send(rightWs, { type: 'start', side: 'right' });
-
-  let interval = null;
-
-  function endGame() {
-    clearInterval(interval);
-    leftInfo.state  = 'lobby'; rightInfo.state  = 'lobby';
-    leftInfo.gameHandler = null; rightInfo.gameHandler = null;
-    broadcastPlayerCount();
+    room.players    = [];
+    room.spectators = [];
+    pushLobbyState();
   }
 
   function startNextPoint() {
-    state.phase = 'playing';
-    initRound(state, state.leftServes);
-    state.inputLeft  = { movement: 0, jump: false };
-    state.inputRight = { movement: 0, jump: false };
+    room.state.phase = 'playing';
+    initRound(room.state, room.state.leftServes);
+    room.state.inputLeft  = { movement: 0, jump: false };
+    room.state.inputRight = { movement: 0, jump: false };
   }
 
   function gameTick() {
-    if (state.phase !== 'playing') return;
-    const result = tick(state);
+    if (room.state.phase !== 'playing') return;
+    const result = tick(room.state);
     if (result !== 0) {
-      if (result === 1) { state.scoreLeft++;  state.leftServes = true;  }
-      else              { state.scoreRight++; state.leftServes = false; }
+      if (result === 1) { room.state.scoreLeft++;  room.state.leftServes = true;  }
+      else              { room.state.scoreRight++; room.state.leftServes = false; }
       broadcastState();
-      if (state.scoreLeft >= WIN_AMOUNT || state.scoreRight >= WIN_AMOUNT) {
-        state.phase = 'game_over';
-        bcast({ type: 'game_over', winner: state.scoreLeft >= WIN_AMOUNT ? 'left' : 'right' });
-        endGame();
+      if (room.state.scoreLeft >= WIN_AMOUNT || room.state.scoreRight >= WIN_AMOUNT) {
+        room.state.phase = 'done';
+        bcast({ type: 'game_over', winner: room.state.scoreLeft >= WIN_AMOUNT ? 'left' : 'right' });
+        endRoomGame();
         return;
       }
-      state.phase = 'point_pause';
+      room.state.phase = 'point_pause';
       bcast({ type: 'point', scorer: result === 1 ? 'left' : 'right' });
-      setTimeout(() => { startNextPoint(); broadcastState(); }, 700);
+      setTimeout(() => { if (room.state) { startNextPoint(); broadcastState(); } }, 700);
       return;
     }
     broadcastState();
   }
 
   function handleInput(side, msg) {
-    const input = side === 'left' ? state.inputLeft : state.inputRight;
+    if (!room.state) return;
+    const input = side === 'left' ? room.state.inputLeft : room.state.inputRight;
     if (typeof msg.movement === 'number') input.movement = msg.movement;
     if (msg.jump) input.jump = true;
-    // Allow chat during a game
-    if (msg.type === 'chat') {
-      const info = side === 'left' ? leftInfo : rightInfo;
-      const text = String(msg.message || '').slice(0, 200).trim();
-      if (text) broadcast({ type: 'chat', name: escapeText(info.name), message: escapeText(text) });
-    }
   }
 
-  leftInfo.gameHandler  = (msg) => handleInput('left',  msg);
-  rightInfo.gameHandler = (msg) => handleInput('right', msg);
+  left.info.state        = 'playing';
+  right.info.state       = 'playing';
+  left.info.gameHandler  = (msg) => handleInput('left',  msg);
+  right.info.gameHandler = (msg) => handleInput('right', msg);
 
   let cleaned = false;
   function cleanup() {
-    if (cleaned) return;
-    cleaned = true;
-    endGame();
+    if (cleaned) return; cleaned = true;
+    clearInterval(room.interval); room.interval = null; room.state = null; room.phase = 'empty';
+    [...room.players, ...room.spectators].forEach(({ info }) => {
+      info.room = null; info.role = null; info.state = 'lobby'; info.gameHandler = null;
+    });
+    room.players = []; room.spectators = [];
     bcast({ type: 'opponent_disconnected' });
+    pushLobbyState();
   }
-  leftWs.on('close',  cleanup);
-  rightWs.on('close', cleanup);
+  left.ws.on('close',  cleanup);
+  right.ws.on('close', cleanup);
 
-  interval = setInterval(gameTick, TICK_MS);
+  room.interval = setInterval(gameTick, TICK_MS);
+  pushLobbyState();
+}
+
+function buildStateMsg(state) {
+  return {
+    type:       'state',
+    ball:       { x: state.ball.x, y: state.ball.y, velocityX: state.ball.velocityX },
+    slimeLeft:  { x: state.slimeLeft.x,  y: state.slimeLeft.y  },
+    slimeRight: { x: state.slimeRight.x, y: state.slimeRight.y },
+    scoreLeft:  state.scoreLeft,
+    scoreRight: state.scoreRight,
+  };
+}
+
+function createState() {
+  const s = {
+    ball: newBall(), slimeLeft: newSlime(true), slimeRight: newSlime(false),
+    scoreLeft: 0, scoreRight: 0,
+    inputLeft: { movement: 0, jump: false }, inputRight: { movement: 0, jump: false },
+    phase: 'playing', leftServes: true,
+  };
+  initRound(s, true);
+  return s;
 }
 
 const PORT = process.env.PORT || 3000;

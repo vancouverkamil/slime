@@ -11,156 +11,115 @@ body {
   align-items: flex-start;
   min-height: 100vh;
 }
-#LobbyWrapper {
-  display: flex;
-  flex-direction: column;
-  width: 1040px;
-}
+#LobbyWrapper { display:flex; flex-direction:column; width:1040px; }
 
 /* ── top bar ── */
 #TopBar {
-  background: #111;
-  color: #777;
-  padding: 4px 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  border-bottom: 1px solid #2a2a2a;
+  background:#111; color:#777; padding:4px 10px;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11px; border-bottom:1px solid #2a2a2a;
 }
-#AnnouncementText { color: #aaa; font-size: 11px; letter-spacing: 0.5px; }
+#AnnouncementText { color:#aaa; font-size:11px; letter-spacing:.5px; }
 
 /* ── middle row ── */
-#MiddleRow { display: flex; height: 375px; }
-#ContentDiv {
-  position: relative;
-  width: 750px;
-  height: 375px;
-  flex-shrink: 0;
-  overflow: hidden;
-}
+#MiddleRow { display:flex; height:375px; }
+#ContentDiv { position:relative; width:750px; height:375px; flex-shrink:0; overflow:hidden; }
 
 /* ── sidebar ── */
-#Sidebar {
-  width: 290px;
-  background: #1a1a2e;
-  display: flex;
-  flex-direction: column;
-  border-left: 2px solid #2a2a3e;
-}
+#Sidebar { width:290px; background:#1a1a2e; display:flex; flex-direction:column; border-left:2px solid #2a2a3e; }
 #PlayerCountDiv {
-  background: #13131f;
-  color: #4CAF50;
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: bold;
-  border-bottom: 1px solid #2a2a3e;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
+  background:#13131f; color:#4CAF50; padding:8px 12px;
+  font-size:13px; font-weight:bold; border-bottom:1px solid #2a2a3e;
+  letter-spacing:.5px; flex-shrink:0;
 }
 #ChatLog {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-height: 0;
+  flex:1; overflow-y:auto; padding:8px;
+  display:flex; flex-direction:column; gap:3px; min-height:0;
 }
-#ChatLog::-webkit-scrollbar { width: 4px; }
-#ChatLog::-webkit-scrollbar-track { background: #1a1a2e; }
-#ChatLog::-webkit-scrollbar-thumb { background: #3a3a5e; border-radius: 2px; }
-.chat-msg { font-size: 12px; color: #bbb; word-break: break-word; line-height: 1.5; }
-.chat-name { color: #7ec8e3; font-weight: bold; }
-.chat-sys  { color: #666; font-style: italic; font-size: 11px; }
+#ChatLog::-webkit-scrollbar { width:4px; }
+#ChatLog::-webkit-scrollbar-track { background:#1a1a2e; }
+#ChatLog::-webkit-scrollbar-thumb { background:#3a3a5e; border-radius:2px; }
+.chat-msg  { font-size:12px; color:#bbb; word-break:break-word; line-height:1.5; }
+.chat-name { color:#7ec8e3; font-weight:bold; }
+.chat-sys  { color:#555; font-style:italic; font-size:11px; }
 #ChatInputRow {
-  display: flex;
-  border-top: 1px solid #2a2a3e;
-  padding: 6px;
-  gap: 5px;
-  background: #13131f;
-  flex-shrink: 0;
+  display:flex; border-top:1px solid #2a2a3e; padding:6px; gap:5px;
+  background:#13131f; flex-shrink:0;
 }
 #ChatInput {
-  flex: 1;
-  background: #0d0d1a;
-  border: 1px solid #3a3a5e;
-  color: #eee;
-  padding: 5px 8px;
-  border-radius: 3px;
-  font-size: 12px;
+  flex:1; background:#0d0d1a; border:1px solid #3a3a5e; color:#eee;
+  padding:5px 8px; border-radius:3px; font-size:12px;
 }
-#ChatInput:focus { outline: none; border-color: #7ec8e3; }
+#ChatInput:focus { outline:none; border-color:#7ec8e3; }
 #ChatSendBtn {
-  background: #2471a3;
-  border: none;
-  color: #fff;
-  padding: 5px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
+  background:#2471a3; border:none; color:#fff;
+  padding:5px 10px; border-radius:3px; cursor:pointer; font-size:14px; font-weight:bold;
 }
-#ChatSendBtn:hover { background: #2e86c1; }
+#ChatSendBtn:hover { background:#2e86c1; }
 
 /* ── bottom bar ── */
 #BottomBar {
-  background: #556068;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 20px;
-  gap: 10px;
-  border-top: 3px solid #445058;
+  background:#556068; display:flex; align-items:center; justify-content:center;
+  padding:14px 20px; gap:10px; border-top:3px solid #445058;
 }
 .bigBtn {
-  background: #5a6470;
-  color: #fff;
-  padding: 14px 28px;
-  font-size: 18px;
-  font-weight: bold;
-  letter-spacing: 1.5px;
-  cursor: pointer;
-  border: 2px solid #6e7c88;
-  text-transform: uppercase;
-  user-select: none;
-  display: inline-block;
+  background:#5a6470; color:#fff; padding:14px 28px;
+  font-size:18px; font-weight:bold; letter-spacing:1.5px;
+  cursor:pointer; border:2px solid #6e7c88; text-transform:uppercase;
+  user-select:none; display:inline-block;
 }
-.bigBtn:hover  { background: #6a7480; }
-.bigBtn:active { background: #4a5460; }
+.bigBtn:hover  { background:#6a7480; }
+.bigBtn:active { background:#4a5460; }
 #OptionsBtn {
-  color: #ccc;
-  font-size: 13px;
-  cursor: pointer;
-  margin-left: 12px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  user-select: none;
+  color:#ccc; font-size:13px; cursor:pointer; margin-left:12px;
+  letter-spacing:1.5px; text-transform:uppercase; user-select:none;
 }
-#OptionsBtn:hover { color: #fff; }
+#OptionsBtn:hover { color:#fff; }
 
-/* ── existing game UI helpers ── */
-h1 { font-size: 70px; }
-h2 { margin: 8px 0; }
+/* ── lobby select overlay ── */
+.lobby-list-wrap { padding:6px 8px 0; }
+.lobby-title {
+  text-align:center; font-size:14px; font-weight:bold; letter-spacing:1.5px;
+  text-transform:uppercase; color:#222; margin-bottom:6px;
+  text-shadow:0 1px 3px rgba(255,255,255,.9);
+}
+.lobby-row {
+  background:rgba(255,255,255,.84); border:1px solid rgba(0,0,0,.12);
+  padding:7px 12px; margin-bottom:4px; cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+  transition:background .1s;
+}
+.lobby-row:hover { background:rgba(255,255,255,.97); }
+.lobby-name   { flex:1; font-weight:bold; font-size:13px; color:#222; }
+.lobby-dots   { font-size:14px; letter-spacing:2px; }
+.lobby-spec   { font-size:11px; color:#888; white-space:nowrap; }
+.lobby-badge  { font-size:11px; font-weight:bold; white-space:nowrap; min-width:90px; text-align:right; }
+.badge-empty   { color:#999; }
+.badge-waiting { color:#d35400; }
+.badge-playing { color:#27ae60; }
+.lobby-back { text-align:center; margin-top:5px; }
+
+/* ── spectator badge on canvas ── */
+.spec-overlay {
+  position:absolute; top:6px; left:6px;
+  background:rgba(0,0,0,.55); color:#fff;
+  font-size:11px; font-weight:bold; letter-spacing:1px;
+  padding:3px 8px; border-radius:3px; pointer-events:none;
+}
+
+/* ── game ui helpers ── */
+h1 { font-size:70px; }
+h2 { margin:8px 0; }
 .SmallButton { text-decoration:none; cursor:pointer; color:#555; }
 .SmallButton:hover { color:#000; }
 .btn {
-  background: #3498db;
-  background-image: linear-gradient(to bottom, #3498db, #2980b9);
-  border-radius: 15px;
-  color: #ffffff;
-  padding: 10px 20px;
-  border: solid #1f628d 5px;
-  text-decoration: none;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
+  background:#3498db;
+  background-image:linear-gradient(to bottom,#3498db,#2980b9);
+  border-radius:15px; color:#fff; padding:10px 20px;
+  border:solid #1f628d 5px; text-decoration:none; cursor:pointer; user-select:none;
 }
-.btn:hover {
-  background: #3cb0fd;
-  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
-}
-input[type='checkbox'] { margin-right: 1em; }
+.btn:hover { background:#3cb0fd; background-image:linear-gradient(to bottom,#3cb0fd,#3498db); }
+input[type='checkbox'] { margin-right:1em; }
 
 </style>
 <script type="text/javascript" src="Input.js"></script>
@@ -168,75 +127,60 @@ input[type='checkbox'] { margin-right: 1em; }
 <script type="text/javascript">
 
 var physicsLog = 0;
-var TWO_PI = Math.PI*2;
+var TWO_PI = Math.PI * 2;
 var WIN_AMOUNT = 7;
 
-function newLegacyBall(radius,color) {
+function newLegacyBall(radius, color) {
   return {
     radius:radius, color:color, x:0, y:0, velocityX:0, velocityY:0, rotation:0,
     render: function() {
-      var xPix   = this.x * pixelsPerUnitX;
-      var yPix   = courtYPix - (this.y * pixelsPerUnitY);
-      var radiusPix = this.radius * pixelsPerUnitY + 2;
-      if(ballImage && !legacyGraphics) {
-        this.rotation += this.velocityX / 100;
-        this.rotation = this.rotation % TWO_PI;
-        ctx.translate(xPix, yPix);
-        ctx.rotate(this.rotation);
-        ctx.drawImage(ballImage, -radiusPix, -radiusPix);
+      var xPix = this.x * pixelsPerUnitX;
+      var yPix = courtYPix - (this.y * pixelsPerUnitY);
+      var rPix = this.radius * pixelsPerUnitY + 2;
+      if (ballImage && !legacyGraphics) {
+        this.rotation = (this.rotation + this.velocityX / 100) % TWO_PI;
+        ctx.translate(xPix, yPix); ctx.rotate(this.rotation);
+        ctx.drawImage(ballImage, -rPix, -rPix);
         ctx.setTransform(1,0,0,1,0,0);
       } else {
         ctx.fillStyle = legacyBallColor;
-        ctx.beginPath();
-        ctx.arc(xPix, yPix, radiusPix, 0, TWO_PI);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(xPix, yPix, rPix, 0, TWO_PI); ctx.fill();
       }
     }
   };
 }
 
-function newLegacySlime(onLeft,radius,color) {
+function newLegacySlime(onLeft, radius, color) {
   return {
     onLeft:onLeft, radius:radius, color:color, img:null, x:0, y:0, velocityX:0, velocityY:0,
     render: function() {
-      var xPix      = this.x * pixelsPerUnitX;
-      var yPix      = courtYPix - (this.y * pixelsPerUnitY);
-      var radiusPix = this.radius * pixelsPerUnitY;
-      if(this.img && !legacyGraphics) {
-        ctx.drawImage(this.img, xPix - radiusPix, yPix - 38);
+      var xPix = this.x * pixelsPerUnitX;
+      var yPix = courtYPix - (this.y * pixelsPerUnitY);
+      var rPix = this.radius * pixelsPerUnitY;
+      if (this.img && !legacyGraphics) {
+        ctx.drawImage(this.img, xPix - rPix, yPix - 38);
       } else {
         ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(xPix, yPix, radiusPix, Math.PI, TWO_PI);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(xPix, yPix, rPix, Math.PI, TWO_PI); ctx.fill();
       }
-      var eyeX = this.x + (this.onLeft ? 1 : -1)*this.radius/4;
-      var eyeY = this.y + this.radius/2;
-      var eyeXPix = eyeX * pixelsPerUnitX;
-      var eyeYPix = courtYPix - (eyeY * pixelsPerUnitY);
-      ctx.translate(eyeXPix, eyeYPix);
+      var eyeX = this.x + (this.onLeft ? 1 : -1) * this.radius / 4;
+      var eyeY = this.y + this.radius / 2;
+      ctx.translate(eyeX * pixelsPerUnitX, courtYPix - eyeY * pixelsPerUnitY);
       ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(0,0, radiusPix/4, 0, TWO_PI);
-      ctx.fill();
-      var dx = ball.x - eyeX;
-      var dy = eyeY - ball.y;
-      var dist = Math.sqrt(dx*dx+dy*dy);
-      var rPixOver8 = radiusPix/8;
+      ctx.beginPath(); ctx.arc(0, 0, rPix/4, 0, TWO_PI); ctx.fill();
+      var dx = ball.x - eyeX, dy = eyeY - ball.y;
+      var dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      var r8 = rPix / 8;
       ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(rPixOver8*dx/dist, rPixOver8*dy/dist, rPixOver8, 0, TWO_PI);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(r8*dx/dist, r8*dy/dist, r8, 0, TWO_PI); ctx.fill();
       ctx.setTransform(1,0,0,1,0,0);
     }
   };
 }
 
-var GAME_STATE_RUNNING                   = 1;
-var GAME_STATE_POINT_PAUSE               = 2;
-var GAME_STATE_MENU_PAUSE                = 3;
-var GAME_STATE_MENU_PAUSE_BETWEEN_POINTS = 4;
-var GAME_STATE_SHOW_WINNER               = 5;
+var GAME_STATE_RUNNING = 1, GAME_STATE_POINT_PAUSE = 2,
+    GAME_STATE_MENU_PAUSE = 3, GAME_STATE_MENU_PAUSE_BETWEEN_POINTS = 4,
+    GAME_STATE_SHOW_WINNER = 5;
 
 var menuDiv, smallMenuDiv, onePlayer, nextSlimeIndex, gameState;
 var ctx, canvas, viewWidth, viewHeight, courtYPix, pixelsPerUnitX, pixelsPerUnitY;
@@ -244,103 +188,69 @@ var updatesToPaint, legacySkyColor, legacyGroundColor, legacyBallColor, newGroun
 var backImage, backTextColor, backImages = {}, ballImage, gameIntervalObject, endOfPointText;
 var greenSlimeImage, redSlimeImage, legacyGraphics;
 var gameWidth, gameHeight, ball, slimeLeft, slimeRight, slimeLeftScore, slimeRightScore;
-var slimeAI, updateCount, leftWon, slowMotion;
-var logString;
+var slimeAI, updateCount, leftWon, slowMotion, logString;
+
 function log(msg) { logString += msg + '\n'; }
 
-function updateSlimeVelocities(s,movement,jump) {
-  if(movement == 0)      s.velocityX = 0;
-  else if(movement == 1) s.velocityX = -8;
-  else if(movement == 2) s.velocityX =  8;
-  else throw "slime movement " + movement + " is invalid";
-  if(jump && s.y == 0) s.velocityY = 31;
+// ── local game physics ────────────────────────────────────
+function updateSlimeVelocities(s, movement, jump) {
+  s.velocityX = movement === 1 ? -8 : movement === 2 ? 8 : 0;
+  if (jump && s.y === 0) s.velocityY = 31;
 }
-function updateSlimeVelocitiesWithKeys(s,left,right,up) {
-  if(keysDown[left]) {
-    s.velocityX = keysDown[right] ? 0 : -8;
-  } else if(keysDown[right]) {
-    s.velocityX = 8;
-  } else {
-    s.velocityX = 0;
-  }
-  if(s.y == 0 && keysDown[up]) s.velocityY = 31;
+function updateSlimeVelocitiesWithKeys(s, left, right, up) {
+  if (keysDown[left])       s.velocityX = keysDown[right] ? 0 : -8;
+  else if (keysDown[right]) s.velocityX = 8;
+  else                      s.velocityX = 0;
+  if (s.y === 0 && keysDown[up]) s.velocityY = 31;
 }
-function updateSlimeVelocitiesWithDoubleKeys(s,left1,left2,right1,right2,up1,up2) {
-  if(keysDown[left1] || keysDown[left2]) {
-    s.velocityX = (keysDown[right1] || keysDown[right2]) ? 0 : -8;
-  } else if(keysDown[right1] || keysDown[right2]) {
-    s.velocityX = 8;
-  } else {
-    s.velocityX = 0;
-  }
-  if(s.y == 0 && (keysDown[up1] || keysDown[up2])) s.velocityY = 31;
+function updateSlimeVelocitiesWithDoubleKeys(s, l1, l2, r1, r2, u1, u2) {
+  if (keysDown[l1] || keysDown[l2])       s.velocityX = (keysDown[r1] || keysDown[r2]) ? 0 : -8;
+  else if (keysDown[r1] || keysDown[r2])  s.velocityX = 8;
+  else                                     s.velocityX = 0;
+  if (s.y === 0 && (keysDown[u1] || keysDown[u2])) s.velocityY = 31;
 }
-function updateSlime(s, leftLimit, rightLimit) {
-  if(s.velocityX != 0) {
-    s.x += s.velocityX;
-    if(s.x < leftLimit) s.x = leftLimit;
-    else if(s.x > rightLimit) s.x = rightLimit;
+function updateSlime(s, lLimit, rLimit) {
+  if (s.velocityX) {
+    s.x = Math.min(Math.max(s.x + s.velocityX, lLimit), rLimit);
   }
-  if(s.velocityY != 0 || s.y > 0) {
-    s.velocityY -= 2;
-    s.y += s.velocityY;
-    if(s.y < 0) { s.y = 0; s.velocityY = 0; }
+  if (s.velocityY || s.y > 0) {
+    s.velocityY -= 2; s.y += s.velocityY;
+    if (s.y < 0) { s.y = 0; s.velocityY = 0; }
   }
 }
-
-var MAX_VELOCITY_X = 15;
-var MAX_VELOCITY_Y = 22;
+var MAX_VELOCITY_X = 15, MAX_VELOCITY_Y = 22, FUDGE = 5;
 function collisionBallSlime(s) {
-  var dx = 2 * (ball.x - s.x);
-  var dy = ball.y - s.y;
-  var dist = Math.trunc(Math.sqrt(dx * dx + dy * dy));
-  var dVelocityX = ball.velocityX - s.velocityX;
-  var dVelocityY = ball.velocityY - s.velocityY;
-  if(dy > 0 && dist < ball.radius + s.radius && dist > FUDGE) {
-    ball.x = s.x + Math.trunc(Math.trunc((s.radius + ball.radius) / 2) * dx / dist);
-    ball.y = s.y + Math.trunc((s.radius + ball.radius) * dy / dist);
-    var something = Math.trunc((dx * dVelocityX + dy * dVelocityY) / dist);
-    if(something <= 0) {
-      ball.velocityX += Math.trunc(s.velocityX - 2 * dx * something / dist);
-      ball.velocityY += Math.trunc(s.velocityY - 2 * dy * something / dist);
-      if(ball.velocityX < -MAX_VELOCITY_X) ball.velocityX = -MAX_VELOCITY_X;
-      else if(ball.velocityX > MAX_VELOCITY_X) ball.velocityX = MAX_VELOCITY_X;
-      if(ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
-      else if(ball.velocityY > MAX_VELOCITY_Y) ball.velocityY = MAX_VELOCITY_Y;
+  var dx = 2*(ball.x - s.x), dy = ball.y - s.y;
+  var dist = Math.trunc(Math.sqrt(dx*dx + dy*dy));
+  if (dy > 0 && dist < ball.radius + s.radius && dist > FUDGE) {
+    ball.x = s.x + Math.trunc(Math.trunc((s.radius+ball.radius)/2)*dx/dist);
+    ball.y = s.y + Math.trunc((s.radius+ball.radius)*dy/dist);
+    var dot = Math.trunc((dx*(ball.velocityX-s.velocityX) + dy*(ball.velocityY-s.velocityY))/dist);
+    if (dot <= 0) {
+      ball.velocityX = Math.min(Math.max(ball.velocityX + Math.trunc(s.velocityX - 2*dx*dot/dist), -MAX_VELOCITY_X), MAX_VELOCITY_X);
+      ball.velocityY = Math.min(Math.max(ball.velocityY + Math.trunc(s.velocityY - 2*dy*dot/dist), -MAX_VELOCITY_Y), MAX_VELOCITY_Y);
     }
   }
 }
-var FUDGE = 5;
 function updateBall() {
-  ball.velocityY += -1;
-  if(ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
-  ball.x += ball.velocityX;
-  ball.y += ball.velocityY;
-  collisionBallSlime(slimeLeft);
-  collisionBallSlime(slimeRight);
-  if(ball.x < 15)  { ball.x = 15;  ball.velocityX = -ball.velocityX; }
-  else if(ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
-  if(ball.x > 480 && ball.x < 520 && ball.y < 140) {
-    if(ball.velocityY < 0 && ball.y > 130) {
-      ball.velocityY *= -1; ball.y = 130;
-    } else if(ball.x < 500) {
-      ball.x = 480;
-      ball.velocityX = ball.velocityX >= 0 ? -ball.velocityX : ball.velocityX;
-    } else {
-      ball.x = 520;
-      ball.velocityX = ball.velocityX <= 0 ? -ball.velocityX : ball.velocityX;
-    }
+  ball.velocityY = Math.max(ball.velocityY - 1, -MAX_VELOCITY_Y);
+  ball.x += ball.velocityX; ball.y += ball.velocityY;
+  collisionBallSlime(slimeLeft); collisionBallSlime(slimeRight);
+  if (ball.x < 15)   { ball.x = 15;  ball.velocityX = -ball.velocityX; }
+  else if (ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
+  if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
+    if (ball.velocityY < 0 && ball.y > 130) { ball.velocityY *= -1; ball.y = 130; }
+    else if (ball.x < 500) { ball.x = 480; ball.velocityX = ball.velocityX >= 0 ? -ball.velocityX : ball.velocityX; }
+    else                   { ball.x = 520; ball.velocityX = ball.velocityX <= 0 ? -ball.velocityX : ball.velocityX; }
   }
-  if(ball.y < 0) {
-    if(ball.x > 500) { leftWon = true;  slimeLeftScore++;  }
-    else             { leftWon = false; slimeRightScore++; }
-    endPoint();
-    return true;
+  if (ball.y < 0) {
+    leftWon = ball.x > 500; (leftWon ? slimeLeftScore++ : slimeRightScore++);
+    endPoint(); return true;
   }
   return false;
 }
 function updateFrame() {
-  if(onePlayer) {
+  if (onePlayer) {
     slimeAI.move(false);
     updateSlimeVelocitiesWithDoubleKeys(slimeLeft, KEY_A,KEY_LEFT, KEY_D,KEY_RIGHT, KEY_W,KEY_UP);
     updateSlimeVelocities(slimeRight, slimeAI.movement, slimeAI.jumpSet);
@@ -348,114 +258,143 @@ function updateFrame() {
     updateSlimeVelocitiesWithKeys(slimeLeft,  KEY_A,    KEY_D,     KEY_W);
     updateSlimeVelocitiesWithKeys(slimeRight, KEY_LEFT, KEY_RIGHT, KEY_UP);
   }
-  updateSlime(slimeLeft,  50,  445);
-  updateSlime(slimeRight, 555, 950);
+  updateSlime(slimeLeft, 50, 445); updateSlime(slimeRight, 555, 950);
   updateBall();
 }
 
-function renderPoints(score, initialX, xDiff) {
+// ── rendering ─────────────────────────────────────────────
+function renderPoints(score, x0, dx) {
   ctx.fillStyle = '#ff0';
-  var x = initialX;
-  for(var i = 0; i < score; i++) {
+  for (var i = 0, x = x0; i < score; i++, x += dx) {
     ctx.beginPath(); ctx.arc(x, 25, 12, 0, TWO_PI); ctx.fill();
-    x += xDiff;
   }
-  ctx.strokeStyle = backTextColor;
-  ctx.lineWidth = 2;
-  x = initialX;
-  for(var i = 0; i < WIN_AMOUNT; i++) {
+  ctx.strokeStyle = backTextColor; ctx.lineWidth = 2;
+  for (var i = 0, x = x0; i < WIN_AMOUNT; i++, x += dx) {
     ctx.beginPath(); ctx.arc(x, 25, 12, 0, TWO_PI); ctx.stroke();
-    x += xDiff;
   }
 }
 function renderBackground() {
-  if(legacyGraphics) {
-    ctx.fillStyle = legacySkyColor;
-    ctx.fillRect(0, 0, viewWidth, courtYPix);
+  if (legacyGraphics) {
+    ctx.fillStyle = legacySkyColor; ctx.fillRect(0, 0, viewWidth, courtYPix);
     ctx.fillStyle = legacyGroundColor;
   } else {
-    ctx.drawImage(backImage, 0, 0);
-    ctx.fillStyle = newGroundColor;
+    ctx.drawImage(backImage, 0, 0); ctx.fillStyle = newGroundColor;
   }
   ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
   ctx.fillStyle = '#fff';
   ctx.fillRect(viewWidth/2-2, 7*viewHeight/10, 4, viewHeight/10+5);
-  renderPoints(slimeLeftScore,  30,            40);
-  renderPoints(slimeRightScore, viewWidth - 30, -40);
+  renderPoints(slimeLeftScore, 30, 40);
+  renderPoints(slimeRightScore, viewWidth-30, -40);
 }
 function renderGame() {
-  if(updatesToPaint == 0) {
-    console.log("ERROR: render called but not ready to paint");
-  } else {
-    if(updatesToPaint > 1) console.log("WARNING: render missed " + (updatesToPaint - 1) + " frame(s)");
-    renderBackground();
-    ball.render(); slimeLeft.render(); slimeRight.render();
-    updatesToPaint = 0;
-  }
+  if (updatesToPaint === 0) return;
+  renderBackground(); ball.render(); slimeLeft.render(); slimeRight.render();
+  updatesToPaint = 0;
 }
 function renderEndOfPoint() {
-  var textWidth = ctx.measureText(endOfPointText).width;
   renderGame();
+  var w = ctx.measureText(endOfPointText).width;
   ctx.fillStyle = '#000';
-  ctx.fillText(endOfPointText, (viewWidth - textWidth)/2, courtYPix + (viewHeight - courtYPix)/2);
+  ctx.fillText(endOfPointText, (viewWidth-w)/2, courtYPix + (viewHeight-courtYPix)/2);
 }
 
 function gameIteration() {
-  if(gameState == GAME_STATE_RUNNING) {
-    updateCount++;
-    if(slowMotion && (updateCount % 2) == 0) return;
-    if(updatesToPaint > 0) console.log("WARNING: updating frame before it was rendered");
-    if(physicsLog > 0) {
-      log("Frame");
-      log(" ball.x  " + ball.x); log(" ball.y  " + ball.y);
-      log(" ball.vx " + ball.velocityX); log(" ball.vy " + ball.velocityY);
-      physicsLog--;
-      if(physicsLog == 0) {
-        var logDom = document.createElement('pre');
-        logDom.innerHTML = logString;
-        document.body.appendChild(logDom);
-      }
+  if (gameState !== GAME_STATE_RUNNING) return;
+  updateCount++;
+  if (slowMotion && updateCount % 2 === 0) return;
+  updateFrame();
+  updatesToPaint++;
+  if (updatesToPaint === 1) requestAnimationFrame(renderGame);
+}
+
+// ── local game flow ───────────────────────────────────────
+function endPoint() {
+  if (slimeAI) { keysDown[KEY_UP]=false; keysDown[KEY_RIGHT]=false; keysDown[KEY_LEFT]=false; }
+  if (slimeLeftScore  >= WIN_AMOUNT) { endMatch(); return; }
+  if (slimeRightScore >= WIN_AMOUNT) { endMatch(); return; }
+  endOfPointText = onePlayer
+    ? (leftWon ? 'Nice, you got the point!' : slimeAI.name + ' scores!')
+    : ('Player ' + (leftWon ? '1':'2') + ' scores!');
+  gameState = GAME_STATE_POINT_PAUSE;
+  requestAnimationFrame(renderEndOfPoint);
+  setTimeout(function() { if (gameState === GAME_STATE_POINT_PAUSE) startNextPoint(); }, 700);
+}
+function startNextPoint() {
+  initRound(leftWon); updatesToPaint = 0; updateCount = 0; gameState = GAME_STATE_RUNNING;
+}
+function endMatch() {
+  gameState = GAME_STATE_SHOW_WINNER;
+  clearInterval(gameIntervalObject);
+  var msg;
+  if (onePlayer) {
+    if (leftWon) {
+      nextSlimeIndex++;
+      msg = nextSlimeIndex >= slimeAIs.length
+        ? '<h1>You beat everyone!</h1><p>Press space to go again!</p>'
+        : '<h1>You won!</h1><p>Press space to continue...</p>';
+    } else {
+      nextSlimeIndex = 0;
+      msg = '<h1>You lost :(</h1><p>Press space to retry...</p>';
     }
-    updateFrame();
-    updatesToPaint++;
-    if(updatesToPaint == 1) requestAnimationFrame(renderGame);
+  } else {
+    msg = '<h1>Player ' + (leftWon ? '1' : '2') + ' Wins!</h1><p>Press space for rematch...</p>';
   }
+  menuDiv.innerHTML = '<div style="text-align:center;padding-top:40px;">' + msg + '</div>';
+  menuDiv.style.display = 'block'; canvas.style.display = 'none'; showBottomBar();
+}
+function initRound(server) {
+  ball.x = server ? 200 : 800; ball.y = 356; ball.velocityX = 0; ball.velocityY = 0;
+  slimeLeft.x  = 200; slimeLeft.y  = 0; slimeLeft.velocityX  = 0; slimeLeft.velocityY  = 0;
+  slimeRight.x = 800; slimeRight.y = 0; slimeRight.velocityX = 0; slimeRight.velocityY = 0;
+}
+function updateWindowSize(w, h) {
+  viewWidth = w; viewHeight = h;
+  pixelsPerUnitX = w / gameWidth; pixelsPerUnitY = h / gameHeight;
+  courtYPix = 4 * viewHeight / 5;
 }
 
-// ── bottom bar helpers ──
-function showBottomBar() {
-  var bb = document.getElementById('BottomBar');
-  if(bb) bb.style.display = 'flex';
+// ── bottom bar helpers ────────────────────────────────────
+function showBottomBar() { var b = document.getElementById('BottomBar'); if(b) b.style.display='flex'; }
+function hideBottomBar() { var b = document.getElementById('BottomBar'); if(b) b.style.display='none'; }
+
+// ── spectator badge ───────────────────────────────────────
+function showSpecBadge() {
+  var el = document.getElementById('SpecBadge');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'SpecBadge'; el.className = 'spec-overlay';
+    document.getElementById('ContentDiv').appendChild(el);
+  }
+  el.textContent = '👁 WATCHING';
+  el.style.display = 'block';
 }
-function hideBottomBar() {
-  var bb = document.getElementById('BottomBar');
-  if(bb) bb.style.display = 'none';
+function hideSpecBadge() {
+  var el = document.getElementById('SpecBadge');
+  if (el) el.style.display = 'none';
 }
 
-// ── lobby WebSocket ──
-var lobbySocket  = null;
-var myPlayerName = '';
+// ── lobby websocket ───────────────────────────────────────
+var lobbySocket    = null;
+var myPlayerName   = '';
+var currentLobbies = [];
 
 function connectLobby() {
   var wsUrl = window.SLIME_WS_URL ||
     ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
-  try {
-    lobbySocket = new WebSocket(wsUrl);
-  } catch(e) { return; }
+  try { lobbySocket = new WebSocket(wsUrl); } catch(e) { return; }
 
   lobbySocket.onmessage = function(e) {
     try { handleServerMessage(JSON.parse(e.data)); } catch(_) {}
   };
   lobbySocket.onclose = function() {
-    lobbySocket = null;
-    updatePlayerCount(0);
-    if(onlineMode) {
+    lobbySocket = null; updatePlayerCount(0);
+    if (onlineMode || isSpectator) {
       clearInterval(onlineInputInterval);
-      onlineMode = false;
+      onlineMode = false; isSpectator = false;
       canvas.style.display = 'none';
       menuDiv.style.display = 'block';
       menuDiv.innerHTML = '<div style="text-align:center;padding-top:80px;"><h2>Connection lost</h2></div>';
-      showBottomBar();
+      hideSpecBadge(); showBottomBar();
       setTimeout(function() { connectLobby(); toInitialMenu(); }, 2000);
     } else {
       setTimeout(connectLobby, 4000);
@@ -466,337 +405,296 @@ function connectLobby() {
 function sendChat() {
   var input = document.getElementById('ChatInput');
   var msg   = (input.value || '').trim();
-  if(!msg) return;
-  if(lobbySocket && lobbySocket.readyState === 1) {
-    lobbySocket.send(JSON.stringify({ type: 'chat', message: msg }));
-  }
+  if (!msg || !lobbySocket || lobbySocket.readyState !== 1) return;
+  lobbySocket.send(JSON.stringify({ type: 'chat', message: msg }));
   input.value = '';
 }
-
 function addChatMessage(name, text) {
   var log = document.getElementById('ChatLog');
-  if(!log) return;
+  if (!log) return;
   var div = document.createElement('div');
   div.className = 'chat-msg';
-  if(name) {
-    div.innerHTML = '<span class="chat-name">' + name + '</span>: ' + text;
-  } else {
-    div.innerHTML = '<span class="chat-sys">' + text + '</span>';
-  }
+  div.innerHTML = name
+    ? '<span class="chat-name">' + name + '</span>: ' + text
+    : '<span class="chat-sys">' + text + '</span>';
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
-  while(log.children.length > 100) log.removeChild(log.firstChild);
+  while (log.children.length > 100) log.removeChild(log.firstChild);
 }
-
-function updatePlayerCount(count) {
+function updatePlayerCount(n) {
   var el = document.getElementById('PlayerCountDiv');
-  if(el) el.textContent = '● ' + count + ' player' + (count === 1 ? '' : 's') + ' online';
+  if (el) el.textContent = '● ' + n + ' player' + (n === 1 ? '' : 's') + ' online';
 }
 
-// ── online mode state ──
-var onlineMode         = false;
-var mySide             = null;
+// ── online / spectator state ──────────────────────────────
+var onlineMode          = false;
+var isSpectator         = false;
+var mySide              = null;
 var onlineInputInterval = null;
-var onlinePointText    = null;
+var onlinePointText     = null;
+var showingLobbySelect  = false;
 
-function startOnline() {
-  if(!lobbySocket || lobbySocket.readyState !== 1) {
+// ── lobby select UI ───────────────────────────────────────
+function showLobbySelect() {
+  if (!lobbySocket || lobbySocket.readyState !== 1) {
     addChatMessage(null, 'Still connecting to server...');
     return;
   }
-  if(onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
-  onlineMode = true; mySide = null; onlinePointText = null;
-  hideBottomBar();
+  showingLobbySelect = true;
+  onlineMode = false; isSpectator = false;
+  hideBottomBar(); hideSpecBadge();
   canvas.style.display = 'none';
   menuDiv.style.display = 'block';
-  menuDiv.innerHTML =
-    '<div style="text-align:center;padding-top:70px;">' +
-    '<h2 style="font-size:32px;margin-bottom:16px;">Finding opponent...</h2>' +
-    '<p style="color:#555;">Waiting in queue</p>' +
-    '<br/><span onclick="cancelQueue()" class="SmallButton" style="font-size:13px;">cancel</span>' +
-    '</div>';
-  lobbySocket.send(JSON.stringify({ type: 'queue' }));
+  renderLobbySelect(currentLobbies);
 }
 
-function cancelQueue() {
-  onlineMode = false;
-  if(lobbySocket && lobbySocket.readyState === 1) {
-    lobbySocket.send(JSON.stringify({ type: 'cancel_queue' }));
+function renderLobbySelect(lobbies) {
+  if (!showingLobbySelect) return;
+  var html = '<div class="lobby-list-wrap"><div class="lobby-title">Select a Lobby</div>';
+  lobbies.forEach(function(r) {
+    var badge, badgeClass;
+    if (r.phase === 'playing') {
+      badge = '▶ WATCH'; badgeClass = 'badge-playing';
+    } else if (r.playerCount === 1) {
+      badge = '⚡ JOIN! 1 waiting'; badgeClass = 'badge-waiting';
+    } else {
+      badge = 'EMPTY'; badgeClass = 'badge-empty';
+    }
+    var dots = (r.playerCount >= 1 ? '●' : '○') + (r.playerCount >= 2 ? '●' : '○');
+    var spec  = r.spectatorCount > 0
+      ? '<span class="lobby-spec">👁 ' + r.spectatorCount + '</span>' : '<span></span>';
+    html +=
+      '<div class="lobby-row" onclick="joinRoom(' + r.id + ')">' +
+        '<span class="lobby-name">' + r.name + '</span>' +
+        '<span class="lobby-dots">' + dots + '</span>' +
+        spec +
+        '<span class="lobby-badge ' + badgeClass + '">' + badge + '</span>' +
+      '</div>';
+  });
+  html += '<div class="lobby-back"><span onclick="cancelLobbySelect()" class="SmallButton" style="font-size:12px;">← back</span></div>';
+  html += '</div>';
+  menuDiv.innerHTML = html;
+}
+
+function joinRoom(roomId) {
+  if (!lobbySocket || lobbySocket.readyState !== 1) return;
+  showingLobbySelect = false;
+  lobbySocket.send(JSON.stringify({ type: 'join_room', roomId: roomId }));
+}
+
+function cancelLobbySelect() {
+  showingLobbySelect = false;
+  showBottomBar(); toInitialMenu();
+}
+
+function leaveLobby() {
+  showingLobbySelect = false; onlineMode = false; isSpectator = false;
+  if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
+  hideSpecBadge();
+  if (lobbySocket && lobbySocket.readyState === 1) {
+    lobbySocket.send(JSON.stringify({ type: 'leave_room' }));
   }
-  showBottomBar();
-  toInitialMenu();
+  showBottomBar(); toInitialMenu();
 }
 
+// ── server message handler ────────────────────────────────
 function handleServerMessage(msg) {
-  if(msg.type === 'connected') {
-    myPlayerName = msg.name;
-    updatePlayerCount(msg.playerCount);
+  if (msg.type === 'connected') {
+    myPlayerName   = msg.name;
+    currentLobbies = msg.lobbies || [];
+    updatePlayerCount(msg.totalPlayers);
     addChatMessage(null, 'Connected as ' + msg.name);
-  } else if(msg.type === 'player_count') {
-    updatePlayerCount(msg.count);
-  } else if(msg.type === 'chat') {
+
+  } else if (msg.type === 'lobby_list') {
+    currentLobbies = msg.lobbies || [];
+    updatePlayerCount(msg.totalPlayers);
+    if (showingLobbySelect) renderLobbySelect(currentLobbies);
+
+  } else if (msg.type === 'chat') {
     addChatMessage(msg.name, msg.message);
-  } else if(msg.type === 'waiting') {
-    // waiting screen already shown in startOnline()
-  } else if(msg.type === 'start') {
+
+  } else if (msg.type === 'player_count') {
+    updatePlayerCount(msg.count);
+
+  } else if (msg.type === 'room_joined') {
+    if (msg.role === 'spectator') {
+      isSpectator = true; onlineMode = false;
+      canvas.style.display = 'none'; menuDiv.style.display = 'block';
+      menuDiv.innerHTML =
+        '<div style="text-align:center;padding-top:80px;">' +
+        '<h2 style="font-size:24px;margin-bottom:10px;">👁 Spectating</h2>' +
+        '<p style="color:#555;">Waiting for game to start...</p><br/>' +
+        '<span onclick="leaveLobby()" class="SmallButton" style="font-size:12px;">leave</span>' +
+        '</div>';
+    } else {
+      onlineMode = true; mySide = msg.side; onlinePointText = null; isSpectator = false;
+      if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
+      canvas.style.display = 'none'; menuDiv.style.display = 'block';
+      menuDiv.innerHTML =
+        '<div style="text-align:center;padding-top:70px;">' +
+        '<h2 style="font-size:28px;margin-bottom:12px;">Waiting for opponent...</h2>' +
+        '<p style="color:#555;font-size:14px;">You are the ' +
+        (msg.side === 'left' ? '<b style="color:#27ae60">green</b>' : '<b style="color:#e74c3c">red</b>') +
+        ' slime</p><br/>' +
+        '<span onclick="leaveLobby()" class="SmallButton" style="font-size:12px;">leave</span>' +
+        '</div>';
+    }
+
+  } else if (msg.type === 'start') {
     mySide = msg.side;
     launchOnlineGame();
-  } else if(msg.type === 'state') {
+
+  } else if (msg.type === 'game_started') {
+    // Spectator: game is now live
+    launchSpectatorMode();
+
+  } else if (msg.type === 'spectator_waiting') {
+    // Spectator joined but game hasn't started; waiting screen already shown
+
+  } else if (msg.type === 'state') {
     applyServerState(msg);
-  } else if(msg.type === 'point') {
-    var iScored = (mySide === msg.scorer);
-    onlinePointText = iScored ? 'You scored!' : 'Opponent scores!';
+
+  } else if (msg.type === 'point') {
+    if (!isSpectator) {
+      onlinePointText = (mySide === msg.scorer) ? 'You scored!' : 'Opponent scores!';
+    } else {
+      onlinePointText = (msg.scorer === 'left' ? 'Green' : 'Red') + ' scores!';
+    }
     setTimeout(function() { onlinePointText = null; }, 700);
-  } else if(msg.type === 'game_over') {
-    finishOnlineGame(msg.winner);
-  } else if(msg.type === 'opponent_disconnected') {
-    clearInterval(onlineInputInterval);
-    onlineMode = false;
-    canvas.style.display = 'none';
-    menuDiv.style.display = 'none';
-    showBottomBar();
-    toInitialMenu();
-    addChatMessage(null, 'Opponent disconnected.');
+
+  } else if (msg.type === 'game_over') {
+    if (isSpectator) {
+      finishSpectating(msg.winner);
+    } else {
+      finishOnlineGame(msg.winner);
+    }
+
+  } else if (msg.type === 'opponent_disconnected') {
+    clearInterval(onlineInputInterval); onlineInputInterval = null;
+    onlineMode = false; isSpectator = false;
+    hideSpecBadge(); canvas.style.display = 'none';
+    menuDiv.style.display = 'none'; showBottomBar(); toInitialMenu();
+    addChatMessage(null, 'The other player disconnected.');
   }
 }
 
+// ── online game (player) ──────────────────────────────────
 function launchOnlineGame() {
   slimeLeft  = newLegacySlime(true,  100, '#0f0');
   slimeRight = newLegacySlime(false, 100, '#f00');
   ball       = newLegacyBall(25, '#ff0');
   slimeLeftScore = 0; slimeRightScore = 0;
-  slimeLeft.img  = greenSlimeImage;
-  slimeRight.img = redSlimeImage;
-  legacyGraphics = false;
-  legacySkyColor = '#00f'; backImage = backImages['sky'];
-  backTextColor = '#000'; legacyGroundColor = '#888';
-  legacyBallColor = '#fff'; newGroundColor = '#ca6';
-  canvas.style.display = 'block';
-  menuDiv.style.display = 'none';
+  slimeLeft.img = greenSlimeImage; slimeRight.img = redSlimeImage;
+  legacyGraphics = false; legacySkyColor = '#00f'; backImage = backImages['sky'];
+  backTextColor = '#000'; legacyGroundColor = '#888'; legacyBallColor = '#fff'; newGroundColor = '#ca6';
+  canvas.style.display = 'block'; menuDiv.style.display = 'none';
 
   onlineInputInterval = setInterval(function() {
-    if(!lobbySocket || lobbySocket.readyState !== 1) return;
-    var leftKey, rightKey, upKey;
-    if(mySide === 'left') { leftKey = KEY_A; rightKey = KEY_D; upKey = KEY_W; }
-    else                  { leftKey = KEY_LEFT; rightKey = KEY_RIGHT; upKey = KEY_UP; }
-    var movement = 0;
-    if(keysDown[leftKey]  && !keysDown[rightKey]) movement = 1;
-    else if(keysDown[rightKey] && !keysDown[leftKey]) movement = 2;
-    lobbySocket.send(JSON.stringify({ movement: movement, jump: !!keysDown[upKey] }));
+    if (!lobbySocket || lobbySocket.readyState !== 1) return;
+    var lk = mySide === 'left' ? KEY_A    : KEY_LEFT;
+    var rk = mySide === 'left' ? KEY_D    : KEY_RIGHT;
+    var uk = mySide === 'left' ? KEY_W    : KEY_UP;
+    var mv = 0;
+    if (keysDown[lk] && !keysDown[rk]) mv = 1;
+    else if (keysDown[rk] && !keysDown[lk]) mv = 2;
+    lobbySocket.send(JSON.stringify({ movement: mv, jump: !!keysDown[uk] }));
   }, 20);
 }
 
+// ── spectator mode ────────────────────────────────────────
+function launchSpectatorMode() {
+  slimeLeft  = newLegacySlime(true,  100, '#0f0');
+  slimeRight = newLegacySlime(false, 100, '#f00');
+  ball       = newLegacyBall(25, '#ff0');
+  slimeLeft.img = greenSlimeImage; slimeRight.img = redSlimeImage;
+  legacyGraphics = false; legacySkyColor = '#00f'; backImage = backImages['sky'];
+  backTextColor = '#000'; legacyGroundColor = '#888'; legacyBallColor = '#fff'; newGroundColor = '#ca6';
+  canvas.style.display = 'block'; menuDiv.style.display = 'none';
+  showSpecBadge();
+}
+
 function applyServerState(msg) {
+  // Auto-launch spectator view if a state arrives before game_started
+  if (isSpectator && canvas.style.display !== 'block') launchSpectatorMode();
   ball.x = msg.ball.x; ball.y = msg.ball.y; ball.velocityX = msg.ball.velocityX;
   slimeLeft.x  = msg.slimeLeft.x;  slimeLeft.y  = msg.slimeLeft.y;
   slimeRight.x = msg.slimeRight.x; slimeRight.y = msg.slimeRight.y;
   slimeLeftScore = msg.scoreLeft; slimeRightScore = msg.scoreRight;
-  renderBackground();
-  ball.render(); slimeLeft.render(); slimeRight.render();
-  if(onlinePointText) {
-    ctx.font = '20px Georgia';
-    ctx.fillStyle = '#000';
+  renderBackground(); ball.render(); slimeLeft.render(); slimeRight.render();
+  if (onlinePointText) {
+    ctx.font = '20px Georgia'; ctx.fillStyle = '#000';
     var w = ctx.measureText(onlinePointText).width;
-    ctx.fillText(onlinePointText, (viewWidth - w)/2, courtYPix + (viewHeight - courtYPix)/2);
+    ctx.fillText(onlinePointText, (viewWidth-w)/2, courtYPix + (viewHeight-courtYPix)/2);
   }
 }
 
 function finishOnlineGame(winner) {
-  clearInterval(onlineInputInterval);
+  clearInterval(onlineInputInterval); onlineInputInterval = null;
   onlineMode = false;
   var iWon = (mySide === winner);
-  canvas.style.display = 'none';
-  menuDiv.style.display = 'block';
+  canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
     '<div style="text-align:center;padding-top:50px;">' +
-    '<h1 style="font-size:52px;margin-bottom:16px;">' + (iWon ? 'You won!' : 'You lost :(') + '</h1>' +
-    '<span onclick="startOnline()" class="btn" style="display:inline-block;margin:10px 12px;font-size:24px;">Play Again</span>' +
-    '<span onclick="toInitialMenu()" class="btn" style="display:inline-block;margin:10px 12px;font-size:24px;">Menu</span>' +
+    '<h1 style="font-size:52px;margin-bottom:16px;">' + (iWon ? 'You won! 🎉' : 'You lost :(') + '</h1>' +
+    '<span onclick="showLobbySelect()" class="btn" style="display:inline-block;margin:10px 12px;font-size:22px;">Play Again</span>' +
+    '<span onclick="toInitialMenu()" class="btn" style="display:inline-block;margin:10px 12px;font-size:22px;">Menu</span>' +
     '</div>';
   showBottomBar();
 }
 
+function finishSpectating(winner) {
+  isSpectator = false; hideSpecBadge();
+  canvas.style.display = 'none'; menuDiv.style.display = 'block';
+  menuDiv.innerHTML =
+    '<div style="text-align:center;padding-top:70px;">' +
+    '<h2 style="font-size:30px;margin-bottom:16px;">' +
+    (winner === 'left' ? '🟢 Green' : '🔴 Red') + ' wins!</h2>' +
+    '<span onclick="showLobbySelect()" class="btn" style="display:inline-block;margin:10px;font-size:20px;">Back to Lobbies</span>' +
+    '</div>';
+  showBottomBar();
+}
+
+// ── space key ─────────────────────────────────────────────
 function spaceKeyDown() {
-  if(onlineMode) return;
-  if(gameState == GAME_STATE_SHOW_WINNER) {
-    if(onePlayer && nextSlimeIndex >= slimeAIs.length) {
-      nextSlimeIndex = 0;
-      toInitialMenu();
+  if (onlineMode || isSpectator || showingLobbySelect) return;
+  if (gameState === GAME_STATE_SHOW_WINNER) {
+    if (onePlayer && nextSlimeIndex >= slimeAIs.length) {
+      nextSlimeIndex = 0; toInitialMenu();
     } else {
       start(onePlayer);
     }
   }
 }
 
-function endMatch() {
-  gameState = GAME_STATE_SHOW_WINNER;
-  clearInterval(gameIntervalObject);
-  if(onePlayer) {
-    if(leftWon) {
-      nextSlimeIndex++;
-      if(nextSlimeIndex >= slimeAIs.length) {
-        menuDiv.innerHTML =
-          '<div style="text-align:center;padding-top:40px;">' +
-          '<h1 style="font-size:52px;margin-bottom:10px;">You beat everyone!</h1>' +
-          "Press 'space' to do it all over again!</div>";
-      } else {
-        menuDiv.innerHTML =
-          '<div style="text-align:center;padding-top:40px;">' +
-          '<h1 style="font-size:52px;margin-bottom:10px;">You won!</h1>' +
-          "Press 'space' to continue...</div>";
-      }
-    } else {
-      nextSlimeIndex = 0;
-      menuDiv.innerHTML =
-        '<div style="text-align:center;padding-top:40px;">' +
-        '<h1 style="font-size:52px;margin-bottom:10px;">You lost :(</h1>' +
-        "Press 'space' to retry...</div>";
-    }
-  } else {
-    menuDiv.innerHTML =
-      '<div style="text-align:center;padding-top:40px;">' +
-      '<h1 style="font-size:52px;margin-bottom:10px;">Player ' + (leftWon ? '1' : '2') + ' Wins!</h1>' +
-      "Press 'space' for rematch...</div>";
-  }
-  menuDiv.style.display = 'block';
-  canvas.style.display  = 'none';
-  showBottomBar();
-}
-
-function startNextPoint() {
-  initRound(leftWon);
-  updatesToPaint = 0; updateCount = 0;
-  gameState = GAME_STATE_RUNNING;
-}
-
-function endPoint() {
-  if(slimeAI) {
-    keysDown[KEY_UP] = false; keysDown[KEY_RIGHT] = false; keysDown[KEY_LEFT] = false;
-  }
-  if(slimeLeftScore  >= WIN_AMOUNT) { endMatch(true);  return; }
-  if(slimeRightScore >= WIN_AMOUNT) { endMatch(false); return; }
-  if(onePlayer) {
-    endOfPointText = leftWon ? 'Nice, you got the point!' : slimeAI.name + ' scores!';
-  } else {
-    endOfPointText = 'Player ' + (leftWon ? '1':'2') + ' scores!';
-  }
-  gameState = GAME_STATE_POINT_PAUSE;
-  requestAnimationFrame(renderEndOfPoint);
-  setTimeout(function() {
-    if(gameState == GAME_STATE_POINT_PAUSE) startNextPoint();
-  }, 700);
-}
-
-function initRound(server) {
-  ball.x = server ? 200 : 800; ball.y = 356;
-  ball.velocityX = 0; ball.velocityY = 0;
-  slimeLeft.x  = 200; slimeLeft.y  = 0; slimeLeft.velocityX  = 0; slimeLeft.velocityY  = 0;
-  slimeRight.x = 800; slimeRight.y = 0; slimeRight.velocityX = 0; slimeRight.velocityY = 0;
-}
-
-function updateWindowSize(width,height) {
-  viewWidth = width; viewHeight = height;
-  pixelsPerUnitX = width  / gameWidth;
-  pixelsPerUnitY = height / gameHeight;
-  courtYPix = 4 * viewHeight / 5;
-}
-
-function setupView(view) {
-  view.style.position = 'absolute';
-  view.style.left = '0';
-  view.style.top  = '0';
-}
-
-function bodyload() {
-  var contentDiv = document.getElementById('GameContentDiv');
-
-  canvas = document.createElement('canvas');
-  canvas.width  = 750;
-  canvas.height = 375;
-  setupView(canvas);
-  canvas.style.display = 'none';
-  ctx = canvas.getContext("2d");
-  ctx.font = "20px Georgia";
-  gameWidth = 1000; gameHeight = 1000;
-  updateWindowSize(canvas.width, canvas.height);
-  contentDiv.appendChild(canvas);
-
-  menuDiv = document.createElement('div');
-  setupView(menuDiv);
-  menuDiv.style.width  = '750px';
-  menuDiv.style.height = '375px';
-  menuDiv.style.background = "#ca6 url('sky2.jpg') no-repeat";
-  contentDiv.appendChild(menuDiv);
-
-  logString = '';
-  nextSlimeIndex = 0;
-  ball       = newLegacyBall(25, '#ff0');
-  slimeLeft  = newLegacySlime(true,  100, '#0f0');
-  slimeRight = newLegacySlime(false, 100, '#f00');
-
-  var localSkyImage = new Image();
-  localSkyImage.src = 'sky2.jpg';
-  localSkyImage.onload = function() { backImages['sky'] = this; };
-
-  var localCaveImage = new Image();
-  localCaveImage.src = 'cave.jpg';
-  localCaveImage.onload = function() { backImages['cave'] = this; };
-
-  var sunsetImage = new Image();
-  sunsetImage.src = 'sunset.jpg';
-  sunsetImage.onload = function() { backImages['sunset'] = this; };
-
-  var localBallImage = new Image();
-  localBallImage.src = 'vball.png';
-  localBallImage.onload = function() { ballImage = this; };
-
-  greenSlimeImage = new Image();
-  greenSlimeImage.src = 'slime175green.png';
-  redSlimeImage = new Image();
-  redSlimeImage.src = 'slime175red.png';
-
-  toInitialMenu();
-  connectLobby();
-}
-
+// ── local game start ──────────────────────────────────────
 function start(startAsOnePlayer) {
   onePlayer = startAsOnePlayer;
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage;
-  if(onePlayer) {
-    var slimeAIProps = slimeAIs[nextSlimeIndex];
-    slimeRight.color      = slimeAIProps.color;
-    legacySkyColor        = slimeAIProps.legacySkyColor;
-    backImage             = backImages[slimeAIProps.backImageName];
-    backTextColor         = slimeAIProps.backTextColor;
-    legacyGroundColor     = slimeAIProps.legacyGroundColor;
-    legacyBallColor       = slimeAIProps.legacyBallColor;
-    newGroundColor        = slimeAIProps.newGroundColor;
-    slimeRight.img        = null;
-    slimeAI               = newSlimeAI(false, slimeAIProps.name);
-    slimeAIProps.initAI(slimeAI);
+  if (onePlayer) {
+    var p = slimeAIs[nextSlimeIndex];
+    slimeRight.color = p.color; legacySkyColor = p.legacySkyColor;
+    backImage = backImages[p.backImageName]; backTextColor = p.backTextColor;
+    legacyGroundColor = p.legacyGroundColor; legacyBallColor = p.legacyBallColor;
+    newGroundColor = p.newGroundColor; slimeRight.img = null;
+    slimeAI = newSlimeAI(false, p.name); p.initAI(slimeAI);
   } else {
-    legacySkyColor   = '#00f'; backImage = backImages['sky'];
-    backTextColor    = '#000'; legacyGroundColor = '#888';
-    legacyBallColor  = '#fff'; newGroundColor    = '#ca6';
-    slimeRight.img   = redSlimeImage; slimeAI = null;
+    legacySkyColor = '#00f'; backImage = backImages['sky'];
+    backTextColor = '#000'; legacyGroundColor = '#888';
+    legacyBallColor = '#fff'; newGroundColor = '#ca6';
+    slimeRight.img = redSlimeImage; slimeAI = null;
   }
-  initRound(true);
-  updatesToPaint = 0; updateCount = 0;
-  loadOptions();
-  gameState = GAME_STATE_RUNNING;
+  initRound(true); updatesToPaint = 0; updateCount = 0;
+  loadOptions(); gameState = GAME_STATE_RUNNING;
   renderBackground();
-  canvas.style.display = 'block';
-  menuDiv.style.display = 'none';
-  hideBottomBar();
+  canvas.style.display = 'block'; menuDiv.style.display = 'none'; hideBottomBar();
   gameIntervalObject = setInterval(gameIteration, 20);
 }
 
 function toInitialMenu() {
-  onlineMode = false;
-  canvas.style.display  = 'none';
-  menuDiv.style.display = 'block';
-  menuDiv.innerHTML     = '';
+  onlineMode = false; isSpectator = false; showingLobbySelect = false;
+  hideSpecBadge();
+  canvas.style.display = 'none'; menuDiv.style.display = 'block'; menuDiv.innerHTML = '';
   showBottomBar();
 }
 
@@ -806,18 +704,55 @@ function loadOptions() {
   physicsLog     = document.getElementById('PhysicsLog').checked ? 120 : 0;
 }
 function showOptions() {
-  if(gameState == GAME_STATE_RUNNING)      gameState = GAME_STATE_MENU_PAUSE;
-  else if(gameState == GAME_STATE_POINT_PAUSE) gameState = GAME_STATE_MENU_PAUSE_BETWEEN_POINTS;
+  if (gameState === GAME_STATE_RUNNING)      gameState = GAME_STATE_MENU_PAUSE;
+  else if (gameState === GAME_STATE_POINT_PAUSE) gameState = GAME_STATE_MENU_PAUSE_BETWEEN_POINTS;
   document.getElementById('OptionsDiv').style.display = 'block';
 }
 function hideOptions() {
   document.getElementById('OptionsDiv').style.display = 'none';
-  if(gameState == GAME_STATE_MENU_PAUSE) {
-    updateCount = 0; gameState = GAME_STATE_RUNNING;
-  } else if(gameState == GAME_STATE_MENU_PAUSE_BETWEEN_POINTS) {
-    startNextPoint();
-  }
+  if (gameState === GAME_STATE_MENU_PAUSE) { updateCount = 0; gameState = GAME_STATE_RUNNING; }
+  else if (gameState === GAME_STATE_MENU_PAUSE_BETWEEN_POINTS) startNextPoint();
   loadOptions();
+}
+
+// ── init ──────────────────────────────────────────────────
+function bodyload() {
+  var contentDiv = document.getElementById('GameContentDiv');
+
+  canvas = document.createElement('canvas');
+  canvas.width = 750; canvas.height = 375;
+  canvas.style.position = 'absolute'; canvas.style.left = '0'; canvas.style.top = '0';
+  canvas.style.display = 'none';
+  ctx = canvas.getContext('2d'); ctx.font = '20px Georgia';
+  contentDiv.appendChild(canvas);
+
+  gameWidth = 1000; gameHeight = 1000;
+  updateWindowSize(canvas.width, canvas.height);
+
+  menuDiv = document.createElement('div');
+  menuDiv.style.position = 'absolute'; menuDiv.style.left = '0'; menuDiv.style.top = '0';
+  menuDiv.style.width = '750px'; menuDiv.style.height = '375px';
+  menuDiv.style.background = "#ca6 url('sky2.jpg') no-repeat";
+  contentDiv.appendChild(menuDiv);
+
+  logString = ''; nextSlimeIndex = 0;
+  ball       = newLegacyBall(25, '#ff0');
+  slimeLeft  = newLegacySlime(true,  100, '#0f0');
+  slimeRight = newLegacySlime(false, 100, '#f00');
+
+  ['sky2.jpg','cave.jpg','sunset.jpg'].forEach(function(src) {
+    var img = new Image(); img.src = src;
+    img.onload = function() {
+      backImages[src.replace('.jpg','')] = this;
+      if (src === 'sky2.jpg') backImages['sky'] = this;
+    };
+  });
+  var bi = new Image(); bi.src = 'vball.png'; bi.onload = function() { ballImage = this; };
+  greenSlimeImage = new Image(); greenSlimeImage.src = 'slime175green.png';
+  redSlimeImage   = new Image(); redSlimeImage.src   = 'slime175red.png';
+
+  toInitialMenu();
+  connectLobby();
 }
 
 </script>
@@ -838,13 +773,11 @@ function hideOptions() {
         <h2>Options</h2><hr/><br/>
         <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:5px;right:5px;font-weight:bold;">close</span>
         <div style="text-align:left;margin:10px;">
-          <input id="LegacyGraphics" type="checkbox">Legacy Graphics</input>
-          <br/><br/>
-          <h3>Debug Options</h3><br/>
-          <input id="PhysicsLog" type="checkbox">Enable Physics Log</input>
-          <br/><br/>
+          <input id="LegacyGraphics" type="checkbox"> Legacy Graphics<br/><br/>
+          <h3>Debug</h3><br/>
+          <input id="PhysicsLog" type="checkbox"> Enable Physics Log<br/><br/>
           <h3>Cheats</h3><br/>
-          <input id="SlowMotion" type="checkbox">Slow Motion</input>
+          <input id="SlowMotion" type="checkbox"> Slow Motion
         </div>
       </div>
     </div>
@@ -862,7 +795,7 @@ function hideOptions() {
   </div>
 
   <div id="BottomBar">
-    <span class="bigBtn" onclick="startOnline()">QUICK PLAY</span>
+    <span class="bigBtn" onclick="showLobbySelect()">QUICK PLAY</span>
     <span class="bigBtn" onclick="start(false)">PRIVATE MATCH</span>
     <span class="bigBtn" onclick="start(true)">ONE PLAYER</span>
     <span id="OptionsBtn" onclick="showOptions()">OPTIONS</span>
