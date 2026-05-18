@@ -71,9 +71,18 @@ function randomName() {
   return 'Player' + (Math.floor(Math.random() * 9000) + 1000);
 }
 
+// Simple per-client chat rate limiter: max 5 messages per 3 s
+function chatAllowed(info) {
+  const now = Date.now();
+  if (now > info.chatReset) { info.chatCount = 0; info.chatReset = now + 3000; }
+  if (info.chatCount >= 5) return false;
+  info.chatCount++;
+  return true;
+}
+
 // ── connection ────────────────────────────────────────────
 wss.on('connection', (ws) => {
-  const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby' };
+  const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby', chatCount: 0, chatReset: 0 };
   allClients.set(ws, info);
 
   send(ws, { type: 'connected', name: info.name, totalPlayers: allClients.size, lobbies: getLobbySnapshot(), playerList: getPlayerList() });
@@ -120,13 +129,15 @@ function handleMsg(ws, info, msg) {
 }
 
 function relayChat(info, msg) {
+  if (!chatAllowed(info)) return;
   const text = String(msg.message || '').slice(0, 200).trim();
   if (text) broadcastAll({ type: 'chat', name: info.name, message: text });
 }
 
 // ── room join ─────────────────────────────────────────────
 function handleJoinRoom(ws, info, roomId) {
-  const room = rooms[roomId];
+  const id = parseInt(roomId, 10);
+  const room = (id >= 0 && id < rooms.length) ? rooms[id] : null;
   if (!room) return;
   leaveRoom(ws, info, false);
 
@@ -275,11 +286,11 @@ function startRoomGame(room) {
   function cleanup() {
     if (cleaned) return; cleaned = true;
     clearInterval(room.interval); room.interval = null; room.state = null; room.phase = 'empty';
+    bcast({ type: 'opponent_disconnected' });
     [...room.players, ...room.spectators].forEach(({ info }) => {
       info.room = null; info.role = null; info.state = 'lobby'; info.gameHandler = null;
     });
     room.players = []; room.spectators = [];
-    bcast({ type: 'opponent_disconnected' });
     pushLobbyState();
   }
   left.ws.on('close',  cleanup);
