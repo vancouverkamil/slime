@@ -489,7 +489,127 @@ var GAME_STATE_SHOW_WINNER = 5;
   }
 
 
+  // === ONLINE MODE ===
+  var onlineMode = false;
+  var socket = null;
+  var mySide = null;
+  var onlineInputInterval = null;
+  var onlinePointText = null;
+
+  function startOnline() {
+    if (socket) { socket.onclose = null; socket.close(); socket = null; }
+    if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
+    onlineMode = true;
+    mySide = null;
+    onlinePointText = null;
+    canvas.style.display = 'none';
+    menuDiv.style.display = 'block';
+    menuDiv.innerHTML = '<div style="text-align:center;">' +
+      '<h1 style="margin-top:60px;">Waiting for opponent...</h1>' +
+      '<p style="margin-top:15px;font-size:18px;">Send your friend this page URL and have them click <b>Online Two Player</b></p>' +
+      '<br/><span onclick="toInitialMenu()" class="SmallButton">cancel</span>' +
+      '</div>';
+
+    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    socket = new WebSocket(protocol + '//' + location.host);
+
+    socket.onmessage = function(e) {
+      try { handleServerMessage(JSON.parse(e.data)); } catch(_) {}
+    };
+    socket.onclose = function() {
+      if (!onlineMode) return;
+      onlineMode = false;
+      menuDiv.innerHTML = '<div style="text-align:center;"><h1 style="margin-top:60px;">Disconnected</h1></div>';
+      setTimeout(toInitialMenu, 2000);
+    };
+  }
+
+  function handleServerMessage(msg) {
+    if (msg.type === 'start') {
+      mySide = msg.side;
+      launchOnlineGame();
+    } else if (msg.type === 'state') {
+      applyServerState(msg);
+    } else if (msg.type === 'point') {
+      var iScored = (mySide === msg.scorer);
+      onlinePointText = iScored ? 'You scored!' : 'Opponent scores!';
+      setTimeout(function() { onlinePointText = null; }, 700);
+    } else if (msg.type === 'game_over') {
+      finishOnlineGame(msg.winner);
+    } else if (msg.type === 'opponent_disconnected') {
+      clearInterval(onlineInputInterval);
+      onlineMode = false;
+      canvas.style.display = 'none';
+      menuDiv.innerHTML = '<div style="text-align:center;"><h1 style="margin-top:60px;">Opponent disconnected</h1></div>';
+      menuDiv.style.display = 'block';
+      setTimeout(toInitialMenu, 2000);
+    }
+  }
+
+  function launchOnlineGame() {
+    slimeLeft  = newLegacySlime(true,  100, '#0f0');
+    slimeRight = newLegacySlime(false, 100, '#f00');
+    ball       = newLegacyBall(25, '#ff0');
+    slimeLeftScore  = 0;
+    slimeRightScore = 0;
+    slimeLeft.img   = greenSlimeImage;
+    slimeRight.img  = redSlimeImage;
+    legacyGraphics  = false;
+    legacySkyColor  = '#00f';
+    backImage       = backImages['sky'];
+    backTextColor   = '#000';
+    legacyGroundColor = '#888';
+    legacyBallColor   = '#fff';
+    newGroundColor    = '#ca6';
+    canvas.style.display = 'block';
+    menuDiv.style.display = 'none';
+
+    onlineInputInterval = setInterval(function() {
+      if (!socket || socket.readyState !== 1) return;
+      var leftKey, rightKey, upKey;
+      if (mySide === 'left') { leftKey = KEY_A; rightKey = KEY_D; upKey = KEY_W; }
+      else                   { leftKey = KEY_LEFT; rightKey = KEY_RIGHT; upKey = KEY_UP; }
+      var movement = 0;
+      if      (keysDown[leftKey]  && !keysDown[rightKey]) movement = 1;
+      else if (keysDown[rightKey] && !keysDown[leftKey])  movement = 2;
+      socket.send(JSON.stringify({ movement: movement, jump: !!keysDown[upKey] }));
+    }, 20);
+  }
+
+  function applyServerState(msg) {
+    ball.x = msg.ball.x; ball.y = msg.ball.y; ball.velocityX = msg.ball.velocityX;
+    slimeLeft.x  = msg.slimeLeft.x;  slimeLeft.y  = msg.slimeLeft.y;
+    slimeRight.x = msg.slimeRight.x; slimeRight.y = msg.slimeRight.y;
+    slimeLeftScore  = msg.scoreLeft;
+    slimeRightScore = msg.scoreRight;
+    renderBackground();
+    ball.render();
+    slimeLeft.render();
+    slimeRight.render();
+    if (onlinePointText) {
+      ctx.font = '20px Georgia';
+      ctx.fillStyle = '#000';
+      var w = ctx.measureText(onlinePointText).width;
+      ctx.fillText(onlinePointText, (viewWidth - w) / 2, courtYPix + (viewHeight - courtYPix) / 2);
+    }
+  }
+
+  function finishOnlineGame(winner) {
+    clearInterval(onlineInputInterval);
+    onlineMode = false;
+    var iWon = (mySide === winner);
+    canvas.style.display = 'none';
+    menuDiv.style.display = 'block';
+    menuDiv.innerHTML = '<div style="text-align:center;">' +
+      '<h1 style="margin:50px 0 20px 0;">' + (iWon ? 'You won!' : 'You lost :(') + '</h1>' +
+      '<span onclick="startOnline()" class="btn" style="display:inline-block;margin:15px 20px;font-size:30px;">Play Again</span>' +
+      '<span onclick="toInitialMenu()" class="btn" style="display:inline-block;margin:15px 20px;font-size:30px;">Menu</span>' +
+      '</div>';
+  }
+  // === END ONLINE MODE ===
+
   function spaceKeyDown() {
+    if(onlineMode) return;
     if(gameState == GAME_STATE_SHOW_WINNER) {
       if(onePlayer && nextSlimeIndex >= slimeAIs.length) {
         nextSlimeIndex = 0;
@@ -734,12 +854,15 @@ var GAME_STATE_SHOW_WINNER = 5;
     gameIntervalObject = setInterval(gameIteration, 20);
   }
   function toInitialMenu() {
+    onlineMode = false;
     menuDiv.innerHTML = '<div style="text-align:center;">' +
-      '<h1 style="margin-top:30px;">Slime Volleyball</h1>' +
-      '<span onclick="start(true)" class="btn" style="display:inline-block;margin:20px 30px 20px 30px;font-size:40px;">One Player</span>' +
-      '<span onclick="start(false)" class="btn" style="display:inline-block;margin:20px 30px 20px 30px;font-size:40px;">Two Player</span>' +
-      '<p>Originally written by Quin Pendragon and Daniel Wedge (http://oneslime.net)<br/>' +
-      'Rewritten by Jonathan Marler</p>'
+      '<h1 style="margin-top:20px;">Slime Volleyball</h1>' +
+      '<span onclick="start(true)"  class="btn" style="display:inline-block;margin:15px 20px;font-size:36px;">One Player</span>' +
+      '<span onclick="start(false)" class="btn" style="display:inline-block;margin:15px 20px;font-size:36px;">Two Player</span>' +
+      '<br/>' +
+      '<span onclick="startOnline()" class="btn" style="display:inline-block;margin:10px 20px;font-size:28px;background:#27ae60;background-image:linear-gradient(to bottom,#2ecc71,#27ae60);border-color:#1e8449;">Online Two Player</span>' +
+      '<p style="margin-top:10px;">Originally written by Quin Pendragon and Daniel Wedge (http://oneslime.net)<br/>' +
+      'Rewritten by Jonathan Marler</p>' +
       '</div>';
   }
   function loadOptions() {
