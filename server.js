@@ -59,7 +59,7 @@ function getLobbySnapshot() {
 }
 function getPlayerList() {
   const list = [];
-  allClients.forEach((info) => { list.push({ name: info.name, status: info.state }); });
+  allClients.forEach((info) => { list.push({ name: info.name, status: info.state, wins: info.wins || 0, rank: info.rank || 'PRIVATE' }); });
   return list;
 }
 function pushLobbyState() {
@@ -102,6 +102,8 @@ wss.on('connection', (ws) => {
         if (msg.type === 'set_name') {
           const name = String(msg.name || '').trim().slice(0, 20);
           if (name) info.name = name;
+          info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
+          info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
         }
         if (msg.type === 'customize') handleCustomize(ws, info, msg);
         return;
@@ -124,6 +126,8 @@ function handleMsg(ws, info, msg) {
   } else if (msg.type === 'set_name') {
     const name = String(msg.name || '').trim().slice(0, 20);
     if (name) info.name = name;
+    info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
+    info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
   } else if (msg.type === 'join_room') {
     handleJoinRoom(ws, info, msg.roomId);
   } else if (msg.type === 'customize') {

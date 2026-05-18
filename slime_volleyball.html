@@ -251,7 +251,7 @@ body {
 .opl.playing { color:#00ff88; } .opl.spectating { color:#7b2fff; }
 
 /* ── lobby card grid ── */
-.lobby-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; padding:0 5px; }
+.lobby-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:0 4px; }
 .lobby-card {
   cursor:pointer; border:1px solid rgba(255,255,255,.1); overflow:hidden;
   transition:all .14s; background:#050014; border-radius:1px;
@@ -272,9 +272,9 @@ body {
   font-size:8px; font-weight:bold; letter-spacing:.3px;
 }
 .lobby-card-icon { position:absolute; top:3px; left:5px; font-size:12px; }
-.lobby-card-body { padding:4px 6px; background:rgba(0,0,18,.55); }
-.lobby-card-name { font-size:9px; font-weight:bold; letter-spacing:.5px; margin-bottom:1px; }
-.lobby-card-info { font-size:8px; color:#444; letter-spacing:.3px; }
+.lobby-card-body { padding:3px 5px; background:rgba(0,0,18,.55); }
+.lobby-card-name { font-size:8px; font-weight:bold; letter-spacing:.3px; margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lobby-card-info { font-size:7px; color:#444; letter-spacing:.2px; }
 
 /* ── options panel ── */
 #OptionsDiv {
@@ -395,7 +395,12 @@ var MAP_BARRIERS_CLIENT = {
 };
 var totalWins = 0;
 try { totalWins = parseInt(localStorage.getItem('slime_totalWins') || '0') || 0; } catch(e) {}
-function recordWin() { totalWins++; try { localStorage.setItem('slime_totalWins', totalWins); } catch(e){} }
+function recordWin() {
+  totalWins++;
+  try { localStorage.setItem('slime_totalWins', totalWins); } catch(e){}
+  if (lobbySocket && lobbySocket.readyState === 1)
+    lobbySocket.send(JSON.stringify({ type: 'set_name', name: myPlayerName, wins: totalWins, rank: getPlayerRank() }));
+}
 function getPlayerRank() {
   if (totalWins >= 10) return 'LIEUTENANT';
   if (totalWins >= 6)  return 'SERGEANT';
@@ -1724,7 +1729,7 @@ function saveName() {
   document.getElementById('PlayerNameDisplay').textContent = name;
   cancelEditName();
   if (lobbySocket && lobbySocket.readyState === 1) {
-    lobbySocket.send(JSON.stringify({ type: 'set_name', name: name }));
+    lobbySocket.send(JSON.stringify({ type: 'set_name', name: name, wins: totalWins, rank: getPlayerRank() }));
   }
 }
 
@@ -1751,7 +1756,17 @@ function updateOnlineList(list) {
   el.innerHTML = list.map(function(p) {
     var cls = p.status === 'playing' ? ' playing' : p.status === 'spectating' ? ' spectating' : '';
     var tag = p.status === 'playing' ? ' ▶' : p.status === 'spectating' ? ' 👁' : '';
-    return '<div class="opl' + cls + '">' + escHtml(p.name) + tag + '</div>';
+    var rankCol = p.rank === 'LIEUTENANT' ? '#ffcc00' : p.rank === 'SERGEANT' ? '#aaaaff' : p.rank === 'CORPORAL' ? '#88ffcc' : '#555';
+    var badge = (p.rank && p.rank !== 'PRIVATE')
+      ? '<span style="color:' + rankCol + ';font-size:6px;letter-spacing:.5px;margin-left:3px;">' + p.rank.slice(0,3) + '</span>'
+      : '';
+    var wins = p.wins > 0
+      ? '<span style="color:#404040;font-size:6px;margin-left:2px;">(' + p.wins + 'W)</span>'
+      : '';
+    return '<div class="opl' + cls + '" style="display:flex;align-items:center;justify-content:space-between;">' +
+      '<span>' + escHtml(p.name) + badge + '</span>' +
+      '<span style="display:flex;align-items:center;gap:2px;">' + wins + '<span style="color:#555;font-size:8px;">' + tag + '</span></span>' +
+      '</div>';
   }).join('');
 }
 
@@ -1858,9 +1873,12 @@ function handleServerMessage(msg) {
     if (savedN) {
       myPlayerName = savedN;
       if (lobbySocket && lobbySocket.readyState === 1)
-        lobbySocket.send(JSON.stringify({ type: 'set_name', name: savedN }));
+        lobbySocket.send(JSON.stringify({ type: 'set_name', name: savedN, wins: totalWins, rank: getPlayerRank() }));
     } else {
       myPlayerName = msg.name;
+      // No saved name — still send wins/rank under server-assigned name
+      if (lobbySocket && lobbySocket.readyState === 1)
+        lobbySocket.send(JSON.stringify({ type: 'set_name', name: msg.name, wins: totalWins, rank: getPlayerRank() }));
     }
     var nd = document.getElementById('PlayerNameDisplay');
     if (nd) nd.textContent = myPlayerName;
