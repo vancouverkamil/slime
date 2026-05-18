@@ -1,4 +1,5 @@
 <html><head>
+<script src="ws-config.js"></script>
 <style type="text/css">
 /* MENU CSS */
 * {margin:0;padding:0;font-family: Arial;}
@@ -510,8 +511,9 @@ var GAME_STATE_SHOW_WINNER = 5;
       '<br/><span onclick="toInitialMenu()" class="SmallButton">cancel</span>' +
       '</div>';
 
-    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    socket = new WebSocket(protocol + '//' + location.host);
+    var wsUrl = window.SLIME_WS_URL ||
+      ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
+    socket = new WebSocket(wsUrl);
 
     socket.onmessage = function(e) {
       try { handleServerMessage(JSON.parse(e.data)); } catch(_) {}
