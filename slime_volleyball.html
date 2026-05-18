@@ -154,12 +154,7 @@ body {
 .bigBtn.fire { border-color:rgba(255,60,0,.5); color:#ff3300; animation:firePulse 1.3s ease-in-out infinite; }
 .bigBtn.fire:hover { background:rgba(255,60,0,.12); border-color:#ff4400; box-shadow:0 0 30px rgba(255,60,0,.45); color:#fff; animation:none; }
 
-/* ── Fullscreen mode ── */
-body.full-mode { overflow:hidden; }
-body.full-mode #LobbyWrapper { position:fixed; top:0; left:0; width:100vw; max-width:none; min-height:100vh; }
-body.full-mode #MiddleRow { flex:1; height:0; }
-body.full-mode #ContentDiv { flex:1; width:auto; height:100%; }
-body.full-mode #OptionsDiv { left:50% !important; transform:translateX(-50%); max-height:calc(100vh - 100px); }
+/* ── Fullscreen mode — layout handled entirely by JS ── */
 
 #OptionsBtn {
   color:rgba(0,255,200,.3); font-size:10px; cursor:pointer; margin-left:6px;
@@ -256,28 +251,28 @@ body.full-mode #OptionsDiv { left:50% !important; transform:translateX(-50%); ma
 .opl.playing { color:#00ff88; } .opl.spectating { color:#7b2fff; }
 
 /* ── lobby card grid ── */
-.lobby-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 6px 10px; }
+.lobby-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; padding:0 5px; }
 .lobby-card {
   cursor:pointer; border:1px solid rgba(255,255,255,.1); overflow:hidden;
   transition:all .14s; background:#050014; border-radius:1px;
 }
-.lobby-card:hover { border-color:rgba(0,255,200,.55); box-shadow:0 0 18px rgba(0,255,200,.15); }
+.lobby-card:hover { border-color:rgba(0,255,200,.55); box-shadow:0 0 12px rgba(0,255,200,.15); }
 .lobby-card-thumb {
-  width:100%; height:108px; background-size:cover; background-position:center;
+  width:100%; height:46px; background-size:cover; background-position:center;
   position:relative;
 }
 .lobby-card-overlay {
   position:absolute; inset:0;
-  background:linear-gradient(to bottom, transparent 35%, rgba(0,0,18,.75));
+  background:linear-gradient(to bottom, transparent 20%, rgba(0,0,18,.65));
 }
 .lobby-card-badge {
-  position:absolute; bottom:5px; right:7px;
-  font-size:9px; font-weight:bold; letter-spacing:.5px;
+  position:absolute; bottom:3px; right:5px;
+  font-size:8px; font-weight:bold; letter-spacing:.3px;
 }
-.lobby-card-icon { position:absolute; top:5px; left:7px; font-size:15px; }
-.lobby-card-body { padding:7px 10px; background:rgba(0,0,18,.55); }
-.lobby-card-name { font-size:11px; font-weight:bold; letter-spacing:.8px; margin-bottom:2px; }
-.lobby-card-info { font-size:9px; color:#444; letter-spacing:.5px; }
+.lobby-card-icon { position:absolute; top:3px; left:5px; font-size:12px; }
+.lobby-card-body { padding:4px 6px; background:rgba(0,0,18,.55); }
+.lobby-card-name { font-size:9px; font-weight:bold; letter-spacing:.5px; margin-bottom:1px; }
+.lobby-card-info { font-size:8px; color:#444; letter-spacing:.3px; }
 
 /* ── options panel ── */
 #OptionsDiv {
@@ -1509,7 +1504,7 @@ function getMapPreview(id, pw, ph) {
   return offC.toDataURL();
 }
 function buildMapPreviews() {
-  for (var i = 0; i < 8; i++) mapPreviews[i] = getMapPreview(i, 284, 148);
+  for (var i = 0; i < 11; i++) mapPreviews[i] = getMapPreview(i, 284, 148);
 }
 
 // ── online player list ────────────────────────────────────
@@ -1531,22 +1526,22 @@ function showLobbySelect() {
   }
   showingLobbySelect = true;
   onlineMode = false; isSpectator = false;
-  hideBottomBar(); hideSpecBadge();
+  hideSpecBadge();
   canvas.style.display = 'none';
   menuDiv.style.display = 'block';
   renderLobbySelect(currentLobbies);
 }
 
-var MAP_ICONS = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆'];
-var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028'];
-var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc'];
+var MAP_ICONS  = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆','🌙','🌋','🌊'];
+var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028','#050a1a','#2a0400','#001428'];
+var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc','#aaddff','#ff6622','#00ccff'];
 
 function renderLobbySelect(lobbies) {
   if (!showingLobbySelect) return;
   var html =
-    '<div style="padding:12px 14px 8px;background:#06001a;height:100%;overflow-y:auto;box-sizing:border-box;">' +
-    '<div style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:5px;text-transform:uppercase;' +
-      'color:#00ffcc;margin-bottom:14px;text-shadow:0 0 14px rgba(0,255,200,.55);">Select a Court</div>' +
+    '<div style="padding:8px 8px 6px;background:#06001a;height:100%;box-sizing:border-box;overflow:hidden;">' +
+    '<div style="text-align:center;font-size:10px;font-weight:bold;letter-spacing:4px;text-transform:uppercase;' +
+      'color:#00ffcc;margin-bottom:8px;text-shadow:0 0 12px rgba(0,255,200,.5);">Select a Court</div>' +
     '<div class="lobby-grid">';
 
   lobbies.forEach(function(r) {
@@ -1575,10 +1570,7 @@ function renderLobbySelect(lobbies) {
       '</div>';
   });
 
-  html += '</div>' +
-    '<div style="text-align:center;margin-top:14px;padding-bottom:6px;">' +
-      '<span onclick="cancelLobbySelect()" class="SmallButton" style="font-size:10px;color:#444;letter-spacing:2px;">← BACK</span>' +
-    '</div></div>';
+  html += '</div></div>';
   menuDiv.innerHTML = html;
 }
 
@@ -1989,6 +1981,8 @@ function hideOptions() {
 }
 
 // ── Game scale / fullscreen ────────────────────────────────
+var SIDEBAR_W = 290, COMPACT_W = 750, COMPACT_H = 375;
+
 function setGameScale(s) {
   gameScale = s;
   try { localStorage.setItem('slime_scale', s); } catch(e){}
@@ -1997,23 +1991,37 @@ function setGameScale(s) {
   applyGameScale();
 }
 function applyGameScale() {
-  var isFull = gameScale === 'full';
-  document.body.classList.toggle('full-mode', isFull);
-  if (isFull) {
-    requestAnimationFrame(function() {
-      var cd = document.getElementById('ContentDiv');
-      var nw = cd.clientWidth || 750, nh = cd.clientHeight || 375;
-      if (canvas && (canvas.width !== nw || canvas.height !== nh)) {
-        canvas.width = nw; canvas.height = nh;
-        updateWindowSize(nw, nh);
-        if (gameState === GAME_STATE_RUNNING) renderBackground();
-      }
-    });
+  var wrapper = document.getElementById('LobbyWrapper');
+  var mr      = document.getElementById('MiddleRow');
+  var cd      = document.getElementById('ContentDiv');
+  var optDiv  = document.getElementById('OptionsDiv');
+  if (!wrapper || !mr || !cd) return;
+
+  if (gameScale === 'full') {
+    var topH  = (document.getElementById('TopBar') || {}).offsetHeight || 28;
+    var botH  = (document.getElementById('BottomBar') || {}).offsetHeight || 0;
+    // Leave sidebar beside the content area
+    var nw = Math.max(500, window.innerWidth - SIDEBAR_W);
+    var nh = Math.max(280, window.innerHeight - topH - botH - 4);
+
+    wrapper.style.width = (nw + SIDEBAR_W) + 'px';
+    wrapper.style.maxWidth = 'none';
+    mr.style.height = nh + 'px';
+    cd.style.width  = nw + 'px';
+    cd.style.height = nh + 'px';
+    if (canvas)  { canvas.width = nw; canvas.height = nh; updateWindowSize(nw, nh); }
+    if (menuDiv) { menuDiv.style.width = nw + 'px'; menuDiv.style.height = nh + 'px'; }
+    // Re-centre OptionsDiv within the (now larger) ContentDiv
+    if (optDiv) { var ol = Math.max(0, Math.round((nw - 420) / 2)); optDiv.style.left = ol + 'px'; optDiv.style.height = Math.min(nh, 520) + 'px'; }
   } else {
-    if (canvas && canvas.width !== 750) {
-      canvas.width = 750; canvas.height = 375;
-      updateWindowSize(750, 375);
-    }
+    wrapper.style.width = '1040px';
+    wrapper.style.maxWidth = '';
+    mr.style.height = COMPACT_H + 'px';
+    cd.style.width  = COMPACT_W + 'px';
+    cd.style.height = COMPACT_H + 'px';
+    if (canvas)  { canvas.width = COMPACT_W; canvas.height = COMPACT_H; updateWindowSize(COMPACT_W, COMPACT_H); }
+    if (menuDiv) { menuDiv.style.width = COMPACT_W + 'px'; menuDiv.style.height = COMPACT_H + 'px'; }
+    if (optDiv)  { optDiv.style.left = '165px'; optDiv.style.height = COMPACT_H + 'px'; }
   }
 }
 function _onWindowResize() { if (gameScale === 'full') applyGameScale(); }

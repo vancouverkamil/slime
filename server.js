@@ -9,7 +9,8 @@ const TICK_MS    = 20;
 
 const ROOM_NAMES = [
   'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
-  'Jungle Court', 'Frozen Court', 'Desert Court', 'Neon Court'
+  'Jungle Court', 'Frozen Court', 'Desert Court', 'Neon Court',
+  'Space Court', 'Volcano Court', 'Ocean Court'
 ];
 
 const app = express();
