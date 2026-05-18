@@ -1,50 +1,167 @@
 <html><head>
 <script src="ws-config.js"></script>
 <style type="text/css">
-/* MENU CSS */
-* {margin:0;padding:0;font-family: Arial;}
-h1 {font-size:70;}
-h2 {margin: 8px 0;}
-.SmallButton {
-  text-decoration: none;
-  cursor:pointer;
-  color:#555;
+
+/* ── reset & shell ── */
+* { margin:0; padding:0; box-sizing:border-box; font-family: Arial, sans-serif; }
+body {
+  background: #0d0d1a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
 }
-.SmallButton:hover {
-  color:#000;
+#LobbyWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 1040px;
 }
+
+/* ── top bar ── */
+#TopBar {
+  background: #111;
+  color: #777;
+  padding: 4px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  border-bottom: 1px solid #2a2a2a;
+}
+#AnnouncementText { color: #aaa; font-size: 11px; letter-spacing: 0.5px; }
+
+/* ── middle row ── */
+#MiddleRow { display: flex; height: 375px; }
+#ContentDiv {
+  position: relative;
+  width: 750px;
+  height: 375px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* ── sidebar ── */
+#Sidebar {
+  width: 290px;
+  background: #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #2a2a3e;
+}
+#PlayerCountDiv {
+  background: #13131f;
+  color: #4CAF50;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  border-bottom: 1px solid #2a2a3e;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+#ChatLog {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+}
+#ChatLog::-webkit-scrollbar { width: 4px; }
+#ChatLog::-webkit-scrollbar-track { background: #1a1a2e; }
+#ChatLog::-webkit-scrollbar-thumb { background: #3a3a5e; border-radius: 2px; }
+.chat-msg { font-size: 12px; color: #bbb; word-break: break-word; line-height: 1.5; }
+.chat-name { color: #7ec8e3; font-weight: bold; }
+.chat-sys  { color: #666; font-style: italic; font-size: 11px; }
+#ChatInputRow {
+  display: flex;
+  border-top: 1px solid #2a2a3e;
+  padding: 6px;
+  gap: 5px;
+  background: #13131f;
+  flex-shrink: 0;
+}
+#ChatInput {
+  flex: 1;
+  background: #0d0d1a;
+  border: 1px solid #3a3a5e;
+  color: #eee;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+#ChatInput:focus { outline: none; border-color: #7ec8e3; }
+#ChatSendBtn {
+  background: #2471a3;
+  border: none;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+#ChatSendBtn:hover { background: #2e86c1; }
+
+/* ── bottom bar ── */
+#BottomBar {
+  background: #556068;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 20px;
+  gap: 10px;
+  border-top: 3px solid #445058;
+}
+.bigBtn {
+  background: #5a6470;
+  color: #fff;
+  padding: 14px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  border: 2px solid #6e7c88;
+  text-transform: uppercase;
+  user-select: none;
+  display: inline-block;
+}
+.bigBtn:hover  { background: #6a7480; }
+.bigBtn:active { background: #4a5460; }
+#OptionsBtn {
+  color: #ccc;
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  user-select: none;
+}
+#OptionsBtn:hover { color: #fff; }
+
+/* ── existing game UI helpers ── */
+h1 { font-size: 70px; }
+h2 { margin: 8px 0; }
+.SmallButton { text-decoration:none; cursor:pointer; color:#555; }
+.SmallButton:hover { color:#000; }
 .btn {
   background: #3498db;
-  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
-  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
-  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
-  background-image: -o-linear-gradient(top, #3498db, #2980b9);
   background-image: linear-gradient(to bottom, #3498db, #2980b9);
-  -webkit-border-radius: 15;
-  -moz-border-radius: 15;
   border-radius: 15px;
   color: #ffffff;
-  padding: 10px 20px 10px 20px;
+  padding: 10px 20px;
   border: solid #1f628d 5px;
   text-decoration: none;
-  cursor:pointer;
+  cursor: pointer;
   user-select: none;
-  -o-user-select:none;
-  -moz-user-select: none;
-  -khtml-user-select: none;
   -webkit-user-select: none;
 }
 .btn:hover {
   background: #3cb0fd;
-  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
   background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
 }
-input[type='checkbox'] {
-  margin-right: 1em;
-}
+input[type='checkbox'] { margin-right: 1em; }
+
 </style>
 <script type="text/javascript" src="Input.js"></script>
 <script type="text/javascript" src="SlimeAI.js"></script>
@@ -54,32 +171,20 @@ var physicsLog = 0;
 var TWO_PI = Math.PI*2;
 var WIN_AMOUNT = 7;
 
-// Objects rendered in the slime engine
-// need an x and a y parameter
 function newLegacyBall(radius,color) {
   return {
-    radius:radius,
-    color:color,
-    x:0,
-    y:0,
-    velocityX:0,
-    velocityY:0,
-    rotation:0,
+    radius:radius, color:color, x:0, y:0, velocityX:0, velocityY:0, rotation:0,
     render: function() {
       var xPix   = this.x * pixelsPerUnitX;
       var yPix   = courtYPix - (this.y * pixelsPerUnitY);
-      // The original game's ball looked bigger then
-      // it was, so we add 2 pixels here to the radius
       var radiusPix = this.radius * pixelsPerUnitY + 2;
-
       if(ballImage && !legacyGraphics) {
-	this.rotation += this.velocityX / 100;
-	this.rotation = this.rotation % TWO_PI;
-
-	ctx.translate(xPix, yPix);
+        this.rotation += this.velocityX / 100;
+        this.rotation = this.rotation % TWO_PI;
+        ctx.translate(xPix, yPix);
         ctx.rotate(this.rotation);
         ctx.drawImage(ballImage, -radiusPix, -radiusPix);
-	ctx.setTransform(1,0,0,1,0,0);
+        ctx.setTransform(1,0,0,1,0,0);
       } else {
         ctx.fillStyle = legacyBallColor;
         ctx.beginPath();
@@ -89,21 +194,14 @@ function newLegacyBall(radius,color) {
     }
   };
 }
+
 function newLegacySlime(onLeft,radius,color) {
   return {
-    onLeft:onLeft,
-    radius:radius,
-    color:color,
-    img:null,
-    x:0,
-    y:0,
-    velocityX:0,
-    velocityY:0,
+    onLeft:onLeft, radius:radius, color:color, img:null, x:0, y:0, velocityX:0, velocityY:0,
     render: function() {
       var xPix      = this.x * pixelsPerUnitX;
       var yPix      = courtYPix - (this.y * pixelsPerUnitY);
       var radiusPix = this.radius * pixelsPerUnitY;
-
       if(this.img && !legacyGraphics) {
         ctx.drawImage(this.img, xPix - radiusPix, yPix - 38);
       } else {
@@ -112,8 +210,6 @@ function newLegacySlime(onLeft,radius,color) {
         ctx.arc(xPix, yPix, radiusPix, Math.PI, TWO_PI);
         ctx.fill();
       }
-
-      // Draw Eyes
       var eyeX = this.x + (this.onLeft ? 1 : -1)*this.radius/4;
       var eyeY = this.y + this.radius/2;
       var eyeXPix = eyeX * pixelsPerUnitX;
@@ -123,8 +219,6 @@ function newLegacySlime(onLeft,radius,color) {
       ctx.beginPath();
       ctx.arc(0,0, radiusPix/4, 0, TWO_PI);
       ctx.fill();
-
-      // Draw Pupil
       var dx = ball.x - eyeX;
       var dy = eyeY - ball.y;
       var dist = Math.sqrt(dx*dx+dy*dy);
@@ -138,784 +232,642 @@ function newLegacySlime(onLeft,radius,color) {
   };
 }
 
-var GAME_STATE_RUNNING     = 1;
-var GAME_STATE_POINT_PAUSE = 2;
-var GAME_STATE_MENU_PAUSE  = 3;
-var GAME_STATE_MENU_PAUSE_BETWEEN_POINTS  = 4;
-var GAME_STATE_SHOW_WINNER = 5;
+var GAME_STATE_RUNNING                   = 1;
+var GAME_STATE_POINT_PAUSE               = 2;
+var GAME_STATE_MENU_PAUSE                = 3;
+var GAME_STATE_MENU_PAUSE_BETWEEN_POINTS = 4;
+var GAME_STATE_SHOW_WINNER               = 5;
 
-  // MENU DATA
-  var menuDiv;
-  var smallMenuDiv;
-  var onePlayer;
-  var nextSlimeIndex;
+var menuDiv, smallMenuDiv, onePlayer, nextSlimeIndex, gameState;
+var ctx, canvas, viewWidth, viewHeight, courtYPix, pixelsPerUnitX, pixelsPerUnitY;
+var updatesToPaint, legacySkyColor, legacyGroundColor, legacyBallColor, newGroundColor;
+var backImage, backTextColor, backImages = {}, ballImage, gameIntervalObject, endOfPointText;
+var greenSlimeImage, redSlimeImage, legacyGraphics;
+var gameWidth, gameHeight, ball, slimeLeft, slimeRight, slimeLeftScore, slimeRightScore;
+var slimeAI, updateCount, leftWon, slowMotion;
+var logString;
+function log(msg) { logString += msg + '\n'; }
 
-  var gameState;
-
-  // RENDER DATA
-  var ctx;
-  var canvas;
-  var viewWidth;
-  var viewHeight;
-  var courtYPix;
-  var pixelsPerUnitX;
-  var pixelsPerUnitY;
-  var updatesToPaint;
-  var legacySkyColor;
-  var legacyGroundColor;
-  var legacyBallColor;
-  var newGroundColor;
-  var backImage;
-  var backTextColor;
-  var backImages = {};
-  var ballImage;
-  var gameIntervalObject;
-  var endOfPointText;
-  var greenSlimeImage;
-  var redSlimeImage;
-  var legacyGraphics;
-
-
-  // GAME DATA
-  var gameWidth,gameHeight;
-  var ball;
-  var slimeLeft;
-  var slimeRight;
-  var slimeLeftScore;
-  var slimeRightScore;
-  var slimeAI;
-  var updateCount; // RESET every time GAME_STATE_RUNNING is set
-  var leftWon;
-  // GAME CHEAT DATA
-  // NOTE: this data should be reloaded every time the
-  //       gameState goes back to GAME_STATE_RUNNING
-  var slowMotion;
-
-  var logString;
-  function log(msg)
-  {
-    logString += msg + '\n';
+function updateSlimeVelocities(s,movement,jump) {
+  if(movement == 0)      s.velocityX = 0;
+  else if(movement == 1) s.velocityX = -8;
+  else if(movement == 2) s.velocityX =  8;
+  else throw "slime movement " + movement + " is invalid";
+  if(jump && s.y == 0) s.velocityY = 31;
+}
+function updateSlimeVelocitiesWithKeys(s,left,right,up) {
+  if(keysDown[left]) {
+    s.velocityX = keysDown[right] ? 0 : -8;
+  } else if(keysDown[right]) {
+    s.velocityX = 8;
+  } else {
+    s.velocityX = 0;
   }
+  if(s.y == 0 && keysDown[up]) s.velocityY = 31;
+}
+function updateSlimeVelocitiesWithDoubleKeys(s,left1,left2,right1,right2,up1,up2) {
+  if(keysDown[left1] || keysDown[left2]) {
+    s.velocityX = (keysDown[right1] || keysDown[right2]) ? 0 : -8;
+  } else if(keysDown[right1] || keysDown[right2]) {
+    s.velocityX = 8;
+  } else {
+    s.velocityX = 0;
+  }
+  if(s.y == 0 && (keysDown[up1] || keysDown[up2])) s.velocityY = 31;
+}
+function updateSlime(s, leftLimit, rightLimit) {
+  if(s.velocityX != 0) {
+    s.x += s.velocityX;
+    if(s.x < leftLimit) s.x = leftLimit;
+    else if(s.x > rightLimit) s.x = rightLimit;
+  }
+  if(s.velocityY != 0 || s.y > 0) {
+    s.velocityY -= 2;
+    s.y += s.velocityY;
+    if(s.y < 0) { s.y = 0; s.velocityY = 0; }
+  }
+}
 
-  // Game Update Functions
-  function updateSlimeVelocities(s,movement,jump) {
-    if(movement == 0) {
-      s.velocityX = 0;
-    } else if(movement == 1) {
-      s.velocityX = -8;
-    } else if(movement == 2) {
-      s.velocityX = 8;
+var MAX_VELOCITY_X = 15;
+var MAX_VELOCITY_Y = 22;
+function collisionBallSlime(s) {
+  var dx = 2 * (ball.x - s.x);
+  var dy = ball.y - s.y;
+  var dist = Math.trunc(Math.sqrt(dx * dx + dy * dy));
+  var dVelocityX = ball.velocityX - s.velocityX;
+  var dVelocityY = ball.velocityY - s.velocityY;
+  if(dy > 0 && dist < ball.radius + s.radius && dist > FUDGE) {
+    ball.x = s.x + Math.trunc(Math.trunc((s.radius + ball.radius) / 2) * dx / dist);
+    ball.y = s.y + Math.trunc((s.radius + ball.radius) * dy / dist);
+    var something = Math.trunc((dx * dVelocityX + dy * dVelocityY) / dist);
+    if(something <= 0) {
+      ball.velocityX += Math.trunc(s.velocityX - 2 * dx * something / dist);
+      ball.velocityY += Math.trunc(s.velocityY - 2 * dy * something / dist);
+      if(ball.velocityX < -MAX_VELOCITY_X) ball.velocityX = -MAX_VELOCITY_X;
+      else if(ball.velocityX > MAX_VELOCITY_X) ball.velocityX = MAX_VELOCITY_X;
+      if(ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
+      else if(ball.velocityY > MAX_VELOCITY_Y) ball.velocityY = MAX_VELOCITY_Y;
+    }
+  }
+}
+var FUDGE = 5;
+function updateBall() {
+  ball.velocityY += -1;
+  if(ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
+  ball.x += ball.velocityX;
+  ball.y += ball.velocityY;
+  collisionBallSlime(slimeLeft);
+  collisionBallSlime(slimeRight);
+  if(ball.x < 15)  { ball.x = 15;  ball.velocityX = -ball.velocityX; }
+  else if(ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
+  if(ball.x > 480 && ball.x < 520 && ball.y < 140) {
+    if(ball.velocityY < 0 && ball.y > 130) {
+      ball.velocityY *= -1; ball.y = 130;
+    } else if(ball.x < 500) {
+      ball.x = 480;
+      ball.velocityX = ball.velocityX >= 0 ? -ball.velocityX : ball.velocityX;
     } else {
-      throw "slime movement " + movement + " is invalid";
-    }
-    if(jump && s.y == 0) {
-      s.velocityY = 31;
+      ball.x = 520;
+      ball.velocityX = ball.velocityX <= 0 ? -ball.velocityX : ball.velocityX;
     }
   }
-  function updateSlimeVelocitiesWithKeys(s,left,right,up) {
-    // update velocities
-    if(keysDown[left]) {
-      if(keysDown[right]) {
-        s.velocityX = 0;
-      } else {
-        s.velocityX = -8;
-      }
-    } else if(keysDown[right]) {
-      s.velocityX = 8;
-    } else {
-      s.velocityX = 0;
-    }
-    if(s.y == 0 && keysDown[up]) {
-      s.velocityY = 31;
-    }
+  if(ball.y < 0) {
+    if(ball.x > 500) { leftWon = true;  slimeLeftScore++;  }
+    else             { leftWon = false; slimeRightScore++; }
+    endPoint();
+    return true;
   }
-  function updateSlimeVelocitiesWithDoubleKeys(s,left1,left2,right1,right2,up1,up2) {
-    // update velocities
-    if(keysDown[left1] || keysDown[left2]) {
-      if(keysDown[right1] || keysDown[right2]) {
-        s.velocityX = 0;
-      } else {
-        s.velocityX = -8;
-      }
-    } else if(keysDown[right1] || keysDown[right2]) {
-      s.velocityX = 8;
-    } else {
-      s.velocityX = 0;
-    }
-    if(s.y == 0 && (keysDown[up1] || keysDown[up2])) {
-      s.velocityY = 31;
-    }
+  return false;
+}
+function updateFrame() {
+  if(onePlayer) {
+    slimeAI.move(false);
+    updateSlimeVelocitiesWithDoubleKeys(slimeLeft, KEY_A,KEY_LEFT, KEY_D,KEY_RIGHT, KEY_W,KEY_UP);
+    updateSlimeVelocities(slimeRight, slimeAI.movement, slimeAI.jumpSet);
+  } else {
+    updateSlimeVelocitiesWithKeys(slimeLeft,  KEY_A,    KEY_D,     KEY_W);
+    updateSlimeVelocitiesWithKeys(slimeRight, KEY_LEFT, KEY_RIGHT, KEY_UP);
   }
-  function updateSlime(s, leftLimit, rightLimit) {
-    if(s.velocityX != 0) {
-      s.x += s.velocityX;
-      if(s.x < leftLimit) s.x = leftLimit;
-      else if(s.x > rightLimit) s.x = rightLimit;
-    }
-    if(s.velocityY != 0 || s.y > 0) {
-      s.velocityY -= 2;
-      s.y += s.velocityY;
-      if(s.y < 0) {
-        s.y = 0;
-        s.velocityY = 0;
-      }
-    }
+  updateSlime(slimeLeft,  50,  445);
+  updateSlime(slimeRight, 555, 950);
+  updateBall();
+}
+
+function renderPoints(score, initialX, xDiff) {
+  ctx.fillStyle = '#ff0';
+  var x = initialX;
+  for(var i = 0; i < score; i++) {
+    ctx.beginPath(); ctx.arc(x, 25, 12, 0, TWO_PI); ctx.fill();
+    x += xDiff;
   }
+  ctx.strokeStyle = backTextColor;
+  ctx.lineWidth = 2;
+  x = initialX;
+  for(var i = 0; i < WIN_AMOUNT; i++) {
+    ctx.beginPath(); ctx.arc(x, 25, 12, 0, TWO_PI); ctx.stroke();
+    x += xDiff;
+  }
+}
+function renderBackground() {
+  if(legacyGraphics) {
+    ctx.fillStyle = legacySkyColor;
+    ctx.fillRect(0, 0, viewWidth, courtYPix);
+    ctx.fillStyle = legacyGroundColor;
+  } else {
+    ctx.drawImage(backImage, 0, 0);
+    ctx.fillStyle = newGroundColor;
+  }
+  ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(viewWidth/2-2, 7*viewHeight/10, 4, viewHeight/10+5);
+  renderPoints(slimeLeftScore,  30,            40);
+  renderPoints(slimeRightScore, viewWidth - 30, -40);
+}
+function renderGame() {
+  if(updatesToPaint == 0) {
+    console.log("ERROR: render called but not ready to paint");
+  } else {
+    if(updatesToPaint > 1) console.log("WARNING: render missed " + (updatesToPaint - 1) + " frame(s)");
+    renderBackground();
+    ball.render(); slimeLeft.render(); slimeRight.render();
+    updatesToPaint = 0;
+  }
+}
+function renderEndOfPoint() {
+  var textWidth = ctx.measureText(endOfPointText).width;
+  renderGame();
+  ctx.fillStyle = '#000';
+  ctx.fillText(endOfPointText, (viewWidth - textWidth)/2, courtYPix + (viewHeight - courtYPix)/2);
+}
 
-  var MAX_VELOCITY_X = 15;
-  var MAX_VELOCITY_Y = 22;
-  function collisionBallSlime(s) {
-    var dx = 2 * (ball.x - s.x);
-    var dy = ball.y - s.y;
-    var dist = Math.trunc(Math.sqrt(dx * dx + dy * dy));
-
-    var dVelocityX = ball.velocityX - s.velocityX;
-    var dVelocityY = ball.velocityY - s.velocityY;
-
-    if(dy > 0 && dist < ball.radius + s.radius && dist > FUDGE) {
-      var oldBall = {x:ball.x,y:ball.y,velocityX:ball.velocityX,velocityY:ball.velocityY};
-      if(physicsLog > 0) {
-        log("Collision:");
-        log(" dx        " + dx);
-        log(" dy        " + dy);
-        log(" dist      " + dist);
-        log(" dvx       " + dVelocityX);
-        log(" dvy       " + dVelocityY);
-        log(" oldBallX  " + ball.x);
-        log(" oldBallY  " + ball.y);
-        log(" [DBG] s.x   : " + s.x);
-        log(" [DBG] s.rad : " + s.radius);
-        log(" [DBG] b.rad : " + ball.radius);
-        log(" [DBG] 0   : " + Math.trunc((s.radius + ball.radius) / 2));
-        log(" [DBG] 1   : " + Math.trunc((s.radius + ball.radius) / 2)*dx);
-        log(" [DBG] 2   : " + Math.trunc(Math.trunc((s.radius + ball.radius) / 2)*dx/dist));
-      }
-      ball.x = s.x + Math.trunc(Math.trunc((s.radius + ball.radius) / 2) * dx / dist);
-      ball.y = s.y + Math.trunc((s.radius + ball.radius) * dy / dist);
-
-      var something = Math.trunc((dx * dVelocityX + dy * dVelocityY) / dist);
-      if(physicsLog > 0) {
-        log(" newBallX  " + ball.x);
-        log(" newBallY  " + ball.y);
-        log(" something " + something);
-      }
-
-      if(something <= 0) {
-        ball.velocityX += Math.trunc(s.velocityX - 2 * dx * something / dist);
-        ball.velocityY += Math.trunc(s.velocityY - 2 * dy * something / dist);
-        if(     ball.velocityX < -MAX_VELOCITY_X) ball.velocityX = -MAX_VELOCITY_X;
-        else if(ball.velocityX >  MAX_VELOCITY_X) ball.velocityX =  MAX_VELOCITY_X;
-        if(     ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
-        else if(ball.velocityY >  MAX_VELOCITY_Y) ball.velocityY =  MAX_VELOCITY_Y;
-        if(physicsLog > 0) {
-          log(" ballVX    " + ball.velocityX);
-          log(" ballVY    " + ball.velocityY);
-        }
+function gameIteration() {
+  if(gameState == GAME_STATE_RUNNING) {
+    updateCount++;
+    if(slowMotion && (updateCount % 2) == 0) return;
+    if(updatesToPaint > 0) console.log("WARNING: updating frame before it was rendered");
+    if(physicsLog > 0) {
+      log("Frame");
+      log(" ball.x  " + ball.x); log(" ball.y  " + ball.y);
+      log(" ball.vx " + ball.velocityX); log(" ball.vy " + ball.velocityY);
+      physicsLog--;
+      if(physicsLog == 0) {
+        var logDom = document.createElement('pre');
+        logDom.innerHTML = logString;
+        document.body.appendChild(logDom);
       }
     }
+    updateFrame();
+    updatesToPaint++;
+    if(updatesToPaint == 1) requestAnimationFrame(renderGame);
   }
-  var FUDGE = 5; // not sure why this is needed
-  // returns true if end of point
-  function updateBall() {
-    ball.velocityY += -1; // gravity
-    if(ball.velocityY < -MAX_VELOCITY_Y) {
-      ball.velocityY = -MAX_VELOCITY_Y;
-    }
+}
 
-    ball.x += ball.velocityX;
-    ball.y += ball.velocityY;
+// ── bottom bar helpers ──
+function showBottomBar() {
+  var bb = document.getElementById('BottomBar');
+  if(bb) bb.style.display = 'flex';
+}
+function hideBottomBar() {
+  var bb = document.getElementById('BottomBar');
+  if(bb) bb.style.display = 'none';
+}
 
-    collisionBallSlime(slimeLeft);
-    collisionBallSlime(slimeRight);
+// ── lobby WebSocket ──
+var lobbySocket  = null;
+var myPlayerName = '';
 
-    // handle wall hits
-    if (ball.x < 15) {
-      ball.x = 15;
-      ball.velocityX = -ball.velocityX;
-    } else if(ball.x > 985){
-      ball.x = 985;
-      ball.velocityX = -ball.velocityX;
-    }
-    // hits the post
-    if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
-      // bounces off top of net
-      if (ball.velocityY < 0 && ball.y > 130) {
-        ball.velocityY *= -1;
-        ball.y = 130;
-      } else if (ball.x < 500) { // hits side of net
-        ball.x = 480;
-        ball.velocityX = ball.velocityX >= 0 ? -ball.velocityX : ball.velocityX;
-      } else {
-        ball.x = 520;
-        ball.velocityX = ball.velocityX <= 0 ? -ball.velocityX : ball.velocityX;
-      }
-    }
+function connectLobby() {
+  var wsUrl = window.SLIME_WS_URL ||
+    ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
+  try {
+    lobbySocket = new WebSocket(wsUrl);
+  } catch(e) { return; }
 
-    // Check for end of point
-    if(ball.y < 0) {
-      if(ball.x > 500) {
-        leftWon = true;
-        slimeLeftScore++;
-      } else {
-        leftWon = false;
-        slimeRightScore++;
-      }
-      endPoint()
-      return true;
-    }
-    return false;
-  }
-  function updateFrame() {
-    if(onePlayer) {
-      slimeAI.move(false); // Move the right slime
-      updateSlimeVelocitiesWithDoubleKeys(slimeLeft,
-        KEY_A,KEY_LEFT,
-        KEY_D,KEY_RIGHT,
-        KEY_W,KEY_UP);
-      updateSlimeVelocities(slimeRight,slimeAI.movement,slimeAI.jumpSet);
-    } else {
-      updateSlimeVelocitiesWithKeys(slimeLeft, KEY_A,KEY_D,KEY_W);
-      updateSlimeVelocitiesWithKeys(slimeRight, KEY_LEFT,KEY_RIGHT,KEY_UP);
-    }
-
-    updateSlime(slimeLeft, 50 , 445);
-    updateSlime(slimeRight, 555, 950);
-
-    // Allows slimes to go accross the net
-    //updateSlime(slimeLeft, 0, 1000);
-    //updateSlime(slimeRight, 0, 1000);
-
-    if(updateBall()) {
-      return;
-    }
-
-  }
-
-  function renderPoints(score, initialX, xDiff) {
-    ctx.fillStyle = '#ff0';
-    var x = initialX;
-    for(var i = 0; i < score; i++) {
-      ctx.beginPath();
-      ctx.arc(x, 25, 12, 0, TWO_PI);
-      ctx.fill();
-      x += xDiff;
-    }
-    ctx.strokeStyle = backTextColor;
-    ctx.lineWidth = 2;
-    x = initialX;
-    for(var i = 0; i < WIN_AMOUNT; i++) {
-      ctx.beginPath();
-      ctx.arc(x, 25, 12, 0, TWO_PI);
-      ctx.stroke();
-      x += xDiff;
-    }
-  }
-
-  // Rendering Functions
-  function renderBackground()
-  {
-    if(legacyGraphics) {
-      ctx.fillStyle=legacySkyColor;
-      ctx.fillRect(0, 0, viewWidth, courtYPix);
-      ctx.fillStyle = legacyGroundColor;
-    } else {
-      ctx.drawImage(backImage, 0, 0);
-      ctx.fillStyle = newGroundColor;
-    }
-    ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
-    ctx.fillStyle='#fff'
-    ctx.fillRect(viewWidth/2-2,7*viewHeight/10,4,viewHeight/10+5);
-    // render scores
-    renderPoints(slimeLeftScore, 30, 40);
-    renderPoints(slimeRightScore, viewWidth - 30, -40);
-  }
-
-
-  // GAME CODE
-  function renderGame() {
-    if(updatesToPaint == 0) {
-      console.log("ERROR: render called but not ready to paint");
-    } else {
-      if(updatesToPaint > 1) {
-        console.log("WARNING: render missed " + (updatesToPaint - 1) + " frame(s)");
-      }
-      renderBackground();
-      ctx.fillStyle = '#000';
-      //ctx.font = "20px Georgia";
-      //ctx.fillText("Score: " + slimeLeftScore, 140, 20);
-      //ctx.fillText("Score: " + slimeRightScore, viewWidth - 230, 20);
-      ball.render();
-      slimeLeft.render();
-      slimeRight.render();
-      updatesToPaint = 0;
-    }
-  }
-  function renderEndOfPoint() {
-    var textWidth = ctx.measureText(endOfPointText).width;
-    renderGame();
-    ctx.fillStyle = '#000';
-    ctx.fillText(endOfPointText,
-      (viewWidth - textWidth)/2, courtYPix + (viewHeight - courtYPix)/2);
-  }
-
-
-
-  function gameIteration() {
-    if(gameState == GAME_STATE_RUNNING) {
-      updateCount++;
-      if(slowMotion && (updateCount % 2) == 0)
-        return;
-      if(updatesToPaint > 0) {
-        console.log("WARNING: updating frame before it was rendered");
-      }
-      if(physicsLog > 0) {
-        log("Frame");
-        log(" ball.x  " + ball.x);
-        log(" ball.y  " + ball.y);
-        log(" ball.vx " + ball.velocityX);
-        log(" ball.vy " + ball.velocityY);
-        physicsLog--;
-        if(physicsLog == 0) {
-          var logDom = document.createElement('pre');
-          logDom.innerHTML = logString;
-          document.body.appendChild(logDom);
-        }
-      }
-      updateFrame();
-      updatesToPaint++;
-      if(updatesToPaint == 1) {
-        requestAnimationFrame(renderGame);
-      }
-    }
-  }
-
-
-  // === ONLINE MODE ===
-  var onlineMode = false;
-  var socket = null;
-  var mySide = null;
-  var onlineInputInterval = null;
-  var onlinePointText = null;
-
-  function startOnline() {
-    if (socket) { socket.onclose = null; socket.close(); socket = null; }
-    if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
-    onlineMode = true;
-    mySide = null;
-    onlinePointText = null;
-    canvas.style.display = 'none';
-    menuDiv.style.display = 'block';
-    menuDiv.innerHTML = '<div style="text-align:center;">' +
-      '<h1 style="margin-top:60px;">Waiting for opponent...</h1>' +
-      '<p style="margin-top:15px;font-size:18px;">Send your friend this page URL and have them click <b>Online Two Player</b></p>' +
-      '<br/><span onclick="toInitialMenu()" class="SmallButton">cancel</span>' +
-      '</div>';
-
-    var wsUrl = window.SLIME_WS_URL ||
-      ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
-    socket = new WebSocket(wsUrl);
-
-    socket.onmessage = function(e) {
-      try { handleServerMessage(JSON.parse(e.data)); } catch(_) {}
-    };
-    socket.onclose = function() {
-      if (!onlineMode) return;
-      onlineMode = false;
-      menuDiv.innerHTML = '<div style="text-align:center;"><h1 style="margin-top:60px;">Disconnected</h1></div>';
-      setTimeout(toInitialMenu, 2000);
-    };
-  }
-
-  function handleServerMessage(msg) {
-    if (msg.type === 'start') {
-      mySide = msg.side;
-      launchOnlineGame();
-    } else if (msg.type === 'state') {
-      applyServerState(msg);
-    } else if (msg.type === 'point') {
-      var iScored = (mySide === msg.scorer);
-      onlinePointText = iScored ? 'You scored!' : 'Opponent scores!';
-      setTimeout(function() { onlinePointText = null; }, 700);
-    } else if (msg.type === 'game_over') {
-      finishOnlineGame(msg.winner);
-    } else if (msg.type === 'opponent_disconnected') {
+  lobbySocket.onmessage = function(e) {
+    try { handleServerMessage(JSON.parse(e.data)); } catch(_) {}
+  };
+  lobbySocket.onclose = function() {
+    lobbySocket = null;
+    updatePlayerCount(0);
+    if(onlineMode) {
       clearInterval(onlineInputInterval);
       onlineMode = false;
       canvas.style.display = 'none';
-      menuDiv.innerHTML = '<div style="text-align:center;"><h1 style="margin-top:60px;">Opponent disconnected</h1></div>';
       menuDiv.style.display = 'block';
-      setTimeout(toInitialMenu, 2000);
+      menuDiv.innerHTML = '<div style="text-align:center;padding-top:80px;"><h2>Connection lost</h2></div>';
+      showBottomBar();
+      setTimeout(function() { connectLobby(); toInitialMenu(); }, 2000);
+    } else {
+      setTimeout(connectLobby, 4000);
     }
+  };
+}
+
+function sendChat() {
+  var input = document.getElementById('ChatInput');
+  var msg   = (input.value || '').trim();
+  if(!msg) return;
+  if(lobbySocket && lobbySocket.readyState === 1) {
+    lobbySocket.send(JSON.stringify({ type: 'chat', message: msg }));
   }
+  input.value = '';
+}
 
-  function launchOnlineGame() {
-    slimeLeft  = newLegacySlime(true,  100, '#0f0');
-    slimeRight = newLegacySlime(false, 100, '#f00');
-    ball       = newLegacyBall(25, '#ff0');
-    slimeLeftScore  = 0;
-    slimeRightScore = 0;
-    slimeLeft.img   = greenSlimeImage;
-    slimeRight.img  = redSlimeImage;
-    legacyGraphics  = false;
-    legacySkyColor  = '#00f';
-    backImage       = backImages['sky'];
-    backTextColor   = '#000';
-    legacyGroundColor = '#888';
-    legacyBallColor   = '#fff';
-    newGroundColor    = '#ca6';
-    canvas.style.display = 'block';
-    menuDiv.style.display = 'none';
-
-    onlineInputInterval = setInterval(function() {
-      if (!socket || socket.readyState !== 1) return;
-      var leftKey, rightKey, upKey;
-      if (mySide === 'left') { leftKey = KEY_A; rightKey = KEY_D; upKey = KEY_W; }
-      else                   { leftKey = KEY_LEFT; rightKey = KEY_RIGHT; upKey = KEY_UP; }
-      var movement = 0;
-      if      (keysDown[leftKey]  && !keysDown[rightKey]) movement = 1;
-      else if (keysDown[rightKey] && !keysDown[leftKey])  movement = 2;
-      socket.send(JSON.stringify({ movement: movement, jump: !!keysDown[upKey] }));
-    }, 20);
+function addChatMessage(name, text) {
+  var log = document.getElementById('ChatLog');
+  if(!log) return;
+  var div = document.createElement('div');
+  div.className = 'chat-msg';
+  if(name) {
+    div.innerHTML = '<span class="chat-name">' + name + '</span>: ' + text;
+  } else {
+    div.innerHTML = '<span class="chat-sys">' + text + '</span>';
   }
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  while(log.children.length > 100) log.removeChild(log.firstChild);
+}
 
-  function applyServerState(msg) {
-    ball.x = msg.ball.x; ball.y = msg.ball.y; ball.velocityX = msg.ball.velocityX;
-    slimeLeft.x  = msg.slimeLeft.x;  slimeLeft.y  = msg.slimeLeft.y;
-    slimeRight.x = msg.slimeRight.x; slimeRight.y = msg.slimeRight.y;
-    slimeLeftScore  = msg.scoreLeft;
-    slimeRightScore = msg.scoreRight;
-    renderBackground();
-    ball.render();
-    slimeLeft.render();
-    slimeRight.render();
-    if (onlinePointText) {
-      ctx.font = '20px Georgia';
-      ctx.fillStyle = '#000';
-      var w = ctx.measureText(onlinePointText).width;
-      ctx.fillText(onlinePointText, (viewWidth - w) / 2, courtYPix + (viewHeight - courtYPix) / 2);
-    }
+function updatePlayerCount(count) {
+  var el = document.getElementById('PlayerCountDiv');
+  if(el) el.textContent = '● ' + count + ' player' + (count === 1 ? '' : 's') + ' online';
+}
+
+// ── online mode state ──
+var onlineMode         = false;
+var mySide             = null;
+var onlineInputInterval = null;
+var onlinePointText    = null;
+
+function startOnline() {
+  if(!lobbySocket || lobbySocket.readyState !== 1) {
+    addChatMessage(null, 'Still connecting to server...');
+    return;
   }
+  if(onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
+  onlineMode = true; mySide = null; onlinePointText = null;
+  hideBottomBar();
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  menuDiv.innerHTML =
+    '<div style="text-align:center;padding-top:70px;">' +
+    '<h2 style="font-size:32px;margin-bottom:16px;">Finding opponent...</h2>' +
+    '<p style="color:#555;">Waiting in queue</p>' +
+    '<br/><span onclick="cancelQueue()" class="SmallButton" style="font-size:13px;">cancel</span>' +
+    '</div>';
+  lobbySocket.send(JSON.stringify({ type: 'queue' }));
+}
 
-  function finishOnlineGame(winner) {
+function cancelQueue() {
+  onlineMode = false;
+  if(lobbySocket && lobbySocket.readyState === 1) {
+    lobbySocket.send(JSON.stringify({ type: 'cancel_queue' }));
+  }
+  showBottomBar();
+  toInitialMenu();
+}
+
+function handleServerMessage(msg) {
+  if(msg.type === 'connected') {
+    myPlayerName = msg.name;
+    updatePlayerCount(msg.playerCount);
+    addChatMessage(null, 'Connected as ' + msg.name);
+  } else if(msg.type === 'player_count') {
+    updatePlayerCount(msg.count);
+  } else if(msg.type === 'chat') {
+    addChatMessage(msg.name, msg.message);
+  } else if(msg.type === 'waiting') {
+    // waiting screen already shown in startOnline()
+  } else if(msg.type === 'start') {
+    mySide = msg.side;
+    launchOnlineGame();
+  } else if(msg.type === 'state') {
+    applyServerState(msg);
+  } else if(msg.type === 'point') {
+    var iScored = (mySide === msg.scorer);
+    onlinePointText = iScored ? 'You scored!' : 'Opponent scores!';
+    setTimeout(function() { onlinePointText = null; }, 700);
+  } else if(msg.type === 'game_over') {
+    finishOnlineGame(msg.winner);
+  } else if(msg.type === 'opponent_disconnected') {
     clearInterval(onlineInputInterval);
     onlineMode = false;
-    var iWon = (mySide === winner);
     canvas.style.display = 'none';
-    menuDiv.style.display = 'block';
-    menuDiv.innerHTML = '<div style="text-align:center;">' +
-      '<h1 style="margin:50px 0 20px 0;">' + (iWon ? 'You won!' : 'You lost :(') + '</h1>' +
-      '<span onclick="startOnline()" class="btn" style="display:inline-block;margin:15px 20px;font-size:30px;">Play Again</span>' +
-      '<span onclick="toInitialMenu()" class="btn" style="display:inline-block;margin:15px 20px;font-size:30px;">Menu</span>' +
-      '</div>';
-  }
-  // === END ONLINE MODE ===
-
-  function spaceKeyDown() {
-    if(onlineMode) return;
-    if(gameState == GAME_STATE_SHOW_WINNER) {
-      if(onePlayer && nextSlimeIndex >= slimeAIs.length) {
-        nextSlimeIndex = 0;
-        toInitialMenu();
-      } else {
-        start(onePlayer);
-      }
-    }
-  }
-  function endMatch() {
-    gameState = GAME_STATE_SHOW_WINNER;
-    clearInterval(gameIntervalObject);
-    if(onePlayer) {
-      if(leftWon) {
-	nextSlimeIndex++;
-	if(nextSlimeIndex >= slimeAIs.length) {
-          menuDiv.innerHTML = '<div style="text-align:center;">' +
-            '<h1 style="margin:50px 0 20px 0;">You beat everyone!</h1>' +
-            "Press 'space' to do it all over again!" +
-            '</div>';
-	} else {
-          menuDiv.innerHTML = '<div style="text-align:center;">' +
-            '<h1 style="margin:50px 0 20px 0;">You won!</h1>' +
-            "Press 'space' to continue..." +
-            '</div>';
-	}
-      } else {
-	nextSlimeIndex = 0;
-        menuDiv.innerHTML = '<div style="text-align:center;">' +
-          '<h1 style="margin:50px 0 20px 0;">You lost :(</h1>' +
-          "Press 'space' to retry..." +
-          '</div>';
-      }
-    } else {
-      menuDiv.innerHTML = '<div style="text-align:center;">' +
-        '<h1 style="margin:50px 0 20px 0;">Player ' + (leftWon ? '1' : '2') + ' Wins!</h1>' +
-        "Press 'space' for rematch..." +
-        '</div>';
-    }
-    menuDiv.style.display = 'block';
-    canvas.style.display = 'none';
-  }
-  function startNextPoint() {
-    initRound(leftWon);
-    updatesToPaint = 0;
-    updateCount = 0;
-    gameState = GAME_STATE_RUNNING;
-  }
-  function endPoint() {
-    if(slimeAI) {
-      keysDown[KEY_UP] = false;
-      keysDown[KEY_RIGHT] = false;
-      keysDown[KEY_LEFT] = false;
-    }
-
-    if(slimeLeftScore >= WIN_AMOUNT) {
-      endMatch(true);
-      return;
-    }
-    if(slimeRightScore >= WIN_AMOUNT) {
-      endMatch(false);
-      return;
-    }
-
-    if(onePlayer) {
-      if(leftWon) {
-        endOfPointText = 'Nice, you got the point!';
-      } else {
-        endOfPointText = slimeAI.name + ' scores!';
-      }
-    } else {
-      endOfPointText = 'Player ' + (leftWon ? '1':'2') + ' scores!';
-    }
-    gameState = GAME_STATE_POINT_PAUSE;
-    requestAnimationFrame(renderEndOfPoint);
-
-    setTimeout(function () {
-      if(gameState == GAME_STATE_POINT_PAUSE) {
-        startNextPoint();
-      }
-    }, 700);
-  }
-  function initRound(server) {
-    ball.x = server ? 200 : 800;
-    ball.y = 356;
-    ball.velocityX = 0;
-    ball.velocityY = 0;
-
-    slimeLeft.x = 200;
-    slimeLeft.y = 0;
-    slimeLeft.velocityX = 0;
-    slimeLeft.velocityY = 0;
-
-    slimeRight.x = 800;
-    slimeRight.y = 0;
-    slimeRight.velocityX = 0;
-    slimeRight.velocityY = 0;
-  }
-
-  function updateWindowSize(width,height) {
-    viewWidth = width;
-    viewHeight = height;
-    console.log("ViewSize x: " + width + ", y: " + height);
-    pixelsPerUnitX = width / gameWidth;
-    pixelsPerUnitY = height / gameHeight;
-    console.log("GAMESIZE x: " + gameWidth + ", y: " + gameHeight);
-    console.log("PPU      x: " + pixelsPerUnitX + ", y: " + pixelsPerUnitY);
-    courtYPix = 4 * viewHeight / 5;
-  }
-
-  function setupView(view) {
-    view.style.position = 'absolute';
-    view.style.left     = '0';
-    view.style.top      = '0';
-  }
-
-  function bodyload() {
-    var contentDiv = document.getElementById('GameContentDiv');
-
-    // Create Render objects
-    canvas = document.createElement('canvas');
-    canvas.width  = 750;
-    canvas.height = 375;
-    setupView(canvas,true);
-    canvas.style.display  = 'none';
-
-    ctx = canvas.getContext("2d");
-    ctx.font = "20px Georgia";
-
-    gameWidth  = 1000;
-    gameHeight = 1000;
-
-    // Setup Render Data
-    updateWindowSize(canvas.width,canvas.height);
-    contentDiv.appendChild(canvas);
-
-    // Create Menu Objects
-    menuDiv = document.createElement('div');
-    setupView(menuDiv,false);
-    menuDiv.style.width  = '750px';
-    menuDiv.style.height = '375px';
-
-    menuDiv.style.background = "#ca6 url('sky2.jpg') no-repeat";
-    contentDiv.appendChild(menuDiv);
-
-    // Create options menu div
-    smallMenuDiv = document.createElement('div');
-    smallMenuDiv.style.position = 'absolute';
-
-
-    // Initialize Logging
-    logString = '';
-
-    // Initialize Game Data
-    nextSlimeIndex = 0;
-    ball       = newLegacyBall(  25,'#ff0');
-    slimeLeft  = newLegacySlime(true,100,'#0f0');
-    slimeRight = newLegacySlime(false,100,'#f00');
-
-    var localSkyImage = new Image();
-    localSkyImage.src = 'sky2.jpg';
-    localSkyImage.onload = function() {
-      backImages['sky'] = this;
-    }
-    var localCaveImage = new Image();
-    localCaveImage.src = 'cave.jpg';
-    localCaveImage.onload = function() {
-      backImages['cave'] = this;
-    }
-    var sunsetImage = new Image();
-    sunsetImage.src = 'sunset.jpg';
-    sunsetImage.onload = function() {
-      backImages['sunset'] = this;
-    }
-
-    var localBallImage = new Image();
-    localBallImage.src = 'vball.png';
-    localBallImage.onload = function() {
-      ballImage = this;
-    }
-
-    greenSlimeImage = new Image();
-    greenSlimeImage.src = 'slime175green.png';
-    /*
-    greenSlimeImage.onload = function() {
-      slimeLeft.img = this;
-    }
-    */
-    redSlimeImage = new Image();
-    redSlimeImage.src = 'slime175red.png';
-    /*
-    redSlimeImage.onload = function() {
-      slimeRight.img = this;
-    }
-    */
-
-    toInitialMenu();
-  }
-
-  // Menu Functions
-  function start(startAsOnePlayer) {
-    onePlayer = startAsOnePlayer;
-
-    slimeLeftScore = 0;
-    slimeRightScore = 0;
-
-    slimeLeft.img = greenSlimeImage;
-    if(onePlayer) {
-      var slimeAIProps = slimeAIs[nextSlimeIndex];
-      slimeRight.color = slimeAIProps.color;
-      legacySkyColor   = slimeAIProps.legacySkyColor;
-      backImage        = backImages[slimeAIProps.backImageName];
-      backTextColor    = slimeAIProps.backTextColor;
-      legacyGroundColor= slimeAIProps.legacyGroundColor;
-      legacyBallColor  = slimeAIProps.legacyBallColor;
-      newGroundColor   = slimeAIProps.newGroundColor;
-
-      slimeRight.img   = null;
-      slimeAI          = newSlimeAI(false,slimeAIProps.name);
-      slimeAIProps.initAI(slimeAI);
-    } else {
-      legacySkyColor   = '#00f';
-      backImage        = backImages['sky'];
-      backTextColor    = '#000';
-      legacyGroundColor= '#888';
-      legacyBallColor  = '#fff';
-      newGroundColor   = '#ca6';
-
-      slimeRight.img   = redSlimeImage;
-      slimeAI          = null;
-    }
-
-    initRound(true);
-
-    updatesToPaint = 0;
-    updateCount = 0;
-    loadOptions();
-    gameState = GAME_STATE_RUNNING
-    renderBackground(); // clear the field
-    canvas.style.display = 'block';
     menuDiv.style.display = 'none';
-    gameIntervalObject = setInterval(gameIteration, 20);
+    showBottomBar();
+    toInitialMenu();
+    addChatMessage(null, 'Opponent disconnected.');
   }
-  function toInitialMenu() {
-    onlineMode = false;
-    menuDiv.innerHTML = '<div style="text-align:center;">' +
-      '<h1 style="margin-top:20px;">Slime Volleyball</h1>' +
-      '<span onclick="start(true)"  class="btn" style="display:inline-block;margin:15px 20px;font-size:36px;">One Player</span>' +
-      '<span onclick="start(false)" class="btn" style="display:inline-block;margin:15px 20px;font-size:36px;">Two Player</span>' +
-      '<br/>' +
-      '<span onclick="startOnline()" class="btn" style="display:inline-block;margin:10px 20px;font-size:28px;background:#27ae60;background-image:linear-gradient(to bottom,#2ecc71,#27ae60);border-color:#1e8449;">Online Two Player</span>' +
-      '<p style="margin-top:10px;">Originally written by Quin Pendragon and Daniel Wedge (http://oneslime.net)<br/>' +
-      'Rewritten by Jonathan Marler</p>' +
-      '</div>';
-  }
-  function loadOptions() {
-    legacyGraphics = document.getElementById('LegacyGraphics').checked;
-    slowMotion = document.getElementById('SlowMotion').checked;
-    if(document.getElementById('PhysicsLog').checked) {
-      physicsLog = 120;
-    } else {
-      physicsLog = 0;
-    }
-  }
-  function showOptions() {
-    if(gameState == GAME_STATE_RUNNING) {
-      gameState = GAME_STATE_MENU_PAUSE;
-    } else if(gameState == GAME_STATE_POINT_PAUSE) {
-      gameState = GAME_STATE_MENU_PAUSE_BETWEEN_POINTS;
-    }
-    var div = document.getElementById('OptionsDiv');
-    div.style.display = 'block';
-  }
-  function hideOptions() {
-    var div = document.getElementById('OptionsDiv');
-    div.style.display = 'none';
-    if(gameState == GAME_STATE_MENU_PAUSE) {
-      updateCount = 0;
-      gameState = GAME_STATE_RUNNING;
-    } else if(gameState == GAME_STATE_MENU_PAUSE_BETWEEN_POINTS) {
-      startNextPoint();
-    }
-    loadOptions();
-  }
-</script>
-</head><body onload="bodyload()" style="text-align:center;">
+}
 
-<div id="ContentDiv" style="position:relative;margin:15px auto;width:750px;">
-  <div id="GameContentDiv"></div>
-  <div id="OptionsDiv" style="position:relative;width:400px;height:360px;margin:0 auto;background:#eee;display:none;border:3px solid #ca6;">
-    <h2>Options</h2><hr/><br/>
-    <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:5px;right:5px;font-weight:bold;">close</span>
-    <div style="text-align:left;margin:10px;">
-      <input id="LegacyGraphics" type="checkbox">Legacy Graphics</input>
-      <br/><br/>
-      <h3>Debug Options</h3><br/>
-        <input id="PhysicsLog" type="checkbox">Enable Physics Log</input>
-      <br/><br/>
-      <h3>Cheats</h3><br/>
-        <input id="SlowMotion" type="checkbox">Slow Motion</input>
-    </div>
+function launchOnlineGame() {
+  slimeLeft  = newLegacySlime(true,  100, '#0f0');
+  slimeRight = newLegacySlime(false, 100, '#f00');
+  ball       = newLegacyBall(25, '#ff0');
+  slimeLeftScore = 0; slimeRightScore = 0;
+  slimeLeft.img  = greenSlimeImage;
+  slimeRight.img = redSlimeImage;
+  legacyGraphics = false;
+  legacySkyColor = '#00f'; backImage = backImages['sky'];
+  backTextColor = '#000'; legacyGroundColor = '#888';
+  legacyBallColor = '#fff'; newGroundColor = '#ca6';
+  canvas.style.display = 'block';
+  menuDiv.style.display = 'none';
+
+  onlineInputInterval = setInterval(function() {
+    if(!lobbySocket || lobbySocket.readyState !== 1) return;
+    var leftKey, rightKey, upKey;
+    if(mySide === 'left') { leftKey = KEY_A; rightKey = KEY_D; upKey = KEY_W; }
+    else                  { leftKey = KEY_LEFT; rightKey = KEY_RIGHT; upKey = KEY_UP; }
+    var movement = 0;
+    if(keysDown[leftKey]  && !keysDown[rightKey]) movement = 1;
+    else if(keysDown[rightKey] && !keysDown[leftKey]) movement = 2;
+    lobbySocket.send(JSON.stringify({ movement: movement, jump: !!keysDown[upKey] }));
+  }, 20);
+}
+
+function applyServerState(msg) {
+  ball.x = msg.ball.x; ball.y = msg.ball.y; ball.velocityX = msg.ball.velocityX;
+  slimeLeft.x  = msg.slimeLeft.x;  slimeLeft.y  = msg.slimeLeft.y;
+  slimeRight.x = msg.slimeRight.x; slimeRight.y = msg.slimeRight.y;
+  slimeLeftScore = msg.scoreLeft; slimeRightScore = msg.scoreRight;
+  renderBackground();
+  ball.render(); slimeLeft.render(); slimeRight.render();
+  if(onlinePointText) {
+    ctx.font = '20px Georgia';
+    ctx.fillStyle = '#000';
+    var w = ctx.measureText(onlinePointText).width;
+    ctx.fillText(onlinePointText, (viewWidth - w)/2, courtYPix + (viewHeight - courtYPix)/2);
+  }
+}
+
+function finishOnlineGame(winner) {
+  clearInterval(onlineInputInterval);
+  onlineMode = false;
+  var iWon = (mySide === winner);
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  menuDiv.innerHTML =
+    '<div style="text-align:center;padding-top:50px;">' +
+    '<h1 style="font-size:52px;margin-bottom:16px;">' + (iWon ? 'You won!' : 'You lost :(') + '</h1>' +
+    '<span onclick="startOnline()" class="btn" style="display:inline-block;margin:10px 12px;font-size:24px;">Play Again</span>' +
+    '<span onclick="toInitialMenu()" class="btn" style="display:inline-block;margin:10px 12px;font-size:24px;">Menu</span>' +
+    '</div>';
+  showBottomBar();
+}
+
+function spaceKeyDown() {
+  if(onlineMode) return;
+  if(gameState == GAME_STATE_SHOW_WINNER) {
+    if(onePlayer && nextSlimeIndex >= slimeAIs.length) {
+      nextSlimeIndex = 0;
+      toInitialMenu();
+    } else {
+      start(onePlayer);
+    }
+  }
+}
+
+function endMatch() {
+  gameState = GAME_STATE_SHOW_WINNER;
+  clearInterval(gameIntervalObject);
+  if(onePlayer) {
+    if(leftWon) {
+      nextSlimeIndex++;
+      if(nextSlimeIndex >= slimeAIs.length) {
+        menuDiv.innerHTML =
+          '<div style="text-align:center;padding-top:40px;">' +
+          '<h1 style="font-size:52px;margin-bottom:10px;">You beat everyone!</h1>' +
+          "Press 'space' to do it all over again!</div>";
+      } else {
+        menuDiv.innerHTML =
+          '<div style="text-align:center;padding-top:40px;">' +
+          '<h1 style="font-size:52px;margin-bottom:10px;">You won!</h1>' +
+          "Press 'space' to continue...</div>";
+      }
+    } else {
+      nextSlimeIndex = 0;
+      menuDiv.innerHTML =
+        '<div style="text-align:center;padding-top:40px;">' +
+        '<h1 style="font-size:52px;margin-bottom:10px;">You lost :(</h1>' +
+        "Press 'space' to retry...</div>";
+    }
+  } else {
+    menuDiv.innerHTML =
+      '<div style="text-align:center;padding-top:40px;">' +
+      '<h1 style="font-size:52px;margin-bottom:10px;">Player ' + (leftWon ? '1' : '2') + ' Wins!</h1>' +
+      "Press 'space' for rematch...</div>";
+  }
+  menuDiv.style.display = 'block';
+  canvas.style.display  = 'none';
+  showBottomBar();
+}
+
+function startNextPoint() {
+  initRound(leftWon);
+  updatesToPaint = 0; updateCount = 0;
+  gameState = GAME_STATE_RUNNING;
+}
+
+function endPoint() {
+  if(slimeAI) {
+    keysDown[KEY_UP] = false; keysDown[KEY_RIGHT] = false; keysDown[KEY_LEFT] = false;
+  }
+  if(slimeLeftScore  >= WIN_AMOUNT) { endMatch(true);  return; }
+  if(slimeRightScore >= WIN_AMOUNT) { endMatch(false); return; }
+  if(onePlayer) {
+    endOfPointText = leftWon ? 'Nice, you got the point!' : slimeAI.name + ' scores!';
+  } else {
+    endOfPointText = 'Player ' + (leftWon ? '1':'2') + ' scores!';
+  }
+  gameState = GAME_STATE_POINT_PAUSE;
+  requestAnimationFrame(renderEndOfPoint);
+  setTimeout(function() {
+    if(gameState == GAME_STATE_POINT_PAUSE) startNextPoint();
+  }, 700);
+}
+
+function initRound(server) {
+  ball.x = server ? 200 : 800; ball.y = 356;
+  ball.velocityX = 0; ball.velocityY = 0;
+  slimeLeft.x  = 200; slimeLeft.y  = 0; slimeLeft.velocityX  = 0; slimeLeft.velocityY  = 0;
+  slimeRight.x = 800; slimeRight.y = 0; slimeRight.velocityX = 0; slimeRight.velocityY = 0;
+}
+
+function updateWindowSize(width,height) {
+  viewWidth = width; viewHeight = height;
+  pixelsPerUnitX = width  / gameWidth;
+  pixelsPerUnitY = height / gameHeight;
+  courtYPix = 4 * viewHeight / 5;
+}
+
+function setupView(view) {
+  view.style.position = 'absolute';
+  view.style.left = '0';
+  view.style.top  = '0';
+}
+
+function bodyload() {
+  var contentDiv = document.getElementById('GameContentDiv');
+
+  canvas = document.createElement('canvas');
+  canvas.width  = 750;
+  canvas.height = 375;
+  setupView(canvas);
+  canvas.style.display = 'none';
+  ctx = canvas.getContext("2d");
+  ctx.font = "20px Georgia";
+  gameWidth = 1000; gameHeight = 1000;
+  updateWindowSize(canvas.width, canvas.height);
+  contentDiv.appendChild(canvas);
+
+  menuDiv = document.createElement('div');
+  setupView(menuDiv);
+  menuDiv.style.width  = '750px';
+  menuDiv.style.height = '375px';
+  menuDiv.style.background = "#ca6 url('sky2.jpg') no-repeat";
+  contentDiv.appendChild(menuDiv);
+
+  logString = '';
+  nextSlimeIndex = 0;
+  ball       = newLegacyBall(25, '#ff0');
+  slimeLeft  = newLegacySlime(true,  100, '#0f0');
+  slimeRight = newLegacySlime(false, 100, '#f00');
+
+  var localSkyImage = new Image();
+  localSkyImage.src = 'sky2.jpg';
+  localSkyImage.onload = function() { backImages['sky'] = this; };
+
+  var localCaveImage = new Image();
+  localCaveImage.src = 'cave.jpg';
+  localCaveImage.onload = function() { backImages['cave'] = this; };
+
+  var sunsetImage = new Image();
+  sunsetImage.src = 'sunset.jpg';
+  sunsetImage.onload = function() { backImages['sunset'] = this; };
+
+  var localBallImage = new Image();
+  localBallImage.src = 'vball.png';
+  localBallImage.onload = function() { ballImage = this; };
+
+  greenSlimeImage = new Image();
+  greenSlimeImage.src = 'slime175green.png';
+  redSlimeImage = new Image();
+  redSlimeImage.src = 'slime175red.png';
+
+  toInitialMenu();
+  connectLobby();
+}
+
+function start(startAsOnePlayer) {
+  onePlayer = startAsOnePlayer;
+  slimeLeftScore = 0; slimeRightScore = 0;
+  slimeLeft.img = greenSlimeImage;
+  if(onePlayer) {
+    var slimeAIProps = slimeAIs[nextSlimeIndex];
+    slimeRight.color      = slimeAIProps.color;
+    legacySkyColor        = slimeAIProps.legacySkyColor;
+    backImage             = backImages[slimeAIProps.backImageName];
+    backTextColor         = slimeAIProps.backTextColor;
+    legacyGroundColor     = slimeAIProps.legacyGroundColor;
+    legacyBallColor       = slimeAIProps.legacyBallColor;
+    newGroundColor        = slimeAIProps.newGroundColor;
+    slimeRight.img        = null;
+    slimeAI               = newSlimeAI(false, slimeAIProps.name);
+    slimeAIProps.initAI(slimeAI);
+  } else {
+    legacySkyColor   = '#00f'; backImage = backImages['sky'];
+    backTextColor    = '#000'; legacyGroundColor = '#888';
+    legacyBallColor  = '#fff'; newGroundColor    = '#ca6';
+    slimeRight.img   = redSlimeImage; slimeAI = null;
+  }
+  initRound(true);
+  updatesToPaint = 0; updateCount = 0;
+  loadOptions();
+  gameState = GAME_STATE_RUNNING;
+  renderBackground();
+  canvas.style.display = 'block';
+  menuDiv.style.display = 'none';
+  hideBottomBar();
+  gameIntervalObject = setInterval(gameIteration, 20);
+}
+
+function toInitialMenu() {
+  onlineMode = false;
+  canvas.style.display  = 'none';
+  menuDiv.style.display = 'block';
+  menuDiv.innerHTML     = '';
+  showBottomBar();
+}
+
+function loadOptions() {
+  legacyGraphics = document.getElementById('LegacyGraphics').checked;
+  slowMotion     = document.getElementById('SlowMotion').checked;
+  physicsLog     = document.getElementById('PhysicsLog').checked ? 120 : 0;
+}
+function showOptions() {
+  if(gameState == GAME_STATE_RUNNING)      gameState = GAME_STATE_MENU_PAUSE;
+  else if(gameState == GAME_STATE_POINT_PAUSE) gameState = GAME_STATE_MENU_PAUSE_BETWEEN_POINTS;
+  document.getElementById('OptionsDiv').style.display = 'block';
+}
+function hideOptions() {
+  document.getElementById('OptionsDiv').style.display = 'none';
+  if(gameState == GAME_STATE_MENU_PAUSE) {
+    updateCount = 0; gameState = GAME_STATE_RUNNING;
+  } else if(gameState == GAME_STATE_MENU_PAUSE_BETWEEN_POINTS) {
+    startNextPoint();
+  }
+  loadOptions();
+}
+
+</script>
+</head><body onload="bodyload()">
+
+<div id="LobbyWrapper">
+
+  <div id="TopBar">
+    <span id="VersionText">v1.0</span>
+    <span id="AnnouncementText">Slime Volleyball &mdash; Play online with friends!</span>
   </div>
-  <span class="SmallButton" style="position:absolute;top:350px;left:10px;" onclick="showOptions()">
-    Options
-  </span>
+
+  <div id="MiddleRow">
+
+    <div id="ContentDiv">
+      <div id="GameContentDiv"></div>
+      <div id="OptionsDiv" style="position:absolute;width:400px;height:360px;top:0;left:175px;background:#eee;display:none;border:3px solid #ca6;z-index:10;">
+        <h2>Options</h2><hr/><br/>
+        <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:5px;right:5px;font-weight:bold;">close</span>
+        <div style="text-align:left;margin:10px;">
+          <input id="LegacyGraphics" type="checkbox">Legacy Graphics</input>
+          <br/><br/>
+          <h3>Debug Options</h3><br/>
+          <input id="PhysicsLog" type="checkbox">Enable Physics Log</input>
+          <br/><br/>
+          <h3>Cheats</h3><br/>
+          <input id="SlowMotion" type="checkbox">Slow Motion</input>
+        </div>
+      </div>
+    </div>
+
+    <div id="Sidebar">
+      <div id="PlayerCountDiv">● 0 players online</div>
+      <div id="ChatLog"></div>
+      <div id="ChatInputRow">
+        <input id="ChatInput" type="text" placeholder="Chat..." maxlength="200"
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button id="ChatSendBtn" onclick="sendChat()">&#10148;</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="BottomBar">
+    <span class="bigBtn" onclick="startOnline()">QUICK PLAY</span>
+    <span class="bigBtn" onclick="start(false)">PRIVATE MATCH</span>
+    <span class="bigBtn" onclick="start(true)">ONE PLAYER</span>
+    <span id="OptionsBtn" onclick="showOptions()">OPTIONS</span>
+  </div>
+
 </div>
+
 </body></html>
