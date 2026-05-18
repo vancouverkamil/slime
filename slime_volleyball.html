@@ -176,6 +176,44 @@ body {
 .badge-playing { color:#00ff88; text-shadow:0 0 6px rgba(0,255,136,.5); }
 .lobby-back { text-align:center; margin-top:6px; padding-bottom:4px; }
 
+/* ── esc pause overlay ── */
+#EscMenu {
+  display:none; position:absolute; inset:0;
+  background:rgba(0,0,14,.88); z-index:60;
+  flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  backdrop-filter: blur(2px);
+}
+#EscMenu .esc-title {
+  color:#00ffcc; font-size:11px; letter-spacing:6px;
+  text-transform:uppercase; margin-bottom:18px;
+  text-shadow:0 0 16px rgba(0,255,200,.8);
+  animation:neonPulse 1.5s ease-in-out infinite;
+}
+#EscMenu .eBtn {
+  border:1px solid rgba(0,255,200,.4); color:#00ffcc; background:transparent;
+  padding:10px 32px; font-size:11px; letter-spacing:3px; text-transform:uppercase;
+  cursor:pointer; font-family:'Courier New',monospace; width:220px; text-align:center;
+  transition:all .15s;
+}
+#EscMenu .eBtn:hover { background:rgba(0,255,200,.12); border-color:#00ffcc; box-shadow:0 0 16px rgba(0,255,200,.25); color:#fff; }
+#EscMenu .eBtn.danger { border-color:rgba(255,51,100,.4); color:#ff3366; }
+#EscMenu .eBtn.danger:hover { background:rgba(255,51,100,.12); border-color:#ff3366; box-shadow:0 0 16px rgba(255,51,100,.25); color:#fff; }
+
+/* ── replay letterbox ── */
+@keyframes fadeInText { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+#ReplayOverlay {
+  display:none; position:absolute; inset:0; z-index:55; pointer-events:none;
+}
+#ReplayOverlay.active { display:block; pointer-events:auto; }
+#ReplayContinue {
+  display:none; position:absolute; inset:0; background:rgba(0,0,10,.7);
+  flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  cursor:pointer;
+}
+#ReplayContinue.visible { display:flex; animation:fadeInText .4s ease; }
+#ReplayContinue .rc-title { color:#00ffcc; font-size:28px; font-weight:bold; letter-spacing:4px; text-shadow:0 0 24px #00ffcc; }
+#ReplayContinue .rc-sub   { color:rgba(0,255,200,.45); font-size:10px; letter-spacing:4px; }
+
 /* ── spectator overlay ── */
 .spec-overlay {
   position:absolute; top:8px; left:8px;
@@ -1058,12 +1096,13 @@ function handleServerMessage(msg) {
     else                      { emoteRight = msg.emoji; emoteRightEnd = now + 2200; }
 
   } else if (msg.type === 'game_over') {
-    showLeaveBtn(false);
-    if (isSpectator) {
-      finishSpectating(msg.winner);
-    } else {
-      finishOnlineGame(msg.winner);
-    }
+    showLeaveBtn(false); hideEscMenu();
+    clearInterval(onlineInputInterval); onlineInputInterval = null;
+    var _w = msg.winner, _sp = isSpectator;
+    playHighlights(_w, function() {
+      if (_sp) finishSpectating(_w);
+      else     finishOnlineGame(_w);
+    });
 
   } else if (msg.type === 'opponent_disconnected') {
     clearInterval(onlineInputInterval); onlineInputInterval = null;
@@ -1114,6 +1153,7 @@ function launchSpectatorMode() {
 
 function applyServerState(msg) {
   if (isSpectator && canvas.style.display !== 'block') launchSpectatorMode();
+  if (!replayInterval) recordReplayFrame(msg);
 
   var prevBallX = ball ? ball.x : msg.ball.x;
   ball.x = msg.ball.x; ball.y = msg.ball.y; ball.velocityX = msg.ball.velocityX;
@@ -1147,7 +1187,6 @@ function applyServerState(msg) {
 }
 
 function finishOnlineGame(winner) {
-  clearInterval(onlineInputInterval); onlineInputInterval = null;
   onlineMode = false; showLeaveBtn(false); particles = [];
   var iWon = (mySide === winner);
   if (iWon) sessionWins++; else sessionLosses++;
@@ -1267,6 +1306,269 @@ function hideOptions() {
   loadOptions();
 }
 
+// ── replay buffer ─────────────────────────────────────────
+var replayBuffer = [];
+var replayInterval = null;
+var replayOnComplete = null;
+
+function recordReplayFrame(msg) {
+  if (replayBuffer.length >= 300) replayBuffer.shift();
+  replayBuffer.push({
+    bx:msg.ball.x, by:msg.ball.y, bvx:msg.ball.velocityX,
+    lx:msg.slimeLeft.x, ly:msg.slimeLeft.y,
+    rx:msg.slimeRight.x, ry:msg.slimeRight.y,
+    sl:msg.scoreLeft, sr:msg.scoreRight
+  });
+}
+
+function stopReplay() {
+  if (replayInterval) { clearInterval(replayInterval); replayInterval = null; }
+  stopDrop();
+}
+
+function confirmReplayExit() {
+  var rc = document.getElementById('ReplayContinue');
+  if (rc) { rc.className = ''; rc.style.display = 'none'; }
+  var ro = document.getElementById('ReplayOverlay');
+  if (ro) ro.className = '';
+  stopReplay();
+  document.removeEventListener('keydown', onReplayKey);
+  if (replayOnComplete) { var cb = replayOnComplete; replayOnComplete = null; cb(); }
+}
+function onReplayKey(e) { if (e.key !== 'Escape') confirmReplayExit(); }
+
+function playHighlights(winner, onComplete) {
+  var clip = replayBuffer.slice(-200);
+  replayOnComplete = onComplete;
+  if (clip.length < 20) { onComplete(); return; }
+
+  canvas.style.display = 'block'; menuDiv.style.display = 'none'; hideBottomBar();
+  var ro = document.getElementById('ReplayOverlay');
+  if (ro) ro.className = 'active';
+
+  playDrop(selectedDrop);
+
+  var fi = 0, rpt = 0, slow = 4; // 4x slow motion
+  var total = clip.length * slow;
+  var lbH = Math.round(viewHeight * 0.15);
+
+  replayInterval = setInterval(function() {
+    if (fi >= clip.length) {
+      clearInterval(replayInterval); replayInterval = null;
+      var rc = document.getElementById('ReplayContinue');
+      if (rc) rc.className = 'visible';
+      document.addEventListener('keydown', onReplayKey);
+      return;
+    }
+    var f = clip[fi];
+    var progress = (fi * slow + rpt) / total;
+    var zoom = 1 + progress * 1.4;
+
+    var focX = f.bx * pixelsPerUnitX;
+    var focY = courtYPix - f.by * pixelsPerUnitY;
+    focX = Math.max(viewWidth/(2*zoom), Math.min(viewWidth - viewWidth/(2*zoom), focX));
+    focY = Math.max(viewHeight/(2*zoom), Math.min(viewHeight - viewHeight/(2*zoom), focY));
+
+    ball.x = f.bx; ball.y = f.by; ball.velocityX = f.bvx;
+    slimeLeft.x  = f.lx; slimeLeft.y  = f.ly;
+    slimeRight.x = f.rx; slimeRight.y = f.ry;
+    slimeLeftScore = f.sl; slimeRightScore = f.sr;
+
+    ctx.save();
+    ctx.translate(viewWidth/2, viewHeight/2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-focX, -focY);
+    renderBackground();
+    ball.render(); slimeLeft.render(); slimeRight.render();
+    ctx.restore();
+
+    // vignette
+    var vg = ctx.createRadialGradient(viewWidth/2, viewHeight/2, viewWidth*0.22, viewWidth/2, viewHeight/2, viewWidth*0.72);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+    // chromatic aberration flash on score
+    if (progress > 0.96) {
+      ctx.fillStyle = 'rgba(0,255,200,.04)'; ctx.fillRect(0,0,viewWidth,viewHeight);
+      ctx.fillStyle = 'rgba(255,0,204,.04)'; ctx.fillRect(2,0,viewWidth,viewHeight);
+    }
+
+    // letterbox
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, viewWidth, lbH);
+    ctx.fillRect(0, viewHeight - lbH, viewWidth, lbH);
+
+    // text
+    ctx.textAlign = 'center';
+    // top bar label
+    ctx.globalAlpha = Math.min(1, progress * 8);
+    ctx.font = 'bold 9px Courier New'; ctx.fillStyle = 'rgba(0,255,200,.6)';
+    ctx.fillText('// MATCH HIGHLIGHT //', viewWidth/2, lbH - 8);
+    ctx.font = '8px Courier New'; ctx.fillStyle = 'rgba(0,255,200,.3)';
+    ctx.fillText('SLOW MOTION  ' + Math.round(zoom*10)/10 + 'x ZOOM', viewWidth/2, lbH - 18);
+
+    // winner reveal at 72% progress
+    if (progress > 0.72) {
+      var revAlpha = Math.min(1, (progress - 0.72) / 0.12);
+      var wName = winner === 'left' ? playerNameLeft : playerNameRight;
+      var wCol  = winner === 'left' ? '#66ffcc' : '#ff66aa';
+      ctx.globalAlpha = revAlpha;
+      ctx.shadowColor = wCol; ctx.shadowBlur = 30;
+      ctx.font = 'bold 28px Courier New'; ctx.fillStyle = '#fff';
+      ctx.fillText(wName, viewWidth/2, viewHeight/2 - 10);
+      ctx.font = 'bold 11px Courier New'; ctx.fillStyle = wCol; ctx.shadowBlur = 12;
+      ctx.fillText('V I C T O R Y', viewWidth/2, viewHeight/2 + 16);
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+
+    rpt++;
+    if (rpt >= slow) { rpt = 0; fi++; }
+  }, 20);
+}
+
+// ── esc pause menu ────────────────────────────────────────
+var escMenuOpen = false;
+
+function showEscMenu() {
+  if (replayInterval) return;
+  escMenuOpen = true;
+  var el = document.getElementById('EscMenu');
+  if (el) el.style.display = 'flex';
+}
+function hideEscMenu() {
+  escMenuOpen = false;
+  var el = document.getElementById('EscMenu');
+  if (el) el.style.display = 'none';
+}
+
+// ── web audio dubstep drops ───────────────────────────────
+var audioCtx = null;
+var dropNodes = [];
+var selectedDrop = 0;
+var dropNames = [
+  'CIRCUIT BREAKER','BASS CANNON','NEON STORM','REACTOR CORE','SUBZERO BASS',
+  'GLITCH STORM','LASER RUSH','MIDNIGHT DROP','CYBER STRIKE','ZERO GRAVITY'
+];
+
+function initAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function stopDrop() {
+  dropNodes.forEach(function(n) { try { n.stop && n.stop(0); } catch(e){} try { n.disconnect(); } catch(e){} });
+  dropNodes = [];
+}
+function _kick(ac, dst, t) {
+  var g = ac.createGain(); g.gain.setValueAtTime(1.4, t); g.gain.exponentialRampToValueAtTime(0.001, t+.45); g.connect(dst);
+  var o = ac.createOscillator(); o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(22, t+.35); o.connect(g);
+  o.start(t); o.stop(t+.45); dropNodes.push(o,g);
+}
+function _hat(ac, dst, t, sh) {
+  var buf = ac.createBuffer(1, ac.sampleRate*(sh?.06:.18), ac.sampleRate);
+  var d = buf.getChannelData(0); for (var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  var src = ac.createBufferSource(); src.buffer = buf;
+  var filt = ac.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=8000;
+  var g = ac.createGain(); g.gain.setValueAtTime(.28,t); g.gain.exponentialRampToValueAtTime(.001,t+(sh?.06:.18));
+  src.connect(filt); filt.connect(g); g.connect(dst); src.start(t); src.stop(t+.25);
+  dropNodes.push(src,filt,g);
+}
+function _wobble(ac, dst, t, dur, freq, lfoR, fCut, Q) {
+  var osc = ac.createOscillator(); osc.type='sawtooth'; osc.frequency.value=freq;
+  var filt = ac.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=fCut; filt.Q.value=Q||10;
+  var lfo  = ac.createOscillator(); lfo.type='sine'; lfo.frequency.value=lfoR;
+  var lfoG = ac.createGain(); lfoG.gain.value=fCut*.85; lfo.connect(lfoG); lfoG.connect(filt.frequency);
+  var env  = ac.createGain();
+  env.gain.setValueAtTime(0,t); env.gain.linearRampToValueAtTime(.6,t+.1);
+  env.gain.setValueAtTime(.6,t+dur-.8); env.gain.linearRampToValueAtTime(0,t+dur);
+  osc.connect(filt); filt.connect(env); env.connect(dst);
+  lfo.start(t); osc.start(t); lfo.stop(t+dur); osc.stop(t+dur);
+  dropNodes.push(osc,filt,lfo,lfoG,env);
+}
+function _tone(ac, dst, t, dur, freq, type, vol) {
+  var o = ac.createOscillator(); o.type=type||'triangle'; o.frequency.value=freq;
+  var g = ac.createGain(); g.gain.setValueAtTime(vol||.15,t); g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g); g.connect(dst); o.start(t); o.stop(t+dur); dropNodes.push(o,g);
+}
+
+function playDrop(idx) {
+  stopDrop();
+  var ac = initAC(), now = ac.currentTime+.12, dur=10;
+  var master = ac.createGain();
+  master.gain.setValueAtTime(.82,now); master.gain.setValueAtTime(.82,now+dur-1.8);
+  master.gain.linearRampToValueAtTime(0,now+dur); master.connect(ac.destination);
+  dropNodes.push(master);
+  var b, bi, i;
+
+  switch(idx) {
+    case 0: // CIRCUIT BREAKER – classic 140bpm wobble
+      bi=60/140; _wobble(ac,master,now,dur,60,4,420,12);
+      for(b=0;b*bi<dur;b++){ _kick(ac,master,now+b*bi); if(b%2===1) _hat(ac,master,now+b*bi+bi/2,true); }
+      break;
+    case 1: // BASS CANNON – massive slow wobble
+      bi=60/140; _wobble(ac,master,now,dur,44,8,650,16);
+      for(b=0;b*bi<dur;b++){ if(b%2===0)_kick(ac,master,now+b*bi); _hat(ac,master,now+b*bi*.75,true); }
+      break;
+    case 2: // NEON STORM – fast bright chaos
+      bi=60/150; _wobble(ac,master,now,dur,78,16,850,8);
+      for(b=0;b*bi<dur;b++){ _kick(ac,master,now+b*bi); _hat(ac,master,now+b*bi+bi/2,true); _hat(ac,master,now+b*bi+bi/4,true); }
+      break;
+    case 3: // REACTOR CORE – slow menacing throb
+      bi=60/130; _wobble(ac,master,now,dur,54,2,280,15);
+      for(b=0;b*2*bi<dur;b++){ _kick(ac,master,now+b*2*bi); _kick(ac,master,now+b*2*bi+bi*1.5); }
+      break;
+    case 4: // SUBZERO BASS – deep glacial pulse
+      bi=60/140; _wobble(ac,master,now,dur,34,1,180,20);
+      for(b=0;b*bi*2<dur;b++){ _kick(ac,master,now+b*bi*2); _hat(ac,master,now+b*bi*2+bi*.5,false); }
+      break;
+    case 5: // GLITCH STORM – choppy fragmented
+      bi=60/140; var sb=bi/4;
+      for(b=0;b*sb<dur;b++){
+        if(b%4===0){ _wobble(ac,master,now+b*sb,sb*3.2,70,12,520,10); _kick(ac,master,now+b*sb); }
+        else if(b%2===1) _hat(ac,master,now+b*sb,true);
+      } break;
+    case 6: // LASER RUSH – hi-pitched scifi
+      bi=60/150; _wobble(ac,master,now,dur,100,8,1050,12);
+      for(b=0;b*bi<dur;b++){
+        _kick(ac,master,now+b*bi);
+        if(b%4===2){ _tone(ac,master,now+b*bi,.22,900,'square',.28); }
+      } break;
+    case 7: // MIDNIGHT DROP – dark rolling groove
+      bi=60/130; _wobble(ac,master,now,dur,50,3,340,14);
+      for(b=0;b*bi<dur;b++){
+        if(b%4===0||b%4===3)_kick(ac,master,now+b*bi);
+        if(b%2===1)_hat(ac,master,now+b*bi,false);
+      } break;
+    case 8: // CYBER STRIKE – melodic drops
+      bi=60/140; _wobble(ac,master,now,dur,64,6,460,11);
+      [440,0,330,0,440,0,523,440,0,330,0,392,440,0].forEach(function(fr,i){
+        if(!fr) return;
+        _tone(ac,master,now+i*bi,bi*.85,fr,'triangle',.13);
+      });
+      for(b=0;b*bi<dur;b++){ _kick(ac,master,now+b*bi); if(b%2===1)_hat(ac,master,now+b*bi,true); }
+      break;
+    case 9: // ZERO GRAVITY – atmospheric cosmos
+      bi=60/140; _wobble(ac,master,now,dur,38,.5,240,22);
+      [130,164,196].forEach(function(fr){
+        var po=ac.createOscillator(); po.type='sine'; po.frequency.value=fr;
+        var pf=ac.createBiquadFilter(); pf.type='lowpass'; pf.frequency.value=500;
+        var pg=ac.createGain(); pg.gain.setValueAtTime(0,now); pg.gain.linearRampToValueAtTime(.1,now+2);
+        pg.gain.setValueAtTime(.1,now+dur-2); pg.gain.linearRampToValueAtTime(0,now+dur);
+        po.connect(pf); pf.connect(pg); pg.connect(master);
+        po.start(now); po.stop(now+dur); dropNodes.push(po,pf,pg);
+      });
+      for(b=0;b*bi*2<dur;b++){ _kick(ac,master,now+b*bi*2); _hat(ac,master,now+b*bi*2+bi,false); }
+      break;
+  }
+}
+
+function previewDrop() {
+  initAC();
+  playDrop(selectedDrop);
+  setTimeout(stopDrop, 6000);
+}
+
 // ── init ──────────────────────────────────────────────────
 function bodyload() {
   var contentDiv = document.getElementById('GameContentDiv');
@@ -1303,6 +1605,26 @@ function bodyload() {
   greenSlimeImage = new Image(); greenSlimeImage.src = 'slime175green.png';
   redSlimeImage   = new Image(); redSlimeImage.src   = 'slime175red.png';
 
+  // Populate drop selector
+  var sel = document.getElementById('DropSelect');
+  if (sel) dropNames.forEach(function(name, i) {
+    var opt = document.createElement('option'); opt.value = i; opt.textContent = (i+1) + '. ' + name;
+    sel.appendChild(opt);
+  });
+
+  // ESC key handler
+  document.addEventListener('keydown', function(e) {
+    if (e.keyCode === 27) {
+      if (replayInterval) return; // ESC during replay handled separately
+      if (escMenuOpen) { hideEscMenu(); return; }
+      if (onlineMode || isSpectator) { showEscMenu(); return; }
+      if (gameState === GAME_STATE_RUNNING || gameState === GAME_STATE_POINT_PAUSE) showOptions();
+    }
+  });
+
+  // Init audio context on first click (browser policy)
+  document.addEventListener('click', function() { initAC(); }, { once: true });
+
   toInitialMenu();
   connectLobby();
 }
@@ -1322,15 +1644,41 @@ function bodyload() {
 
     <div id="ContentDiv">
       <div id="GameContentDiv"></div>
-      <div id="OptionsDiv" style="position:absolute;width:380px;height:340px;top:0;left:185px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:18px 20px;">
-        <div style="color:#00ffcc;letter-spacing:3px;font-size:12px;margin-bottom:12px;text-transform:uppercase;">Options</div>
+
+      <!-- ESC pause menu -->
+      <div id="EscMenu">
+        <div class="esc-title">// PAUSED //</div>
+        <button class="eBtn" onclick="hideEscMenu()">&#9654;&nbsp; RESUME</button>
+        <button class="eBtn danger" onclick="hideEscMenu(); leaveLobby();">&#8592;&nbsp; LEAVE MATCH</button>
+      </div>
+
+      <!-- Replay overlay (canvas renders underneath; this sits on top for text/buttons) -->
+      <div id="ReplayOverlay">
+        <div id="ReplayContinue" onclick="confirmReplayExit()">
+          <div class="rc-title">CONTINUE</div>
+          <div class="rc-sub">CLICK OR ANY KEY</div>
+        </div>
+      </div>
+
+      <div id="OptionsDiv" style="position:absolute;width:420px;height:360px;top:0;left:165px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:18px 22px;overflow-y:auto;">
+        <div style="color:#00ffcc;letter-spacing:4px;font-size:11px;margin-bottom:10px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.5);">&#9881; System Options</div>
         <div style="border-bottom:1px solid rgba(0,255,200,.15);margin-bottom:12px;"></div>
-        <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:12px;right:14px;font-size:12px;letter-spacing:1px;">[ close ]</span>
-        <div style="text-align:left;color:#777;font-size:12px;line-height:2;">
+        <span class="SmallButton" onclick="hideOptions()" style="position:absolute;top:12px;right:14px;font-size:11px;letter-spacing:1px;">[ ESC / CLOSE ]</span>
+
+        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">VICTORY MUSIC &mdash; plays on match end</div>
+        <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:1px;margin-bottom:4px;"></select>
+        <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:10px;letter-spacing:2px;padding:4px 12px;cursor:pointer;font-family:inherit;margin-bottom:14px;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
+
+        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin-bottom:6px;">DISPLAY</div>
+        <div style="color:#777;font-size:11px;line-height:2.2;">
           <input id="LegacyGraphics" type="checkbox"> <span style="letter-spacing:1px;">Legacy Graphics</span><br/>
-          <div style="color:rgba(0,255,200,.3);font-size:10px;letter-spacing:2px;margin:8px 0 4px;">DEBUG</div>
+        </div>
+        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin:10px 0 6px;">DEBUG</div>
+        <div style="color:#777;font-size:11px;line-height:2.2;">
           <input id="PhysicsLog" type="checkbox"> <span style="letter-spacing:1px;">Physics Log</span><br/>
-          <div style="color:rgba(0,255,200,.3);font-size:10px;letter-spacing:2px;margin:8px 0 4px;">CHEATS</div>
+        </div>
+        <div style="color:rgba(0,255,200,.35);font-size:9px;letter-spacing:2px;margin:10px 0 6px;">CHEATS</div>
+        <div style="color:#777;font-size:11px;line-height:2.2;">
           <input id="SlowMotion" type="checkbox"> <span style="letter-spacing:1px;">Slow Motion</span>
         </div>
       </div>
@@ -1363,7 +1711,7 @@ function bodyload() {
     <span class="bigBtn" onclick="showLobbySelect()">&#9654; QUICK PLAY</span>
     <span class="bigBtn magenta" onclick="start(false)">&#128101; 2 PLAYER</span>
     <span class="bigBtn gold" onclick="start(true)">&#129302; VS CPU</span>
-    <button id="OptionsBtn" onclick="showOptions()">[ OPTIONS ]</button>
+    <span class="bigBtn" style="border-color:rgba(150,50,255,.4);color:#aa44ff;" onmouseover="this.style.background='rgba(150,50,255,.1)';this.style.borderColor='#aa44ff';this.style.boxShadow='0 0 18px rgba(150,50,255,.25)';" onmouseout="this.style.background='';this.style.borderColor='rgba(150,50,255,.4)';this.style.boxShadow='';" onclick="showOptions()">&#9881; OPTIONS</span>
   </div>
 
 </div>
