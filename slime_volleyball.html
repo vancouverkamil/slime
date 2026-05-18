@@ -99,6 +99,27 @@ body {
 .badge-playing { color:#27ae60; }
 .lobby-back { text-align:center; margin-top:5px; }
 
+/* ── name change row ── */
+#PlayerNameDiv {
+  background:#13131f; color:#aaa; padding:6px 12px;
+  font-size:12px; border-bottom:1px solid #2a2a3e;
+  display:flex; align-items:center; gap:6px; flex-shrink:0;
+}
+#PlayerNameDisplay { color:#7ec8e3; font-weight:bold; }
+#PlayerNameEditBtn {
+  cursor:pointer; color:#555; font-size:13px; margin-left:auto;
+}
+#PlayerNameEditBtn:hover { color:#7ec8e3; }
+#PlayerNameEditArea { display:none; flex:1; display:none; align-items:center; gap:4px; }
+#PlayerNameInput {
+  flex:1; background:#0d0d1a; border:1px solid #3a3a5e; color:#eee;
+  padding:3px 6px; border-radius:3px; font-size:12px;
+}
+#PlayerNameInput:focus { outline:none; border-color:#7ec8e3; }
+.name-btn { cursor:pointer; font-size:14px; padding:2px 6px; border-radius:3px; }
+.name-confirm { color:#4CAF50; } .name-confirm:hover { color:#6ee26e; }
+.name-cancel  { color:#e74c3c; } .name-cancel:hover  { color:#ff7070; }
+
 /* ── spectator badge on canvas ── */
 .spec-overlay {
   position:absolute; top:6px; left:6px;
@@ -263,6 +284,243 @@ function updateFrame() {
 }
 
 // ── rendering ─────────────────────────────────────────────
+function drawMapBackground(id) {
+  var w = viewWidth, h = viewHeight, gy = courtYPix, cx = ctx;
+  switch (id) {
+
+    case 0: { // Sky Court — bright day with clouds
+      var sg = cx.createLinearGradient(0, 0, 0, gy);
+      sg.addColorStop(0, '#1a6bb5'); sg.addColorStop(1, '#a8d8f0');
+      cx.fillStyle = sg; cx.fillRect(0, 0, w, gy);
+      cx.fillStyle = '#ffe566'; cx.beginPath(); cx.arc(80, 55, 32, 0, TWO_PI); cx.fill();
+      cx.fillStyle = '#fff9cc'; cx.beginPath(); cx.arc(80, 55, 22, 0, TWO_PI); cx.fill();
+      function cloud(x,y,s) {
+        cx.fillStyle = 'rgba(255,255,255,0.9)';
+        cx.beginPath(); cx.arc(x,y,s,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(x+s*1.3,y+s*0.35,s*.7,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(x-s*1.1,y+s*0.4,s*.65,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(x+s*.4,y-s*.5,s*.6,0,TWO_PI); cx.fill();
+      }
+      cloud(160,68,22); cloud(400,50,18); cloud(590,78,25); cloud(690,44,14);
+      var gg = cx.createLinearGradient(0,gy,0,h);
+      gg.addColorStop(0,'#5cb85c'); gg.addColorStop(1,'#3a7a3a');
+      cx.fillStyle = gg; cx.fillRect(0,gy,w,h-gy);
+      backTextColor = '#222'; break;
+    }
+
+    case 1: { // Cave Court — dark crystals and stalactites
+      cx.fillStyle = '#080810'; cx.fillRect(0, 0, w, gy);
+      cx.fillStyle = '#1e1630';
+      for (var i = 0; i < 15; i++) {
+        var sx = i * 52 + 15, sh = 28 + Math.sin(i * 1.9) * 18 + (i%3)*12;
+        cx.beginPath(); cx.moveTo(sx-11,0); cx.lineTo(sx+11,0); cx.lineTo(sx,sh); cx.closePath(); cx.fill();
+      }
+      function crystal(x,y,col) {
+        cx.shadowColor = col; cx.shadowBlur = 18; cx.fillStyle = col;
+        cx.beginPath(); cx.moveTo(x,y-22); cx.lineTo(x+9,y); cx.lineTo(x,y+9); cx.lineTo(x-9,y); cx.closePath(); cx.fill();
+        cx.shadowBlur = 0;
+      }
+      crystal(14,175,'#00ffcc'); crystal(24,218,'#7b2fff'); crystal(10,260,'#00ccff');
+      crystal(736,168,'#ff00aa'); crystal(742,210,'#00ffcc'); crystal(730,252,'#7b2fff');
+      cx.fillStyle = 'rgba(0,255,200,.07)'; cx.beginPath(); cx.arc(18,218,45,0,TWO_PI); cx.fill();
+      cx.fillStyle = 'rgba(123,47,255,.07)'; cx.beginPath(); cx.arc(736,210,45,0,TWO_PI); cx.fill();
+      var cgg = cx.createLinearGradient(0,gy,0,h);
+      cgg.addColorStop(0,'#1a1228'); cgg.addColorStop(1,'#0d0d1a');
+      cx.fillStyle = cgg; cx.fillRect(0,gy,w,h-gy);
+      cx.fillStyle = '#2a2038';
+      for (var j = 0; j < 8; j++) { cx.beginPath(); cx.ellipse(j*100+30,gy+6,18,8,0,0,TWO_PI); cx.fill(); }
+      backTextColor = '#00ffcc'; break;
+    }
+
+    case 2: { // Sunset Court — purple-orange dusk with silhouette peaks
+      var sun2 = cx.createLinearGradient(0,0,0,gy);
+      sun2.addColorStop(0,'#1a0a2e'); sun2.addColorStop(0.4,'#8b2252');
+      sun2.addColorStop(0.75,'#e85d04'); sun2.addColorStop(1,'#f9c74f');
+      cx.fillStyle = sun2; cx.fillRect(0,0,w,gy);
+      cx.fillStyle = '#ffd60a'; cx.beginPath(); cx.arc(375,gy+4,45,Math.PI,TWO_PI); cx.fill();
+      cx.fillStyle = 'rgba(255,200,50,.28)'; cx.beginPath(); cx.arc(375,gy+4,82,Math.PI,TWO_PI); cx.fill();
+      cx.fillStyle = '#2d1b4e';
+      function mtn(x,mw,mh) { cx.beginPath(); cx.moveTo(x-mw,gy); cx.lineTo(x,gy-mh); cx.lineTo(x+mw,gy); cx.closePath(); cx.fill(); }
+      mtn(100,110,120); mtn(250,90,90); mtn(165,80,68);
+      mtn(600,120,140); mtn(680,85,95); mtn(540,72,80);
+      var sgg = cx.createLinearGradient(0,gy,0,h);
+      sgg.addColorStop(0,'#c9722a'); sgg.addColorStop(1,'#7a3d10');
+      cx.fillStyle = sgg; cx.fillRect(0,gy,w,h-gy);
+      backTextColor = '#fff'; break;
+    }
+
+    case 3: { // Storm Court — lightning, rain, dark clouds
+      var stg = cx.createLinearGradient(0,0,0,gy);
+      stg.addColorStop(0,'#0a0a18'); stg.addColorStop(0.5,'#1c1c38'); stg.addColorStop(1,'#28204e');
+      cx.fillStyle = stg; cx.fillRect(0,0,w,gy);
+      cx.fillStyle = 'rgba(38,38,75,.88)';
+      function scloud(x,y,r) {
+        cx.beginPath(); cx.arc(x,y,r,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(x+r*.8,y+5,r*.7,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(x-r*.9,y+8,r*.65,0,TWO_PI); cx.fill();
+      }
+      scloud(130,50,40); scloud(350,40,52); scloud(580,55,46); scloud(700,36,34);
+      cx.strokeStyle = 'rgba(255,255,180,.8)'; cx.lineWidth = 3;
+      cx.beginPath(); cx.moveTo(200,55); cx.lineTo(188,130); cx.lineTo(202,130); cx.lineTo(183,215); cx.stroke();
+      cx.strokeStyle = 'rgba(255,255,200,.25)'; cx.lineWidth = 9;
+      cx.beginPath(); cx.moveTo(200,55); cx.lineTo(188,130); cx.lineTo(202,130); cx.lineTo(183,215); cx.stroke();
+      cx.strokeStyle = 'rgba(140,170,255,.22)'; cx.lineWidth = 1;
+      for (var ri = 0; ri < 45; ri++) {
+        var rx = (ri*127+40)%750, ry = (ri*83+15)%(gy-30);
+        cx.beginPath(); cx.moveTo(rx,ry); cx.lineTo(rx-4,ry+18); cx.stroke();
+      }
+      cx.lineWidth = 1;
+      var mgg = cx.createLinearGradient(0,gy,0,h);
+      mgg.addColorStop(0,'#2a1e0e'); mgg.addColorStop(1,'#180e06');
+      cx.fillStyle = mgg; cx.fillRect(0,gy,w,h-gy);
+      cx.fillStyle = 'rgba(70,95,155,.35)';
+      cx.beginPath(); cx.ellipse(210,gy+25,52,10,0,0,TWO_PI); cx.fill();
+      cx.beginPath(); cx.ellipse(560,gy+30,40,8,0,0,TWO_PI); cx.fill();
+      backTextColor = '#ffee66'; break;
+    }
+
+    case 4: { // Jungle Court — dense canopy with hanging vines
+      var jsg = cx.createLinearGradient(0,0,0,gy);
+      jsg.addColorStop(0,'#0d2200'); jsg.addColorStop(0.5,'#1e4806'); jsg.addColorStop(1,'#366a12');
+      cx.fillStyle = jsg; cx.fillRect(0,0,w,gy);
+      [30,95,195,335,430,565,660,715].forEach(function(tx) {
+        var tw = 14+(tx%10);
+        cx.fillStyle = '#120a02';
+        cx.fillRect(tx-tw/2, gy-165, tw, 165);
+        cx.fillStyle = 'rgba(10,50,2,.9)';
+        cx.beginPath(); cx.arc(tx,gy-158,40,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(tx+20,gy-142,30,0,TWO_PI); cx.fill();
+        cx.beginPath(); cx.arc(tx-20,gy-148,32,0,TWO_PI); cx.fill();
+      });
+      cx.strokeStyle = 'rgba(22,75,8,.75)'; cx.lineWidth = 3;
+      [75,220,385,500,645].forEach(function(vx) {
+        var vl = 65+(vx%80);
+        cx.beginPath(); cx.moveTo(vx,0);
+        cx.bezierCurveTo(vx+20,vl/3,vx-15,vl*.6,vx+5,vl); cx.stroke();
+      });
+      cx.lineWidth = 1;
+      var jgg = cx.createLinearGradient(0,gy,0,h);
+      jgg.addColorStop(0,'#281802'); jgg.addColorStop(1,'#160e02');
+      cx.fillStyle = jgg; cx.fillRect(0,gy,w,h-gy);
+      cx.fillStyle = '#266010';
+      for (var ti = 0; ti < 22; ti++) { cx.beginPath(); cx.arc(ti*35+5,gy,8,Math.PI,TWO_PI); cx.fill(); }
+      backTextColor = '#aaff66'; break;
+    }
+
+    case 5: { // Frozen Court — aurora, ice peaks, snow
+      var fsg = cx.createLinearGradient(0,0,0,gy);
+      fsg.addColorStop(0,'#b0cce8'); fsg.addColorStop(1,'#e2f2fc');
+      cx.fillStyle = fsg; cx.fillRect(0,0,w,gy);
+      cx.globalAlpha = 0.14;
+      ['#00ff88','#00ccff','#aa44ff'].forEach(function(ac,ai) {
+        var ag = cx.createLinearGradient(ai*210,0,ai*210+160,gy*.6);
+        ag.addColorStop(0,'transparent'); ag.addColorStop(.5,ac); ag.addColorStop(1,'transparent');
+        cx.fillStyle = ag; cx.fillRect(ai*210+30,0,120,gy*.6);
+      });
+      cx.globalAlpha = 1;
+      function icePeak(x,mw,mh,col) {
+        cx.fillStyle = col;
+        cx.beginPath(); cx.moveTo(x-mw,gy); cx.lineTo(x,gy-mh);
+        cx.lineTo(x+mw*.35,gy-mh*.7); cx.lineTo(x+mw,gy); cx.closePath(); cx.fill();
+        cx.fillStyle = '#fff';
+        cx.beginPath(); cx.moveTo(x-18,gy-mh+32); cx.lineTo(x,gy-mh); cx.lineTo(x+18,gy-mh+32); cx.closePath(); cx.fill();
+      }
+      icePeak(75,105,112,'#b8d8f0'); icePeak(200,82,88,'#cce4ff');
+      icePeak(625,115,128,'#b0d0ec'); icePeak(705,78,82,'#cce4ff');
+      cx.fillStyle = 'rgba(255,255,255,.75)';
+      for (var sfi = 0; sfi < 32; sfi++) {
+        cx.beginPath(); cx.arc((sfi*101+25)%750,(sfi*73+12)%gy, 1.5+(sfi%3), 0, TWO_PI); cx.fill();
+      }
+      var fgg = cx.createLinearGradient(0,gy,0,h);
+      fgg.addColorStop(0,'#c5e5ff'); fgg.addColorStop(1,'#9dc8ee');
+      cx.fillStyle = fgg; cx.fillRect(0,gy,w,h-gy);
+      cx.fillStyle = 'rgba(255,255,255,.4)'; cx.fillRect(0,gy,w,4);
+      backTextColor = '#1a5580'; break;
+    }
+
+    case 6: { // Desert Court — scorching sun, cacti, dunes
+      var dsg = cx.createLinearGradient(0,0,0,gy);
+      dsg.addColorStop(0,'#0d5fa5'); dsg.addColorStop(0.55,'#e8871a'); dsg.addColorStop(1,'#f5c842');
+      cx.fillStyle = dsg; cx.fillRect(0,0,w,gy);
+      cx.fillStyle = '#fff176'; cx.beginPath(); cx.arc(650,58,46,0,TWO_PI); cx.fill();
+      cx.fillStyle = '#ffee44'; cx.beginPath(); cx.arc(650,58,34,0,TWO_PI); cx.fill();
+      cx.strokeStyle = 'rgba(255,230,50,.38)'; cx.lineWidth = 3;
+      for (var ray = 0; ray < 12; ray++) {
+        var ra = (ray/12)*TWO_PI;
+        cx.beginPath(); cx.moveTo(650+Math.cos(ra)*46,58+Math.sin(ra)*46);
+        cx.lineTo(650+Math.cos(ra)*72,58+Math.sin(ra)*72); cx.stroke();
+      }
+      cx.lineWidth = 1;
+      cx.fillStyle = '#c8882a';
+      cx.beginPath(); cx.moveTo(0,gy);
+      cx.bezierCurveTo(120,gy-52,250,gy-20,375,gy-42);
+      cx.bezierCurveTo(500,gy-62,630,gy-14,750,gy-38);
+      cx.lineTo(750,gy); cx.closePath(); cx.fill();
+      cx.fillStyle = '#2d6a2d';
+      function cactus(x,by) {
+        cx.fillRect(x-5,by-58,10,58);
+        cx.fillRect(x-20,by-40,16,8); cx.fillRect(x-20,by-58,8,22);
+        cx.fillRect(x+5,by-32,16,8);  cx.fillRect(x+12,by-50,8,22);
+      }
+      cactus(105,gy); cactus(635,gy); cactus(55,gy-6);
+      var dgg = cx.createLinearGradient(0,gy,0,h);
+      dgg.addColorStop(0,'#e8b84b'); dgg.addColorStop(1,'#c49028');
+      cx.fillStyle = dgg; cx.fillRect(0,gy,w,h-gy);
+      cx.fillStyle = 'rgba(200,160,50,.45)';
+      for (var sd = 0; sd < 28; sd++) { cx.beginPath(); cx.arc((sd*117+38)%750,gy+10+(sd*39)%55,3,0,TWO_PI); cx.fill(); }
+      backTextColor = '#5a2d00'; break;
+    }
+
+    case 7: // Neon Court — cyberpunk grid city
+    default: {
+      cx.fillStyle = '#00000f'; cx.fillRect(0,0,w,h);
+      // Sky grid
+      cx.strokeStyle = 'rgba(180,0,255,.14)'; cx.lineWidth = 1;
+      for (var gr = 1; gr < 8; gr++) { cx.beginPath(); cx.moveTo(0,gr*(gy/8)); cx.lineTo(w,gr*(gy/8)); cx.stroke(); }
+      for (var gc = 0; gc <= 16; gc++) { cx.beginPath(); cx.moveTo(gc*(w/16),0); cx.lineTo(gc*(w/16),gy); cx.stroke(); }
+      // Neon city silhouette
+      var bldgs = [[45,88,38],[98,62,48],[168,95,33],[238,52,58],[318,78,38],[432,58,62],[518,90,48],[598,62,43],[658,84,52],[710,52,38]];
+      bldgs.forEach(function(b) {
+        cx.fillStyle = '#08001e';
+        cx.fillRect(b[0],gy-b[1],b[2],b[1]);
+        cx.fillStyle = 'rgba(0,255,200,.35)';
+        for (var wi = 0; wi < 3; wi++) {
+          cx.fillRect(b[0]+4+wi*10,gy-b[1]+10,5,5);
+          cx.fillRect(b[0]+4+wi*10,gy-b[1]+24,5,5);
+        }
+      });
+      // Central orb
+      var ng = cx.createRadialGradient(375,gy*.38,4,375,gy*.38,62);
+      ng.addColorStop(0,'rgba(255,0,200,.85)'); ng.addColorStop(.5,'rgba(140,0,255,.3)'); ng.addColorStop(1,'transparent');
+      cx.fillStyle = ng; cx.beginPath(); cx.arc(375,gy*.38,62,0,TWO_PI); cx.fill();
+      // Sky border glow
+      cx.strokeStyle = '#ff00cc'; cx.lineWidth = 2;
+      cx.shadowColor = '#ff00cc'; cx.shadowBlur = 12;
+      cx.strokeRect(1,1,w-2,gy-1); cx.shadowBlur = 0; cx.lineWidth = 1;
+      // Ground with perspective grid
+      var ngg = cx.createLinearGradient(0,gy,0,h);
+      ngg.addColorStop(0,'#100028'); ngg.addColorStop(1,'#06000f');
+      cx.fillStyle = ngg; cx.fillRect(0,gy,w,h-gy);
+      cx.strokeStyle = 'rgba(0,255,200,.28)'; cx.lineWidth = 1;
+      for (var gl = 0; gl <= 5; gl++) {
+        var gy2 = gy + (h-gy)*(gl/5);
+        cx.beginPath(); cx.moveTo(0,gy2); cx.lineTo(w,gy2); cx.stroke();
+      }
+      var vp = w/2;
+      for (var gv = 0; gv <= 12; gv++) {
+        var fx = gv*(w/12);
+        cx.beginPath(); cx.moveTo(fx,gy); cx.lineTo(vp+(fx-vp)*.12,h); cx.stroke();
+      }
+      // Ground neon line
+      cx.strokeStyle = '#00ffcc'; cx.lineWidth = 2;
+      cx.shadowColor = '#00ffcc'; cx.shadowBlur = 10;
+      cx.beginPath(); cx.moveTo(0,gy); cx.lineTo(w,gy); cx.stroke();
+      cx.shadowBlur = 0; cx.lineWidth = 1;
+      backTextColor = '#00ffcc'; break;
+    }
+  }
+}
+
 function renderPoints(score, x0, dx) {
   ctx.fillStyle = '#ff0';
   for (var i = 0, x = x0; i < score; i++, x += dx) {
@@ -277,10 +535,17 @@ function renderBackground() {
   if (legacyGraphics) {
     ctx.fillStyle = legacySkyColor; ctx.fillRect(0, 0, viewWidth, courtYPix);
     ctx.fillStyle = legacyGroundColor;
+    ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
+  } else if (currentRoomId !== null) {
+    drawMapBackground(currentRoomId);
+  } else if (backImage) {
+    ctx.drawImage(backImage, 0, 0);
+    ctx.fillStyle = newGroundColor;
+    ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
   } else {
-    ctx.drawImage(backImage, 0, 0); ctx.fillStyle = newGroundColor;
+    ctx.fillStyle = '#88ccff'; ctx.fillRect(0, 0, viewWidth, courtYPix);
+    ctx.fillStyle = '#ca6'; ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
   }
-  ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
   ctx.fillStyle = '#fff';
   ctx.fillRect(viewWidth/2-2, 7*viewHeight/10, 4, viewHeight/10+5);
   renderPoints(slimeLeftScore, 30, 40);
@@ -433,6 +698,33 @@ var mySide              = null;
 var onlineInputInterval = null;
 var onlinePointText     = null;
 var showingLobbySelect  = false;
+var currentRoomId       = null;
+
+// ── name editing ──────────────────────────────────────────
+function startEditName() {
+  var inp = document.getElementById('PlayerNameInput');
+  inp.value = myPlayerName;
+  document.getElementById('PlayerNameLabel').style.display = 'none';
+  document.getElementById('PlayerNameEditBtn').style.display = 'none';
+  var ea = document.getElementById('PlayerNameEditArea');
+  ea.style.display = 'flex';
+  inp.focus(); inp.select();
+}
+function cancelEditName() {
+  document.getElementById('PlayerNameLabel').style.display = 'inline';
+  document.getElementById('PlayerNameEditBtn').style.display = 'inline';
+  document.getElementById('PlayerNameEditArea').style.display = 'none';
+}
+function saveName() {
+  var name = document.getElementById('PlayerNameInput').value.trim().slice(0, 20);
+  if (!name) { cancelEditName(); return; }
+  myPlayerName = name;
+  document.getElementById('PlayerNameDisplay').textContent = name;
+  cancelEditName();
+  if (lobbySocket && lobbySocket.readyState === 1) {
+    lobbySocket.send(JSON.stringify({ type: 'set_name', name: name }));
+  }
+}
 
 // ── lobby select UI ───────────────────────────────────────
 function showLobbySelect() {
@@ -448,30 +740,37 @@ function showLobbySelect() {
   renderLobbySelect(currentLobbies);
 }
 
+var MAP_ICONS = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆'];
+var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028'];
+var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc'];
+
 function renderLobbySelect(lobbies) {
   if (!showingLobbySelect) return;
-  var html = '<div class="lobby-list-wrap"><div class="lobby-title">Select a Lobby</div>';
+  var html = '<div class="lobby-list-wrap"><div class="lobby-title">Select a Court</div>';
   lobbies.forEach(function(r) {
     var badge, badgeClass;
     if (r.phase === 'playing') {
       badge = '▶ WATCH'; badgeClass = 'badge-playing';
     } else if (r.playerCount === 1) {
-      badge = '⚡ JOIN! 1 waiting'; badgeClass = 'badge-waiting';
+      badge = '⚡ 1 waiting'; badgeClass = 'badge-waiting';
     } else {
       badge = 'EMPTY'; badgeClass = 'badge-empty';
     }
     var dots = (r.playerCount >= 1 ? '●' : '○') + (r.playerCount >= 2 ? '●' : '○');
-    var spec  = r.spectatorCount > 0
+    var spec = r.spectatorCount > 0
       ? '<span class="lobby-spec">👁 ' + r.spectatorCount + '</span>' : '<span></span>';
+    var bgCol  = MAP_COLORS[r.id] || '#222';
+    var txtCol = MAP_TEXT[r.id]   || '#fff';
     html +=
-      '<div class="lobby-row" onclick="joinRoom(' + r.id + ')">' +
-        '<span class="lobby-name">' + r.name + '</span>' +
-        '<span class="lobby-dots">' + dots + '</span>' +
+      '<div class="lobby-row" onclick="joinRoom(' + r.id + ')" style="background:' + bgCol + ';border-color:rgba(255,255,255,.12);">' +
+        '<span style="font-size:16px;margin-right:2px;">' + MAP_ICONS[r.id] + '</span>' +
+        '<span class="lobby-name" style="color:' + txtCol + ';">' + r.name + '</span>' +
+        '<span class="lobby-dots" style="color:' + txtCol + ';opacity:.8;">' + dots + '</span>' +
         spec +
         '<span class="lobby-badge ' + badgeClass + '">' + badge + '</span>' +
       '</div>';
   });
-  html += '<div class="lobby-back"><span onclick="cancelLobbySelect()" class="SmallButton" style="font-size:12px;">← back</span></div>';
+  html += '<div class="lobby-back"><span onclick="cancelLobbySelect()" class="SmallButton" style="font-size:12px;color:#aaa;">← back</span></div>';
   html += '</div>';
   menuDiv.innerHTML = html;
 }
@@ -503,6 +802,8 @@ function handleServerMessage(msg) {
     myPlayerName   = msg.name;
     currentLobbies = msg.lobbies || [];
     updatePlayerCount(msg.totalPlayers);
+    var nd = document.getElementById('PlayerNameDisplay');
+    if (nd) nd.textContent = msg.name;
     addChatMessage(null, 'Connected as ' + msg.name);
 
   } else if (msg.type === 'lobby_list') {
@@ -517,6 +818,7 @@ function handleServerMessage(msg) {
     updatePlayerCount(msg.count);
 
   } else if (msg.type === 'room_joined') {
+    currentRoomId = msg.roomId;
     if (msg.role === 'spectator') {
       isSpectator = true; onlineMode = false;
       canvas.style.display = 'none'; menuDiv.style.display = 'block';
@@ -585,8 +887,7 @@ function launchOnlineGame() {
   ball       = newLegacyBall(25, '#ff0');
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage; slimeRight.img = redSlimeImage;
-  legacyGraphics = false; legacySkyColor = '#00f'; backImage = backImages['sky'];
-  backTextColor = '#000'; legacyGroundColor = '#888'; legacyBallColor = '#fff'; newGroundColor = '#ca6';
+  legacyGraphics = false;
   canvas.style.display = 'block'; menuDiv.style.display = 'none';
 
   onlineInputInterval = setInterval(function() {
@@ -607,8 +908,7 @@ function launchSpectatorMode() {
   slimeRight = newLegacySlime(false, 100, '#f00');
   ball       = newLegacyBall(25, '#ff0');
   slimeLeft.img = greenSlimeImage; slimeRight.img = redSlimeImage;
-  legacyGraphics = false; legacySkyColor = '#00f'; backImage = backImages['sky'];
-  backTextColor = '#000'; legacyGroundColor = '#888'; legacyBallColor = '#fff'; newGroundColor = '#ca6';
+  legacyGraphics = false;
   canvas.style.display = 'block'; menuDiv.style.display = 'none';
   showSpecBadge();
 }
@@ -668,6 +968,7 @@ function spaceKeyDown() {
 
 // ── local game start ──────────────────────────────────────
 function start(startAsOnePlayer) {
+  currentRoomId = null;
   onePlayer = startAsOnePlayer;
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage;
@@ -784,6 +1085,16 @@ function bodyload() {
 
     <div id="Sidebar">
       <div id="PlayerCountDiv">● 0 players online</div>
+      <div id="PlayerNameDiv">
+        <span id="PlayerNameLabel">You: <b id="PlayerNameDisplay">...</b></span>
+        <span id="PlayerNameEditBtn" onclick="startEditName()" title="Change name">✏</span>
+        <span id="PlayerNameEditArea" style="display:none;flex:1;align-items:center;gap:4px;">
+          <input id="PlayerNameInput" type="text" maxlength="20"
+                 onkeydown="if(event.key==='Enter')saveName();else if(event.key==='Escape')cancelEditName()">
+          <span class="name-btn name-confirm" onclick="saveName()" title="Save">✓</span>
+          <span class="name-btn name-cancel"  onclick="cancelEditName()" title="Cancel">✗</span>
+        </span>
+      </div>
       <div id="ChatLog"></div>
       <div id="ChatInputRow">
         <input id="ChatInput" type="text" placeholder="Chat..." maxlength="200"

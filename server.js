@@ -80,6 +80,10 @@ wss.on('connection', (ws) => {
       if (info.state === 'playing' && info.gameHandler) {
         info.gameHandler(msg);
         if (msg.type === 'chat') relayChat(info, msg);
+        if (msg.type === 'set_name') {
+          const name = String(msg.name || '').trim().slice(0, 20);
+          if (name) info.name = name;
+        }
         return;
       }
       handleMsg(ws, info, msg);
@@ -97,6 +101,9 @@ wss.on('connection', (ws) => {
 function handleMsg(ws, info, msg) {
   if (msg.type === 'chat') {
     relayChat(info, msg);
+  } else if (msg.type === 'set_name') {
+    const name = String(msg.name || '').trim().slice(0, 20);
+    if (name) info.name = name;
   } else if (msg.type === 'join_room') {
     handleJoinRoom(ws, info, msg.roomId);
   } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
