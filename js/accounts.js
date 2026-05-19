@@ -55,11 +55,10 @@ function applyAccount(user) {
     '<span>' + (user.stats.matches || 0) + 'M</span> ' +
     '<span style="color:#66ffcc;">' + (user.stats.wins || 0) + 'W</span> ' +
     '<span style="color:#ff66aa;">' + (user.stats.losses || 0) + 'L</span>';
-  var nd = document.getElementById('PlayerNameDisplay');
-  if (nd) nd.textContent = myPlayerName;
   hatConfigs.left = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing };
   syncCustomizationUI();
   sendCustomization();
+  loadLeaderboard();
 }
 
 function storeAccountToken(token) {
@@ -83,6 +82,7 @@ function accountLogin() {
       storeAccountToken(body.token);
       applyAccount(body.user);
       accountMessage('');
+      loadLeaderboard();
       reconnectLobby();
     })
     .catch(function(err) { accountMessage(err.message, true); });
@@ -95,6 +95,7 @@ function accountRegister() {
       storeAccountToken(body.token);
       applyAccount(body.user);
       accountMessage('');
+      loadLeaderboard();
       reconnectLobby();
     })
     .catch(function(err) { accountMessage(err.message, true); });
@@ -106,8 +107,31 @@ function accountLogout() {
       storeAccountToken('');
       currentAccount = null;
       applyAccount(null);
+      loadLeaderboard();
       reconnectLobby();
     });
+}
+
+function loadLeaderboard() {
+  return accountRequest('/api/leaderboard', { method: 'GET', headers: {} })
+    .then(function(body) { renderLeaderboard(body.players || []); })
+    .catch(function() { renderLeaderboard([]); });
+}
+
+function renderLeaderboard(players) {
+  var list = document.getElementById('LeaderboardList');
+  if (!list) return;
+  list.innerHTML = players.map(function(user, i) {
+    var stats = user.stats || {};
+    var p = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(stats.xp || 0) : { level: 1 });
+    var mine = currentAccount && currentAccount.username === user.username ? ' mine' : '';
+    return '<div class="lb-row' + mine + '" onclick="showProfile(\'' + escHtml(user.username) + '\')">' +
+      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-name">@' + escHtml(user.username) + '</span>' +
+      '<span class="lb-level">L' + (p.level || 1) + '</span>' +
+      '<span class="lb-xp">' + (stats.xp || 0) + ' XP</span>' +
+      '</div>';
+  }).join('') || '<div class="lb-empty">No accounts yet.</div>';
 }
 
 function reconnectLobby() {
@@ -242,7 +266,7 @@ function renderInventory(user) {
   var inv = user.inventory || [];
   if (coinsEl) coinsEl.textContent = 'SC: ' + coins;
 
-  var COLS = 4, ROWS = 8, TOTAL = COLS * ROWS;
+  var COLS = 8, ROWS = 4, TOTAL = COLS * ROWS;
   var slots = [];
   // Slot 0: always coin
   slots.push({ type: 'coin', count: coins });
@@ -271,10 +295,10 @@ function renderInventory(user) {
   grid.querySelectorAll('.inv-hat-icon').forEach(function(el) {
     var hatId = el.getAttribute('data-hat');
     var c = document.createElement('canvas');
-    c.width = 44; c.height = 44;
+    c.width = 36; c.height = 36;
     var cx2 = c.getContext('2d');
-    cx2.fillStyle = '#0a0018'; cx2.fillRect(0, 0, 44, 44);
-    drawHatAt(cx2, 22, 36, 16, { hat: hatId, anim: 'none', drawing: [] });
+    cx2.fillStyle = '#0a0018'; cx2.fillRect(0, 0, 36, 36);
+    drawHatAt(cx2, 18, 30, 13, { hat: hatId, anim: 'none', drawing: [] });
     el.appendChild(c);
   });
 }

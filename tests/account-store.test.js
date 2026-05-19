@@ -77,3 +77,18 @@ test('recordMatch updates both linked accounts', () => {
   assert.strictEqual(leftProfile.recentMatches[0].xpGained, leftXp);
   assert.strictEqual(rightProfile.recentMatches[0].result, 'loss');
 });
+
+test('leaderboard sorts accounts by total xp', () => {
+  const store = tempStore();
+  const high = store.register('high_xp', 'password123');
+  const low = store.register('low_xp', 'password123');
+
+  high.stats.xp = 250;
+  low.stats.xp = 40;
+  store.save();
+
+  const rows = store.leaderboard();
+  assert.deepStrictEqual(rows.map((row) => row.username), ['high_xp', 'low_xp']);
+  assert.strictEqual(rows[0].progression.xp, 250);
+  assert.strictEqual(rows[0].passwordHash, undefined);
+});

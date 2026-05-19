@@ -17,8 +17,6 @@ function handleServerMessage(msg) {
       if (lobbySocket && lobbySocket.readyState === 1)
         lobbySocket.send(JSON.stringify({ type: 'set_name', name: msg.name, wins: totalWins, rank: getPlayerRank() }));
     }
-    var nd = document.getElementById('PlayerNameDisplay');
-    if (nd) nd.textContent = myPlayerName;
     addChatMessage(null, 'Connected as ' + myPlayerName);
     if (msg.playerList) updateOnlineList(msg.playerList);
 

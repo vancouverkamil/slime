@@ -211,20 +211,21 @@
           </div>
         </div>
       </div>
-      <div id="PlayerNameDiv">
-        <span id="PlayerNameLabel">ID: <b id="PlayerNameDisplay">...</b></span>
-        <span id="PlayerNameEditBtn" onclick="startEditName()" title="Change name">✏</span>
-        <span id="PlayerNameEditArea" style="display:none;flex:1;align-items:center;gap:4px;">
-          <input id="PlayerNameInput" type="text" maxlength="20"
-                 onkeydown="if(event.key==='Enter')saveName();else if(event.key==='Escape')cancelEditName()">
-          <span class="name-btn name-confirm" onclick="saveName()">✓</span>
-          <span class="name-btn name-cancel"  onclick="cancelEditName()">✗</span>
-        </span>
+      <div id="LeaderboardPanel">
+        <div id="LeaderboardHeader">XP Leaderboard</div>
+        <div id="LeaderboardList"></div>
       </div>
       <button id="LeaveRoomBtn" onclick="leaveLobby()">⬅ Leave Room</button>
       <div id="OnlineListPanel">
         <div id="OnlineListHeader">players online</div>
         <div id="OnlineList"></div>
+      </div>
+      <div id="ChatHeader">
+        <span>GLOBAL CHAT:</span>
+        <label title="Toggle profanity filtering">
+          <input id="ProfanityToggle" type="checkbox" onchange="setProfanityFilter(this.checked)">
+          profanity
+        </label>
       </div>
       <div id="ChatLog"></div>
       <div id="ChatInputRow">

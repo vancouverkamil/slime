@@ -32,6 +32,37 @@ var HAT_OPTIONS = [
   { id:'party',  label:'Party'   },
   { id:'custom', label:'Custom'  },
 ];
+var profanityFilterEnabled = true;
+var PROFANITY_WORDS = [
+  'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'dick', 'cunt', 'pussy',
+  'slut', 'whore', 'fag', 'nigger', 'retard'
+];
+
+function censorProfanity(text) {
+  if (!profanityFilterEnabled) return text;
+  var out = String(text || '');
+  PROFANITY_WORDS.forEach(function(word) {
+    var re = new RegExp('\\b' + word + '\\b', 'ig');
+    out = out.replace(re, function(match) {
+      return match.charAt(0) + Array(match.length).join('*');
+    });
+  });
+  return out;
+}
+
+function setProfanityFilter(on) {
+  profanityFilterEnabled = !!on;
+  try { localStorage.setItem('slime_profanity_filter', profanityFilterEnabled ? '1' : '0'); } catch(e) {}
+}
+
+function initProfanityToggle() {
+  try {
+    var saved = localStorage.getItem('slime_profanity_filter');
+    if (saved !== null) profanityFilterEnabled = saved !== '0';
+  } catch(e) {}
+  var el = document.getElementById('ProfanityToggle');
+  if (el) el.checked = profanityFilterEnabled;
+}
 
 function getTintedCanvas(img, color) {
   var key = (img.src || '') + '|' + color;
@@ -103,6 +134,7 @@ function addChatMessage(name, text) {
   if (!log) return;
   var div = document.createElement('div');
   div.className = 'chat-msg';
+  text = censorProfanity(text);
   div.innerHTML = name
     ? '<span class="chat-name">' + escHtml(name) + '</span>: ' + escHtml(text)
     : '<span class="chat-sys">' + escHtml(text) + '</span>';

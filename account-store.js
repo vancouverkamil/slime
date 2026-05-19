@@ -256,6 +256,27 @@ class AccountStore {
       inventory: user.inventory || [],
     };
   }
+
+  publicLeaderboardProfile(user) {
+    if (!user) return null;
+    const stats = normalizeStats(user.stats);
+    return {
+      username: user.username,
+      displayName: user.displayName,
+      stats,
+      progression: progression.getProgression(stats.xp),
+    };
+  }
+
+  leaderboard() {
+    return this.data.users
+      .map((user) => this.publicLeaderboardProfile(user))
+      .sort((a, b) => {
+        const xpDiff = ((b.stats || {}).xp || 0) - ((a.stats || {}).xp || 0);
+        if (xpDiff) return xpDiff;
+        return String(a.username).localeCompare(String(b.username));
+      });
+  }
 }
 
 class PostgresAccountStore {
@@ -474,6 +495,15 @@ class PostgresAccountStore {
 
   publicProfile(user) {
     return AccountStore.prototype.publicProfile.call(this, user);
+  }
+
+  async leaderboard() {
+    await this.ready;
+    const rows = await this.sql`
+      SELECT * FROM users
+      ORDER BY COALESCE((stats->>'xp')::int, 0) DESC, username ASC
+    `;
+    return rows.map((row) => AccountStore.prototype.publicLeaderboardProfile.call(this, this.rowToUser(row)));
   }
 }
 

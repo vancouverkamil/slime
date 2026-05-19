@@ -171,6 +171,11 @@ app.get('/api/profiles/:username', async (req, res) => {
   res.json({ user: accounts.publicProfile(user) });
 });
 
+app.get('/api/leaderboard', async (_req, res) => {
+  const players = typeof accounts.leaderboard === 'function' ? await accounts.leaderboard() : [];
+  res.json({ players });
+});
+
 app.post('/api/me/slime', async (req, res) => {
   const user = await getReqUser(req);
   if (!user) {
@@ -424,9 +429,11 @@ wss.on('connection', async (ws, req) => {
         if (msg.type === 'chat') relayChat(info, msg);
         if (msg.type === 'set_name') {
           const name = String(msg.name || '').trim().slice(0, 20);
-          if (name) info.name = name;
-          info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
-          info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
+          if (!info.userId && name) info.name = name;
+          if (!info.userId) {
+            info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
+            info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
+          }
         }
         if (msg.type === 'customize') await handleCustomize(ws, info, msg);
         return;
@@ -449,9 +456,11 @@ async function handleMsg(ws, info, msg) {
     relayChat(info, msg);
   } else if (msg.type === 'set_name') {
     const name = String(msg.name || '').trim().slice(0, 20);
-    if (name) info.name = name;
-    info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
-    info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
+    if (!info.userId && name) info.name = name;
+    if (!info.userId) {
+      info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
+      info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
+    }
   } else if (msg.type === 'join_room') {
     leaveSlimeverse(ws, info);
     handleJoinRoom(ws, info, msg.roomId);

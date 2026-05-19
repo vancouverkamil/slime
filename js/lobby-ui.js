@@ -1,29 +1,3 @@
-function startEditName() {
-  var inp = document.getElementById('PlayerNameInput');
-  inp.value = myPlayerName;
-  document.getElementById('PlayerNameLabel').style.display = 'none';
-  document.getElementById('PlayerNameEditBtn').style.display = 'none';
-  var ea = document.getElementById('PlayerNameEditArea');
-  ea.style.display = 'flex';
-  inp.focus(); inp.select();
-}
-function cancelEditName() {
-  document.getElementById('PlayerNameLabel').style.display = 'inline';
-  document.getElementById('PlayerNameEditBtn').style.display = 'inline';
-  document.getElementById('PlayerNameEditArea').style.display = 'none';
-}
-function saveName() {
-  var name = document.getElementById('PlayerNameInput').value.trim().slice(0, 20);
-  if (!name) { cancelEditName(); return; }
-  myPlayerName = name;
-  localStorage.setItem('slimeName', name);
-  document.getElementById('PlayerNameDisplay').textContent = name;
-  cancelEditName();
-  if (lobbySocket && lobbySocket.readyState === 1) {
-    lobbySocket.send(JSON.stringify({ type: 'set_name', name: name, wins: totalWins, rank: getPlayerRank() }));
-  }
-}
-
 // ── map preview thumbnails ────────────────────────────────
 var mapPreviews = [];
 function getMapPreview(id, pw, ph) {

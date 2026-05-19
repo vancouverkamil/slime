@@ -33,13 +33,12 @@ function bodyload() {
   greenSlimeImage = new Image(); greenSlimeImage.src = 'slime175green.png';
   redSlimeImage   = new Image(); redSlimeImage.src   = 'slime175red.png';
 
-  // Load persisted name
+  // Load persisted guest name
   var savedName = localStorage.getItem('slimeName');
   if (savedName) {
     myPlayerName = savedName;
-    var nd = document.getElementById('PlayerNameDisplay');
-    if (nd) nd.textContent = savedName;
   }
+  initProfanityToggle();
 
   // Load persisted customization
   playerBodyColor = localStorage.getItem('slimeBodyColor') || '#00ff00';
@@ -87,6 +86,8 @@ function bodyload() {
   if (fx) fx.checked = screenFxEnabled;
 
   loadAccount().then(function() {
+    loadLeaderboard();
+    setInterval(loadLeaderboard, 20000);
     toInitialMenu();
     connectLobby();
   });
