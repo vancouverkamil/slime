@@ -17,13 +17,17 @@ function accountPayload() {
 function accountRequest(url, options) {
   options = options || {};
   options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
-  options.credentials = 'same-origin';
-  return fetch(url, options).then(function(res) {
+  options.credentials = 'include';
+  return fetch(accountUrl(url), options).then(function(res) {
     return res.json().then(function(body) {
       if (!res.ok) throw new Error(body.error || 'Request failed.');
       return body;
     });
   });
+}
+
+function accountUrl(path) {
+  return (window.SLIME_API_URL || '') + path;
 }
 
 function applyAccount(user) {

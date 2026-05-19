@@ -20,6 +20,21 @@ const ROOM_NAMES = [
 
 const app = express();
 const accounts = createAccountStore();
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  }
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 app.use(express.json({ limit: '256kb' }));
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'slime_volleyball.html')));
@@ -49,12 +64,42 @@ function parseCookies(header) {
   return cookies;
 }
 
-function sessionCookie(token) {
-  return `slime_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}`;
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const url = new URL(origin);
+    return (
+      url.hostname === 'localhost' ||
+      url.hostname === '127.0.0.1' ||
+      url.hostname === 'slime-7wuo.onrender.com' ||
+      url.hostname.endsWith('.vercel.app')
+    );
+  } catch (_) {
+    return false;
+  }
 }
 
-function clearSessionCookie() {
-  return 'slime_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0';
+function isCrossSiteRequest(req) {
+  if (!req.headers.origin) return false;
+  try {
+    return new URL(req.headers.origin).host !== req.headers.host;
+  } catch (_) {
+    return false;
+  }
+}
+
+function sessionCookie(token, req) {
+  const crossSite = isCrossSiteRequest(req);
+  const sameSite = crossSite ? 'None' : 'Lax';
+  const secure = crossSite ? '; Secure' : '';
+  return `slime_session=${encodeURIComponent(token)}; HttpOnly; SameSite=${sameSite}; Path=/; Max-Age=${60 * 60 * 24 * 30}${secure}`;
+}
+
+function clearSessionCookie(req) {
+  const crossSite = isCrossSiteRequest(req);
+  const sameSite = crossSite ? 'None' : 'Lax';
+  const secure = crossSite ? '; Secure' : '';
+  return `slime_session=; HttpOnly; SameSite=${sameSite}; Path=/; Max-Age=0${secure}`;
 }
 
 async function getReqUser(req) {
@@ -74,7 +119,7 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const user = await accounts.register(req.body.username, req.body.password);
     const token = await accounts.createSession(user.id);
-    res.setHeader('Set-Cookie', sessionCookie(token));
+    res.setHeader('Set-Cookie', sessionCookie(token, req));
     sendUser(res, user);
   } catch (err) {
     res.status(400).json({ error: err.message || 'Could not create account.' });
@@ -88,14 +133,14 @@ app.post('/api/auth/login', async (req, res) => {
     return;
   }
   const token = await accounts.createSession(user.id);
-  res.setHeader('Set-Cookie', sessionCookie(token));
+  res.setHeader('Set-Cookie', sessionCookie(token, req));
   sendUser(res, user);
 });
 
 app.post('/api/auth/logout', async (req, res) => {
   const token = parseCookies(req.headers.cookie).slime_session;
   await accounts.deleteSession(token);
-  res.setHeader('Set-Cookie', clearSessionCookie());
+  res.setHeader('Set-Cookie', clearSessionCookie(req));
   res.json({ ok: true });
 });
 
