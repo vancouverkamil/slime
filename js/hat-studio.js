@@ -223,6 +223,121 @@ function saveHatDrawing() {
   sendCustomization();
 }
 
+function savedHatPayload(name) {
+  return {
+    name: name,
+    hatAnim: playerHatAnim,
+    drawBrush: _drawBrush,
+    drawSize: _drawSize,
+    drawColor: _drawColor,
+    drawing: JSON.parse(JSON.stringify(playerHatDrawing || [])),
+  };
+}
+
+function saveCurrentHatPreset() {
+  if (!currentAccount) {
+    accountMessage('Login to save hat drawings.', true);
+    return;
+  }
+  if (!playerHatDrawing || playerHatDrawing.length === 0) {
+    accountMessage('Draw something before saving.', true);
+    return;
+  }
+  var saved = currentAccount.savedHatDrawings || [];
+  if (saved.length >= 5) {
+    accountMessage('You can save up to 5 hat drawings.', true);
+    return;
+  }
+  var name = window.prompt('Save hat drawing as:', 'Hat ' + (saved.length + 1));
+  if (name === null) return;
+  accountRequest('/api/me/hat-drawings', {
+    method: 'POST',
+    body: JSON.stringify(savedHatPayload(name)),
+  }).then(function(body) {
+    currentAccount = body.user;
+    renderSavedHatDrawings();
+    accountMessage('Hat drawing saved.');
+  }).catch(function(err) {
+    accountMessage(err.message, true);
+  });
+}
+
+function useHatPreset(id) {
+  if (!currentAccount) return;
+  var saved = currentAccount.savedHatDrawings || [];
+  var preset = null;
+  for (var i = 0; i < saved.length; i++) {
+    if (saved[i].id === id) { preset = saved[i]; break; }
+  }
+  if (!preset) return;
+  playerHat = 'custom';
+  playerHatAnim = preset.hatAnim || 'none';
+  playerHatDrawing = JSON.parse(JSON.stringify(preset.drawing || []));
+  _drawBrush = preset.drawBrush || 'pen';
+  _drawSize = preset.drawSize || 4;
+  _drawColor = preset.drawColor || '#ffffff';
+  _drawColorIdx = Math.max(0, _drawColors.indexOf(_drawColor));
+  _undoStack = [];
+  try {
+    localStorage.setItem('slimeHat', playerHat);
+    localStorage.setItem('slimeHatAnim', playerHatAnim);
+    localStorage.setItem('slimeHatDrawing', JSON.stringify(playerHatDrawing));
+  } catch(e) {}
+  syncCustomizationUI();
+  _refreshDrawCanvases();
+  updateDrawToolUI();
+  updateUndoRedoUI();
+  updateSlimePreview();
+  sendCustomization();
+}
+
+function deleteHatPreset(id) {
+  if (!currentAccount) return;
+  accountRequest('/api/me/hat-drawings/' + encodeURIComponent(id), {
+    method: 'DELETE',
+    body: '{}',
+  }).then(function(body) {
+    currentAccount = body.user;
+    renderSavedHatDrawings();
+    accountMessage('Hat drawing deleted.');
+  }).catch(function(err) {
+    accountMessage(err.message, true);
+  });
+}
+
+function renderSavedHatDrawings() {
+  var wrap = document.getElementById('SavedHatDrawings');
+  if (!wrap) return;
+  if (!currentAccount) {
+    wrap.innerHTML = '<div class="saved-hats-empty">Login to save up to 5 custom hats.</div>';
+    return;
+  }
+  var saved = currentAccount.savedHatDrawings || [];
+  var html = '<div class="saved-hats-title">Saved Custom Hats <span>' + saved.length + '/5</span></div>';
+  html += saved.map(function(item, i) {
+    return '<div class="saved-hat-row">' +
+      '<div class="saved-hat-preview" data-saved-hat="' + escHtml(item.id) + '"></div>' +
+      '<div class="saved-hat-meta"><b>' + escHtml(item.name || ('Hat ' + (i + 1))) + '</b><span>' +
+        escHtml((item.hatAnim || 'none').toUpperCase()) + ' / ' + escHtml((item.drawBrush || 'pen').toUpperCase()) +
+      '</span></div>' +
+      '<button class="hat-opt" onclick="useHatPreset(\'' + escHtml(item.id) + '\')">USE</button>' +
+      '<button class="hat-opt danger" onclick="deleteHatPreset(\'' + escHtml(item.id) + '\')">DEL</button>' +
+      '</div>';
+  }).join('');
+  if (saved.length === 0) html += '<div class="saved-hats-empty">No saved custom hats yet.</div>';
+  wrap.innerHTML = html;
+  saved.forEach(function(item) {
+    var el = wrap.querySelector('[data-saved-hat="' + item.id + '"]');
+    if (!el) return;
+    var c = document.createElement('canvas');
+    c.width = 44; c.height = 34;
+    var cx = c.getContext('2d');
+    cx.fillStyle = '#040012'; cx.fillRect(0, 0, c.width, c.height);
+    drawHatAt(cx, 22, 29, 13, { hat: 'custom', anim: 'none', drawing: item.drawing || [] });
+    el.appendChild(c);
+  });
+}
+
 function clearHatDrawing() {
   playerHatDrawing = []; _currentStroke = []; _undoStack = [];
   try { localStorage.removeItem('slimeHatDrawing'); } catch(e) {}

@@ -135,8 +135,10 @@
                 <!-- actions -->
                 <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
                   <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:3px 11px;">&#10005; Clear</button>
+                  <button onclick="saveCurrentHatPreset()" class="hat-opt" style="font-size:8px;padding:3px 11px;">SAVE</button>
                   <button onclick="openHatFullscreen()" class="hat-opt" style="font-size:8px;padding:3px 11px;margin-left:auto;">&#11036; Fullscreen</button>
                 </div>
+                <div id="SavedHatDrawings" class="saved-hats"></div>
                 <div id="StudioNotCustom" style="display:none;margin-top:12px;padding:8px 11px;border:1px solid rgba(0,255,200,.1);border-radius:2px;color:rgba(0,255,200,.35);font-size:9px;letter-spacing:.6px;line-height:1.6;">
                   &#9888; Pick "Custom" in Hat Style to show your drawing in-game.
                 </div>
@@ -290,6 +292,7 @@
     <div style="display:flex;gap:5px;margin-bottom:10px;align-items:center;width:100%;">
       <button id="FSDrawUndo" onclick="hatUndo()" class="draw-tool-btn" title="Undo (Ctrl+Z)" style="opacity:.3;cursor:default;">&#8617; Undo</button>
       <button id="FSDrawRedo" onclick="hatRedo()" class="draw-tool-btn" title="Redo (Ctrl+Y)" style="opacity:.3;cursor:default;">&#8618; Redo</button>
+      <button onclick="saveCurrentHatPreset()" class="hat-opt" style="font-size:9px;padding:3px 10px;">SAVE</button>
       <button onclick="clearHatDrawing()" class="hat-opt" style="margin-left:auto;font-size:9px;padding:3px 10px;">&#10005; Clear All</button>
     </div>
     <canvas id="HatFullscreenCanvas" width="500" height="580" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;max-width:90vw;max-height:75vh;"></canvas>

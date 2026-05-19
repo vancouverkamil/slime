@@ -350,8 +350,19 @@ body {
 }
 .hat-opt.active { border-color:#00ffcc; color:#00ffcc; background:rgba(0,255,200,.1); }
 .hat-opt:hover { border-color:rgba(0,255,200,.45); color:#aaa; }
+.hat-opt.danger { border-color:rgba(255,80,130,.22); color:#8d4866; }
+.hat-opt.danger:hover { border-color:rgba(255,80,130,.55); color:#ff6699; background:rgba(255,80,130,.06); }
 .hat-opt.locked { border-color:rgba(255,210,90,.18); color:rgba(255,210,90,.42); cursor:not-allowed; }
 .hat-opt.locked:hover { border-color:rgba(255,210,90,.28); color:rgba(255,210,90,.5); background:rgba(255,210,90,.04); }
+.saved-hats { margin-top:12px; border-top:1px solid rgba(0,255,200,.08); padding-top:10px; }
+.saved-hats-title { color:rgba(0,255,200,.45); font-size:8px; letter-spacing:2px; text-transform:uppercase; display:flex; justify-content:space-between; margin-bottom:7px; }
+.saved-hats-title span { color:#555; }
+.saved-hat-row { display:grid; grid-template-columns:50px 1fr auto auto; gap:6px; align-items:center; border:1px solid rgba(0,255,200,.1); background:rgba(0,255,200,.025); padding:5px; margin-bottom:5px; }
+.saved-hat-preview { width:44px; height:34px; border:1px solid rgba(0,255,200,.12); background:#040012; display:flex; align-items:center; justify-content:center; }
+.saved-hat-meta { min-width:0; display:flex; flex-direction:column; gap:2px; }
+.saved-hat-meta b { color:#ddd; font-size:9px; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.saved-hat-meta span { color:#555; font-size:7px; letter-spacing:1px; }
+.saved-hats-empty { color:#444; font-size:9px; letter-spacing:.5px; padding:5px 0; }
 .draw-tool-btn {
   cursor:pointer; border:1px solid rgba(0,255,200,.2); padding:2px 8px;
   font-size:9px; letter-spacing:.4px; color:#555; background:transparent;

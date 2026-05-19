@@ -57,6 +57,7 @@ function applyAccount(user) {
     '<span style="color:#ff66aa;">' + (user.stats.losses || 0) + 'L</span>';
   hatConfigs.left = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing };
   syncCustomizationUI();
+  renderSavedHatDrawings();
   sendCustomization();
   loadLeaderboard();
 }

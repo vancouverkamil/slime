@@ -92,3 +92,29 @@ test('leaderboard sorts accounts by total xp', () => {
   assert.strictEqual(rows[0].progression.xp, 250);
   assert.strictEqual(rows[0].passwordHash, undefined);
 });
+
+test('saved hat drawings are capped at five and can be deleted', () => {
+  const store = tempStore();
+  const user = store.register('artist', 'password123');
+
+  for (let i = 0; i < 5; i++) {
+    store.saveHatPreset(user.id, {
+      name: `Preset ${i + 1}`,
+      hatAnim: 'pulse',
+      drawBrush: 'marker',
+      drawSize: 5,
+      drawColor: '#44aaff',
+      drawing: [{ pts: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: '#fff', size: 4, brush: 'pen' }],
+    });
+  }
+
+  assert.throws(() => store.saveHatPreset(user.id, { name: 'Extra', drawing: [] }), /up to 5/);
+
+  const profile = store.publicProfile(store.findByUsername('artist'));
+  assert.strictEqual(profile.savedHatDrawings.length, 5);
+  assert.strictEqual(profile.savedHatDrawings[0].hatAnim, 'pulse');
+  assert.strictEqual(profile.savedHatDrawings[0].drawBrush, 'marker');
+
+  store.deleteHatPreset(user.id, profile.savedHatDrawings[0].id);
+  assert.strictEqual(store.publicProfile(store.findByUsername('artist')).savedHatDrawings.length, 4);
+});

@@ -16,6 +16,7 @@ function showOptSection(sec) {
     if (dc) redrawHatCanvas(dc, dc._ctx || dc.getContext('2d'));
     var snc = document.getElementById('StudioNotCustom');
     if (snc) snc.style.display = playerHat !== 'custom' ? 'block' : 'none';
+    renderSavedHatDrawings();
     updateUndoRedoUI();
   }
 }
@@ -115,6 +116,7 @@ function syncCustomizationUI() {
 
   if (playerHatAnim !== 'none' && playerHat !== 'none') startPreviewAnim();
   else stopPreviewAnim();
+  renderSavedHatDrawings();
 }
 
 function startPreviewAnim() {

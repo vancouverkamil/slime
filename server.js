@@ -209,6 +209,24 @@ app.post('/api/me/buy', async (req, res) => {
   }
 });
 
+app.post('/api/me/hat-drawings', async (req, res) => {
+  const user = await getReqUser(req);
+  if (!user) { res.status(401).json({ error: 'Login required.' }); return; }
+  try {
+    const updated = await accounts.saveHatPreset(user.id, req.body || {});
+    sendUser(res, updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Could not save hat drawing.' });
+  }
+});
+
+app.delete('/api/me/hat-drawings/:id', async (req, res) => {
+  const user = await getReqUser(req);
+  if (!user) { res.status(401).json({ error: 'Login required.' }); return; }
+  const updated = await accounts.deleteHatPreset(user.id, String(req.params.id || '').slice(0, 32));
+  sendUser(res, updated);
+});
+
 // ── helpers ──────────────────────────────────────────────
 function send(ws, msg) {
   if (ws.readyState === 1) ws.send(JSON.stringify(msg));

@@ -32,6 +32,20 @@ function safeHatDrawing(drawing) {
   return Array.isArray(drawing) ? drawing.slice(0, 300) : [];
 }
 
+function safeSavedHatDrawings(drawings) {
+  if (!Array.isArray(drawings)) return [];
+  return drawings.slice(0, 5).map((item, index) => ({
+    id: String(item && item.id || makeId()).slice(0, 32),
+    name: String(item && item.name || `Hat ${index + 1}`).trim().slice(0, 24) || `Hat ${index + 1}`,
+    savedAt: item && item.savedAt ? String(item.savedAt).slice(0, 40) : nowIso(),
+    hatAnim: String(item && item.hatAnim || 'none').slice(0, 20),
+    drawBrush: String(item && item.drawBrush || 'pen').slice(0, 20),
+    drawSize: Math.max(1, Math.min(30, Number(item && item.drawSize) || 4)),
+    drawColor: String(item && item.drawColor || '#ffffff').slice(0, 20),
+    drawing: safeHatDrawing(item && item.drawing),
+  }));
+}
+
 function normalizeStats(stats) {
   stats = stats || {};
   return {
@@ -73,6 +87,7 @@ function defaultUser(username, password) {
     recentMatches: [],
     coins: 1,
     inventory: [],
+    savedHatDrawings: [],
   };
 }
 
@@ -240,6 +255,37 @@ class AccountStore {
     return user;
   }
 
+  saveHatPreset(userId, preset) {
+    const user = this.findById(userId);
+    if (!user) return null;
+    const saved = safeSavedHatDrawings(user.savedHatDrawings);
+    if (saved.length >= 5) throw new Error('You can save up to 5 hat drawings.');
+    const next = safeSavedHatDrawings([{
+      id: makeId(),
+      name: preset.name || `Hat ${saved.length + 1}`,
+      savedAt: nowIso(),
+      hatAnim: preset.hatAnim,
+      drawBrush: preset.drawBrush,
+      drawSize: preset.drawSize,
+      drawColor: preset.drawColor,
+      drawing: preset.drawing,
+    }])[0];
+    user.savedHatDrawings = saved.concat([next]);
+    user.updatedAt = nowIso();
+    this.save();
+    return user;
+  }
+
+  deleteHatPreset(userId, presetId) {
+    const user = this.findById(userId);
+    if (!user) return null;
+    const saved = safeSavedHatDrawings(user.savedHatDrawings);
+    user.savedHatDrawings = saved.filter((item) => item.id !== presetId);
+    user.updatedAt = nowIso();
+    this.save();
+    return user;
+  }
+
   publicProfile(user) {
     if (!user) return null;
     return {
@@ -254,6 +300,7 @@ class AccountStore {
       recentMatches: user.recentMatches || [],
       coins: user.coins || 1,
       inventory: user.inventory || [],
+      savedHatDrawings: safeSavedHatDrawings(user.savedHatDrawings),
     };
   }
 
@@ -304,6 +351,7 @@ class PostgresAccountStore {
     `;
     await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER NOT NULL DEFAULT 1`;
     await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS inventory JSONB NOT NULL DEFAULT '[]'::jsonb`;
+    await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS saved_hat_drawings JSONB NOT NULL DEFAULT '[]'::jsonb`;
     await this.sql`
       CREATE TABLE IF NOT EXISTS sessions (
         token TEXT PRIMARY KEY,
@@ -329,6 +377,7 @@ class PostgresAccountStore {
       recentMatches: row.recent_matches,
       coins: typeof row.coins === 'number' ? row.coins : 1,
       inventory: Array.isArray(row.inventory) ? row.inventory : [],
+      savedHatDrawings: safeSavedHatDrawings(row.saved_hat_drawings),
     };
   }
 
@@ -391,13 +440,15 @@ class PostgresAccountStore {
         id, username, display_name, password_salt, password_hash,
         created_at, updated_at, stats, slime, achievements, recent_matches,
         coins, inventory
+        , saved_hat_drawings
       )
       VALUES (
         ${user.id}, ${user.username}, ${user.displayName}, ${user.passwordSalt}, ${user.passwordHash},
         ${user.createdAt}, ${user.updatedAt}, ${JSON.stringify(user.stats)}::jsonb,
         ${JSON.stringify(user.slime)}::jsonb, ${JSON.stringify(user.achievements)}::jsonb,
         ${JSON.stringify(user.recentMatches)}::jsonb,
-        ${user.coins}, ${JSON.stringify(user.inventory)}::jsonb
+        ${user.coins}, ${JSON.stringify(user.inventory)}::jsonb,
+        ${JSON.stringify(user.savedHatDrawings)}::jsonb
       )
     `;
     return user;
@@ -486,6 +537,47 @@ class PostgresAccountStore {
       UPDATE users
       SET coins = coins - ${price},
           inventory = inventory || ${JSON.stringify([hatId])}::jsonb,
+          updated_at = now()
+      WHERE id = ${userId}
+      RETURNING *
+    `;
+    return this.rowToUser(rows[0]);
+  }
+
+  async saveHatPreset(userId, preset) {
+    await this.ready;
+    const user = await this.findById(userId);
+    if (!user) return null;
+    const saved = safeSavedHatDrawings(user.savedHatDrawings);
+    if (saved.length >= 5) throw new Error('You can save up to 5 hat drawings.');
+    const next = safeSavedHatDrawings([{
+      id: makeId(),
+      name: preset.name || `Hat ${saved.length + 1}`,
+      savedAt: nowIso(),
+      hatAnim: preset.hatAnim,
+      drawBrush: preset.drawBrush,
+      drawSize: preset.drawSize,
+      drawColor: preset.drawColor,
+      drawing: preset.drawing,
+    }])[0];
+    const rows = await this.sql`
+      UPDATE users
+      SET saved_hat_drawings = ${JSON.stringify(saved.concat([next]))}::jsonb,
+          updated_at = now()
+      WHERE id = ${userId}
+      RETURNING *
+    `;
+    return this.rowToUser(rows[0]);
+  }
+
+  async deleteHatPreset(userId, presetId) {
+    await this.ready;
+    const user = await this.findById(userId);
+    if (!user) return null;
+    const saved = safeSavedHatDrawings(user.savedHatDrawings).filter((item) => item.id !== presetId);
+    const rows = await this.sql`
+      UPDATE users
+      SET saved_hat_drawings = ${JSON.stringify(saved)}::jsonb,
           updated_at = now()
       WHERE id = ${userId}
       RETURNING *
