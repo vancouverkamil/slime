@@ -11,8 +11,8 @@ loadLocalEnv();
 
 const WIN_AMOUNT = 7;
 const TICK_MS    = 20;
-const SLIMEVERSE_TICK_MS = 50;
-const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980 };
+const SLIMEVERSE_TICK_MS = 16;
+const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 600 };
 
 const ROOM_NAMES = [
   'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
@@ -289,11 +289,15 @@ function enterSlimeverse(ws, info) {
   slimeverseClients.set(ws, {
     x: 500 + (spawnIndex % 8) * 85,
     y: SLIMEVERSE_WORLD.floorY,
+    z: 200,
     vx: 0,
     vy: 0,
+    vz: 0,
     left: false,
     right: false,
     jump: false,
+    fwd: false,
+    back: false,
   });
   info.room = null;
   info.role = 'wanderer';
@@ -316,8 +320,10 @@ function slimeverseSnapshot() {
       ...getPublicPlayer(info),
       x: Math.round(sv.x),
       y: Math.round(sv.y),
+      z: Math.round(sv.z),
       vx: Math.round(sv.vx * 10) / 10,
       vy: Math.round(sv.vy * 10) / 10,
+      vz: Math.round(sv.vz * 10) / 10,
     });
   });
   return players;
@@ -325,17 +331,19 @@ function slimeverseSnapshot() {
 
 function tickSlimeverse() {
   if (slimeverseClients.size === 0) return;
+  const maxZ = SLIMEVERSE_WORLD.maxZ;
   slimeverseClients.forEach((sv) => {
-    sv.vx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
-    if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -23;
+    const targetVx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
+    sv.vx += (targetVx - sv.vx) * 0.28;
+    const targetVz = sv.fwd && !sv.back ? -5 : sv.back && !sv.fwd ? 5 : 0;
+    sv.vz += (targetVz - sv.vz) * 0.22;
+    if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -22;
     sv.jump = false;
     sv.vy = Math.min(26, sv.vy + 1.35);
     sv.x = Math.max(70, Math.min(SLIMEVERSE_WORLD.width - 70, sv.x + sv.vx));
     sv.y += sv.vy;
-    if (sv.y > SLIMEVERSE_WORLD.floorY) {
-      sv.y = SLIMEVERSE_WORLD.floorY;
-      sv.vy = 0;
-    }
+    sv.z = Math.max(0, Math.min(maxZ, sv.z + sv.vz));
+    if (sv.y > SLIMEVERSE_WORLD.floorY) { sv.y = SLIMEVERSE_WORLD.floorY; sv.vy = 0; }
   });
   broadcastSlimeverse({ type: 'slimeverse_state', players: slimeverseSnapshot() });
 }
@@ -433,6 +441,8 @@ async function handleMsg(ws, info, msg) {
     if (sv) {
       sv.left = !!msg.left;
       sv.right = !!msg.right;
+      sv.fwd  = !!msg.fwd;
+      sv.back = !!msg.back;
       if (msg.jump) sv.jump = true;
     }
   } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
