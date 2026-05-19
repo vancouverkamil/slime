@@ -324,12 +324,23 @@ body {
 .hat-opt.active { border-color:#00ffcc; color:#00ffcc; background:rgba(0,255,200,.1); }
 .hat-opt:hover { border-color:rgba(0,255,200,.45); color:#aaa; }
 .draw-tool-btn {
-  cursor:pointer; border:1px solid rgba(0,255,200,.2); padding:2px 7px;
-  font-size:9px; letter-spacing:.5px; color:#555; background:transparent;
+  cursor:pointer; border:1px solid rgba(0,255,200,.2); padding:2px 8px;
+  font-size:9px; letter-spacing:.4px; color:#555; background:transparent;
   transition:all .1s; font-family:inherit;
 }
 .draw-tool-btn.active { border-color:#00ffcc; color:#00ffcc; background:rgba(0,255,200,.1); }
-.draw-tool-btn:hover { border-color:rgba(0,255,200,.4); color:#aaa; }
+.draw-tool-btn:hover  { border-color:rgba(0,255,200,.4); color:#aaa; }
+.opt-nav-item {
+  padding:8px 14px; font-size:8px; letter-spacing:2px; color:#3a3a3a;
+  cursor:pointer; transition:all .12s;
+  border-left:2px solid transparent; text-transform:uppercase; white-space:nowrap;
+}
+.opt-nav-item:hover { color:#aaa; border-left-color:rgba(0,255,200,.3); background:rgba(0,255,200,.03); }
+.opt-nav-item.opt-nav-active { color:#00ffcc; border-left-color:#00ffcc; background:rgba(0,255,200,.07); text-shadow:0 0 8px rgba(0,255,200,.3); }
+.opt-section-title {
+  color:rgba(0,255,200,.3); font-size:8px; letter-spacing:2.5px; text-transform:uppercase;
+  padding-bottom:6px; border-bottom:1px solid rgba(0,255,200,.07); margin-bottom:12px;
+}
 #HatFullscreenOverlay {
   display:none; position:fixed; top:0; left:0; width:100%; height:100%;
   background:rgba(2,0,12,.97); z-index:9999;
@@ -1871,6 +1882,15 @@ function devReset() {
 }
 document.addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) { e.preventDefault(); toggleDevMenu(); }
+  var studioOpen = (document.getElementById('OptionsDiv') || {}).style &&
+                   document.getElementById('OptionsDiv').style.display !== 'none' &&
+                   _activeOptSection === 'studio';
+  var fsOpen = (document.getElementById('HatFullscreenOverlay') || {}).classList &&
+               document.getElementById('HatFullscreenOverlay').classList.contains('fs-open');
+  if (studioOpen || fsOpen) {
+    if (e.ctrlKey && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); hatUndo(); }
+    if (e.ctrlKey && (e.key === 'y' || e.key === 'Y' || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) { e.preventDefault(); hatRedo(); }
+  }
 });
 
 // ── player tooltip ────────────────────────────────────────
@@ -2369,6 +2389,9 @@ function showOptions() {
   if (gameState === GAME_STATE_RUNNING)      gameState = GAME_STATE_MENU_PAUSE;
   else if (gameState === GAME_STATE_POINT_PAUSE) gameState = GAME_STATE_MENU_PAUSE_BETWEEN_POINTS;
   document.getElementById('OptionsDiv').style.display = 'block';
+  showOptSection(_activeOptSection || 'color');
+  syncCustomizationUI();
+  updateUndoRedoUI();
 }
 function hideOptions() {
   document.getElementById('OptionsDiv').style.display = 'none';
@@ -2409,7 +2432,7 @@ function applyGameScale() {
     if (canvas)  { canvas.width = nw; canvas.height = nh; updateWindowSize(nw, nh); }
     if (menuDiv) { menuDiv.style.width = nw + 'px'; menuDiv.style.height = nh + 'px'; }
     // Re-centre OptionsDiv within the (now larger) ContentDiv
-    if (optDiv) { var ol = Math.max(0, Math.round((nw - 620) / 2)); optDiv.style.left = ol + 'px'; optDiv.style.height = Math.min(nh, 520) + 'px'; optDiv.style.overflowY = 'auto'; }
+    if (optDiv) { var ol = Math.max(0, Math.round((nw - 620) / 2)); optDiv.style.left = ol + 'px'; optDiv.style.height = Math.min(nh, 520) + 'px'; }
   } else {
     wrapper.style.width = '1040px';
     wrapper.style.maxWidth = '';
@@ -2418,7 +2441,7 @@ function applyGameScale() {
     cd.style.height = COMPACT_H + 'px';
     if (canvas)  { canvas.width = COMPACT_W; canvas.height = COMPACT_H; updateWindowSize(COMPACT_W, COMPACT_H); }
     if (menuDiv) { menuDiv.style.width = COMPACT_W + 'px'; menuDiv.style.height = COMPACT_H + 'px'; }
-    if (optDiv)  { optDiv.style.left = Math.round((COMPACT_W - 620) / 2) + 'px'; optDiv.style.height = COMPACT_H + 'px'; optDiv.style.overflowY = 'auto'; }
+    if (optDiv)  { optDiv.style.left = Math.round((COMPACT_W - 620) / 2) + 'px'; optDiv.style.height = COMPACT_H + 'px'; }
   }
 }
 function _onWindowResize() { if (gameScale === 'full') applyGameScale(); }
@@ -2771,6 +2794,10 @@ var _drawBrush   = 'pen';    // 'pen' | 'marker' | 'eraser'
 var _drawSize    = 4;        // brush size in px at DRAW_W baseline
 var _drawColorIdx = 0;
 var _drawColors  = ['#ffffff','#ffff00','#ff4444','#44ff88','#44aaff','#ff44ff','#ff8800','#aaaaaa'];
+var _undoStack   = [];       // popped strokes for redo
+
+// Options panel navigation
+var _activeOptSection = 'color';
 
 // Color picker state
 var _cpHue = 120, _cpSat = 1.0, _cpVal = 1.0;
@@ -2960,7 +2987,8 @@ function initHatDrawCanvas(dc) {
     _drawing=false; _drawingCanvas=null;
     if (_currentStroke.length > 1) {
       playerHatDrawing.push({pts:_currentStroke.slice(), color:_drawColor, size:_drawSize, brush:_drawBrush});
-      saveHatDrawing();
+      _undoStack = []; // new stroke invalidates redo history
+      saveHatDrawing(); updateUndoRedoUI();
     }
     _currentStroke=[];
     redrawHatCanvas(dc, dc._ctx); updateSlimePreview();
@@ -2977,11 +3005,10 @@ function saveHatDrawing() {
 }
 
 function clearHatDrawing() {
-  playerHatDrawing = []; _currentStroke = [];
+  playerHatDrawing = []; _currentStroke = []; _undoStack = [];
   try { localStorage.removeItem('slimeHatDrawing'); } catch(e) {}
-  var dc = document.getElementById('HatDrawCanvas'); if (dc) redrawHatCanvas(dc, dc._ctx);
-  var fc = document.getElementById('HatFullscreenCanvas'); if (fc && fc._init) redrawHatCanvas(fc, fc._ctx);
-  updateSlimePreview(); sendCustomization();
+  _refreshDrawCanvases();
+  updateSlimePreview(); sendCustomization(); updateUndoRedoUI();
 }
 
 function setDrawBrush(b) {
@@ -3033,6 +3060,65 @@ function closeHatFullscreen() {
   updateSlimePreview();
 }
 
+// ── options panel navigation ───────────────────────────────
+var _optSections = ['color','hat','studio','audio','display'];
+function showOptSection(sec) {
+  _activeOptSection = sec;
+  _optSections.forEach(function(s) {
+    var content = document.getElementById('OptSection_' + s);
+    var nav     = document.getElementById('OptNav_' + s);
+    if (content) content.style.display = s === sec ? 'block' : 'none';
+    if (nav)     nav.classList.toggle('opt-nav-active', s === sec);
+  });
+  if (sec === 'color') {
+    initColorPicker();
+  }
+  if (sec === 'studio') {
+    var dc = document.getElementById('HatDrawCanvas');
+    initHatDrawCanvas(dc);
+    if (dc) redrawHatCanvas(dc, dc._ctx || dc.getContext('2d'));
+    var snc = document.getElementById('StudioNotCustom');
+    if (snc) snc.style.display = playerHat !== 'custom' ? 'block' : 'none';
+    updateUndoRedoUI();
+  }
+}
+
+// ── undo / redo ────────────────────────────────────────────
+function hatUndo() {
+  if (playerHatDrawing.length === 0) return;
+  _undoStack.push(playerHatDrawing.pop());
+  _refreshDrawCanvases();
+  saveHatDrawing(); updateSlimePreview(); updateUndoRedoUI();
+}
+function hatRedo() {
+  if (_undoStack.length === 0) return;
+  playerHatDrawing.push(_undoStack.pop());
+  _refreshDrawCanvases();
+  saveHatDrawing(); updateSlimePreview(); updateUndoRedoUI();
+}
+function _refreshDrawCanvases() {
+  var dc = document.getElementById('HatDrawCanvas');
+  if (dc) redrawHatCanvas(dc, dc._ctx || dc.getContext('2d'));
+  var fc = document.getElementById('HatFullscreenCanvas');
+  if (fc && fc._init) redrawHatCanvas(fc, fc._ctx || fc.getContext('2d'));
+}
+function updateUndoRedoUI() {
+  var canUndo = playerHatDrawing.length > 0;
+  var canRedo = _undoStack.length > 0;
+  ['DrawUndo','FSDrawUndo'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.opacity = canUndo ? '1' : '0.3';
+    el.style.cursor  = canUndo ? 'pointer' : 'default';
+  });
+  ['DrawRedo','FSDrawRedo'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.opacity = canRedo ? '1' : '0.3';
+    el.style.cursor  = canRedo ? 'pointer' : 'default';
+  });
+}
+
 function syncCustomizationUI() {
   // Initialize HSV color picker (lazy — only if DOM is ready)
   initColorPicker();
@@ -3063,15 +3149,9 @@ function syncCustomizationUI() {
       hp.appendChild(b);
     });
   }
-  var ds = document.getElementById('HatDrawSection');
-  if (ds) {
-    ds.style.display = playerHat === 'custom' ? 'block' : 'none';
-    if (playerHat === 'custom') {
-      var dc = document.getElementById('HatDrawCanvas');
-      initHatDrawCanvas(dc);
-      if (dc) redrawHatCanvas(dc, dc._ctx || dc.getContext('2d'));
-    }
-  }
+  // Update Hat Studio "not custom" notice
+  var snc = document.getElementById('StudioNotCustom');
+  if (snc) snc.style.display = playerHat !== 'custom' ? 'block' : 'none';
 
   var as = document.getElementById('HatAnimSection');
   if (as) as.style.display = (playerHat !== 'none') ? 'block' : 'none';
@@ -3394,85 +3474,121 @@ function bodyload() {
         </div>
       </div>
 
-      <div id="OptionsDiv" style="position:absolute;width:620px;height:auto;top:14px;left:16px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:12px 16px 14px;box-sizing:border-box;overflow-y:auto;">
+      <div id="OptionsDiv" style="position:absolute;width:620px;height:auto;top:14px;left:16px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.25);z-index:10;padding:0;box-sizing:border-box;overflow:hidden;">
+        <div style="display:flex;flex-direction:column;height:100%;">
 
-        <!-- header -->
-        <div style="display:flex;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(0,255,200,.15);">
-          <span style="color:#00ffcc;letter-spacing:4px;font-size:10px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.5);">&#9881; Options</span>
-          <span class="SmallButton" onclick="hideOptions()" style="margin-left:auto;font-size:10px;letter-spacing:1px;">[ ESC / CLOSE ]</span>
-        </div>
-
-        <!-- 3-column body -->
-        <div style="display:flex;gap:18px;align-items:flex-start;">
-
-          <!-- col 1: color picker -->
-          <div style="width:196px;flex-shrink:0;">
-            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">SLIME COLOR</div>
-            <div id="ColorPickerWrap">
-              <canvas id="ColorSVCanvas" width="200" height="150" style="width:100%;display:block;cursor:crosshair;border:1px solid rgba(0,255,200,.15);border-radius:2px;"></canvas>
-              <canvas id="ColorHueStrip" width="200" height="14" style="width:100%;display:block;cursor:pointer;border:1px solid rgba(0,255,200,.15);margin-top:4px;border-radius:2px;"></canvas>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">
-                <div id="ColorPreviewBox" style="width:24px;height:24px;border:1px solid rgba(0,255,200,.35);flex-shrink:0;border-radius:3px;"></div>
-                <input id="ColorHexInput" type="text" maxlength="7" placeholder="#00ff00"
-                       style="width:62px;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;font-family:'Courier New',monospace;font-size:10px;padding:3px 5px;"
-                       onchange="applyColorHex(this.value)"
-                       onkeydown="if(event.key==='Enter')applyColorHex(this.value)">
-                <div id="ColorSwatches" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-              </div>
-            </div>
+          <!-- header -->
+          <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(0,255,200,.1);flex-shrink:0;background:rgba(0,255,200,.02);">
+            <span style="color:#00ffcc;letter-spacing:4px;font-size:10px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.4);">&#9881; Options</span>
+            <span class="SmallButton" onclick="hideOptions()" style="margin-left:auto;font-size:9px;letter-spacing:1px;color:#444;">[ CLOSE ]</span>
           </div>
 
-          <!-- col 2: hat + draw -->
-          <div style="flex:1;min-width:0;">
-            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">HAT</div>
-            <div id="HatPicker" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"></div>
-            <div id="HatDrawSection" style="display:none;margin-top:6px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-                <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;">Draw your hat:</div>
-                <button onclick="openHatFullscreen()" class="hat-opt" style="font-size:7px;padding:1px 6px;">&#11036; EXPAND</button>
-              </div>
-              <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:3px;align-items:center;">
-                <button id="DrawBrushPen"    onclick="setDrawBrush('pen')"    class="draw-tool-btn active">&#9998; Pen</button>
-                <button id="DrawBrushMarker" onclick="setDrawBrush('marker')" class="draw-tool-btn">&#9646; Marker</button>
-                <button id="DrawBrushEraser" onclick="setDrawBrush('eraser')" class="draw-tool-btn">&#9702; Erase</button>
-                <div id="DrawColorDot" onclick="cycleDrawColor()" title="Brush color (click to cycle)" style="width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,255,200,.4);cursor:pointer;flex-shrink:0;background:#ffffff;margin-left:2px;"></div>
-              </div>
-              <div style="display:flex;gap:3px;margin-bottom:5px;">
-                <button id="DrawSizeS"  onclick="setDrawSize(2)"  class="draw-tool-btn active">S</button>
-                <button id="DrawSizeM"  onclick="setDrawSize(5)"  class="draw-tool-btn">M</button>
-                <button id="DrawSizeL"  onclick="setDrawSize(11)" class="draw-tool-btn">L</button>
-                <button id="DrawSizeXL" onclick="setDrawSize(22)" class="draw-tool-btn">XL</button>
-              </div>
-              <canvas id="HatDrawCanvas" width="174" height="202" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:4px;max-width:100%;"></canvas>
-              <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:2px 7px;">&#10005; Clear</button>
-            </div>
-            <div id="HatAnimSection" style="display:none;margin-top:6px;">
-              <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">HAT ANIMATION</div>
-              <div id="HatAnimPicker" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-            </div>
-          </div>
+          <!-- body: sidebar + content -->
+          <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
 
-          <!-- col 3: preview + music + settings -->
-          <div style="flex-shrink:0;width:145px;">
-            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">PREVIEW</div>
-            <canvas id="SlimePreview" width="100" height="90" style="border:1px solid rgba(0,255,200,.18);display:block;margin-bottom:10px;"></canvas>
-            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">VICTORY MUSIC</div>
-            <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:4px 6px;font-family:'Courier New',monospace;font-size:10px;margin-bottom:5px;"></select>
-            <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:9px;letter-spacing:2px;padding:3px 10px;cursor:pointer;font-family:inherit;width:100%;margin-bottom:12px;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
-            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">GAME SIZE</div>
-            <div style="display:flex;gap:4px;margin-bottom:12px;">
-              <button id="ScaleFull" onclick="setGameScale('full')" class="hat-opt" style="flex:1;">Fullscreen</button>
-              <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active" style="flex:1;">Compact</button>
+            <!-- sidebar nav -->
+            <div style="width:132px;flex-shrink:0;border-right:1px solid rgba(0,255,200,.07);display:flex;flex-direction:column;overflow:hidden;">
+              <!-- slime preview -->
+              <div style="padding:14px 12px 12px;border-bottom:1px solid rgba(0,255,200,.07);text-align:center;">
+                <canvas id="SlimePreview" width="100" height="90" style="border:1px solid rgba(0,255,200,.12);display:block;margin:0 auto 6px;border-radius:2px;"></canvas>
+                <div style="color:#2a2a2a;font-size:7px;letter-spacing:2px;">PREVIEW</div>
+              </div>
+              <!-- nav items -->
+              <div style="padding:8px 0;flex:1;">
+                <div id="OptNav_color"   class="opt-nav-item opt-nav-active" onclick="showOptSection('color')"  >&#9632; COLOR</div>
+                <div id="OptNav_hat"     class="opt-nav-item" onclick="showOptSection('hat')"   >&#9836; HAT STYLE</div>
+                <div id="OptNav_studio"  class="opt-nav-item" onclick="showOptSection('studio')" >&#9998; HAT STUDIO</div>
+                <div id="OptNav_audio"   class="opt-nav-item" onclick="showOptSection('audio')"  >&#9834; AUDIO</div>
+                <div id="OptNav_display" class="opt-nav-item" onclick="showOptSection('display')">&#9881; DISPLAY</div>
+              </div>
             </div>
-            <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:6px;">DISPLAY / DEBUG</div>
-            <div style="color:#666;font-size:10px;line-height:1.9;letter-spacing:.5px;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input id="LegacyGraphics" type="checkbox"> Legacy Graphics</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input id="PhysicsLog" type="checkbox"> Physics Log</label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input id="SlowMotion" type="checkbox"> Slow Motion</label>
-            </div>
-          </div>
 
-        </div>
+            <!-- content area -->
+            <div style="flex:1;min-width:0;overflow-y:auto;padding:18px 20px;">
+
+              <!-- ── COLOR ── -->
+              <div id="OptSection_color">
+                <div class="opt-section-title" style="margin-top:0;">Slime Color</div>
+                <canvas id="ColorSVCanvas" width="200" height="150" style="width:100%;max-width:280px;display:block;cursor:crosshair;border:1px solid rgba(0,255,200,.15);border-radius:2px;"></canvas>
+                <canvas id="ColorHueStrip" width="200" height="14" style="width:100%;max-width:280px;display:block;cursor:pointer;border:1px solid rgba(0,255,200,.12);margin-top:5px;border-radius:2px;"></canvas>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                  <div id="ColorPreviewBox" style="width:28px;height:28px;border:1px solid rgba(0,255,200,.3);flex-shrink:0;border-radius:3px;"></div>
+                  <input id="ColorHexInput" type="text" maxlength="7" placeholder="#00ff00"
+                         style="width:72px;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;font-family:'Courier New',monospace;font-size:10px;padding:4px 6px;"
+                         onchange="applyColorHex(this.value)"
+                         onkeydown="if(event.key==='Enter')applyColorHex(this.value)">
+                  <div id="ColorSwatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+                </div>
+              </div>
+
+              <!-- ── HAT STYLE ── -->
+              <div id="OptSection_hat" style="display:none;">
+                <div class="opt-section-title" style="margin-top:0;">Hat Style</div>
+                <div id="HatPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;"></div>
+                <div id="HatAnimSection" style="display:none;margin-top:16px;">
+                  <div class="opt-section-title">Animation</div>
+                  <div id="HatAnimPicker" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+                </div>
+              </div>
+
+              <!-- ── HAT STUDIO ── -->
+              <div id="OptSection_studio" style="display:none;">
+                <div class="opt-section-title" style="margin-top:0;">Hat Studio</div>
+                <!-- row 1: brush + color -->
+                <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
+                  <button id="DrawBrushPen"    onclick="setDrawBrush('pen')"    class="draw-tool-btn active">&#9998; Pen</button>
+                  <button id="DrawBrushMarker" onclick="setDrawBrush('marker')" class="draw-tool-btn">&#9646; Marker</button>
+                  <button id="DrawBrushEraser" onclick="setDrawBrush('eraser')" class="draw-tool-btn">&#9702; Erase</button>
+                  <div id="DrawColorDot" onclick="cycleDrawColor()" title="Brush color" style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,255,200,.3);cursor:pointer;flex-shrink:0;background:#ffffff;margin-left:4px;"></div>
+                </div>
+                <!-- row 2: size + undo/redo -->
+                <div style="display:flex;gap:4px;align-items:center;margin-bottom:10px;">
+                  <button id="DrawSizeS"  onclick="setDrawSize(2)"  class="draw-tool-btn active">S</button>
+                  <button id="DrawSizeM"  onclick="setDrawSize(5)"  class="draw-tool-btn">M</button>
+                  <button id="DrawSizeL"  onclick="setDrawSize(11)" class="draw-tool-btn">L</button>
+                  <button id="DrawSizeXL" onclick="setDrawSize(22)" class="draw-tool-btn">XL</button>
+                  <div style="flex:1;"></div>
+                  <button id="DrawUndo" onclick="hatUndo()" class="draw-tool-btn" title="Undo (Ctrl+Z)" style="opacity:.3;cursor:default;">&#8617; Undo</button>
+                  <button id="DrawRedo" onclick="hatRedo()" class="draw-tool-btn" title="Redo (Ctrl+Y)" style="opacity:.3;cursor:default;">&#8618; Redo</button>
+                </div>
+                <!-- canvas -->
+                <canvas id="HatDrawCanvas" width="174" height="202" style="border:1px solid rgba(0,255,200,.22);cursor:crosshair;display:block;max-width:100%;border-radius:2px;"></canvas>
+                <!-- actions -->
+                <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+                  <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:3px 11px;">&#10005; Clear</button>
+                  <button onclick="openHatFullscreen()" class="hat-opt" style="font-size:8px;padding:3px 11px;margin-left:auto;">&#11036; Fullscreen</button>
+                </div>
+                <div id="StudioNotCustom" style="display:none;margin-top:12px;padding:8px 11px;border:1px solid rgba(0,255,200,.1);border-radius:2px;color:rgba(0,255,200,.35);font-size:9px;letter-spacing:.6px;line-height:1.6;">
+                  &#9888; Pick "Custom" in Hat Style to show your drawing in-game.
+                </div>
+              </div>
+
+              <!-- ── AUDIO ── -->
+              <div id="OptSection_audio" style="display:none;">
+                <div class="opt-section-title" style="margin-top:0;">Victory Music</div>
+                <div style="color:#3a3a3a;font-size:9px;letter-spacing:.4px;margin-bottom:12px;">Plays when you win a match.</div>
+                <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;max-width:300px;display:block;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:10px;margin-bottom:10px;"></select>
+                <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.55);font-size:9px;letter-spacing:2px;padding:6px 16px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.55)';">&#9654; PREVIEW</button>
+              </div>
+
+              <!-- ── DISPLAY ── -->
+              <div id="OptSection_display" style="display:none;">
+                <div class="opt-section-title" style="margin-top:0;">Game Size</div>
+                <div style="display:flex;gap:6px;margin-bottom:22px;">
+                  <button id="ScaleFull"    onclick="setGameScale('full')"    class="hat-opt" style="padding:5px 14px;">Fullscreen</button>
+                  <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active" style="padding:5px 14px;">Compact</button>
+                </div>
+                <div class="opt-section-title">Debug</div>
+                <div style="display:flex;flex-direction:column;gap:9px;">
+                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="LegacyGraphics" type="checkbox"> Legacy Graphics</label>
+                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="PhysicsLog" type="checkbox"> Physics Log</label>
+                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="SlowMotion" type="checkbox"> Slow Motion</label>
+                </div>
+              </div>
+
+            </div><!-- /content -->
+          </div><!-- /body -->
+        </div><!-- /flex-column wrapper -->
       </div>
 
       <!-- Dev Menu -->
@@ -3533,16 +3649,22 @@ function bodyload() {
       <span style="color:#00ffcc;letter-spacing:4px;font-size:11px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.4);">&#9998; Hat Studio</span>
       <button onclick="closeHatFullscreen()" class="hat-opt" style="margin-left:auto;font-size:9px;padding:3px 10px;">&#10005; DONE</button>
     </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center;width:100%;">
+    <!-- toolbar row 1: brushes + color + sizes -->
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;align-items:center;width:100%;">
       <button id="FSDrawBrushPen"    onclick="setDrawBrush('pen')"    class="draw-tool-btn active">&#9998; Pen</button>
       <button id="FSDrawBrushMarker" onclick="setDrawBrush('marker')" class="draw-tool-btn">&#9646; Marker</button>
       <button id="FSDrawBrushEraser" onclick="setDrawBrush('eraser')" class="draw-tool-btn">&#9702; Erase</button>
-      <div id="FSDrawColorDot" onclick="cycleDrawColor()" title="Brush color" style="width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,255,200,.4);cursor:pointer;flex-shrink:0;background:#ffffff;"></div>
-      <span style="color:#333;margin:0 4px;">|</span>
+      <div id="FSDrawColorDot" onclick="cycleDrawColor()" title="Brush color" style="width:20px;height:20px;border-radius:50%;border:2px solid rgba(0,255,200,.35);cursor:pointer;flex-shrink:0;background:#ffffff;margin-left:2px;"></div>
+      <span style="color:#282828;margin:0 4px;">|</span>
       <button id="FSDrawSizeS"  onclick="setDrawSize(2)"  class="draw-tool-btn active">S</button>
       <button id="FSDrawSizeM"  onclick="setDrawSize(5)"  class="draw-tool-btn">M</button>
       <button id="FSDrawSizeL"  onclick="setDrawSize(11)" class="draw-tool-btn">L</button>
       <button id="FSDrawSizeXL" onclick="setDrawSize(22)" class="draw-tool-btn">XL</button>
+    </div>
+    <!-- toolbar row 2: undo/redo + clear -->
+    <div style="display:flex;gap:5px;margin-bottom:10px;align-items:center;width:100%;">
+      <button id="FSDrawUndo" onclick="hatUndo()" class="draw-tool-btn" title="Undo (Ctrl+Z)" style="opacity:.3;cursor:default;">&#8617; Undo</button>
+      <button id="FSDrawRedo" onclick="hatRedo()" class="draw-tool-btn" title="Redo (Ctrl+Y)" style="opacity:.3;cursor:default;">&#8618; Redo</button>
       <button onclick="clearHatDrawing()" class="hat-opt" style="margin-left:auto;font-size:9px;padding:3px 10px;">&#10005; Clear All</button>
     </div>
     <canvas id="HatFullscreenCanvas" width="500" height="580" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;max-width:90vw;max-height:75vh;"></canvas>
