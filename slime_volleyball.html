@@ -323,6 +323,19 @@ body {
 }
 .hat-opt.active { border-color:#00ffcc; color:#00ffcc; background:rgba(0,255,200,.1); }
 .hat-opt:hover { border-color:rgba(0,255,200,.45); color:#aaa; }
+.draw-tool-btn {
+  cursor:pointer; border:1px solid rgba(0,255,200,.2); padding:2px 7px;
+  font-size:9px; letter-spacing:.5px; color:#555; background:transparent;
+  transition:all .1s; font-family:inherit;
+}
+.draw-tool-btn.active { border-color:#00ffcc; color:#00ffcc; background:rgba(0,255,200,.1); }
+.draw-tool-btn:hover { border-color:rgba(0,255,200,.4); color:#aaa; }
+#HatFullscreenOverlay {
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(2,0,12,.97); z-index:9999;
+  align-items:center; justify-content:center;
+}
+#HatFullscreenOverlay.fs-open { display:flex; }
 
 /* ── game ui ── */
 h1 { font-size:60px; }
@@ -2396,7 +2409,7 @@ function applyGameScale() {
     if (canvas)  { canvas.width = nw; canvas.height = nh; updateWindowSize(nw, nh); }
     if (menuDiv) { menuDiv.style.width = nw + 'px'; menuDiv.style.height = nh + 'px'; }
     // Re-centre OptionsDiv within the (now larger) ContentDiv
-    if (optDiv) { var ol = Math.max(0, Math.round((nw - 420) / 2)); optDiv.style.left = ol + 'px'; optDiv.style.height = Math.min(nh, 520) + 'px'; }
+    if (optDiv) { var ol = Math.max(0, Math.round((nw - 620) / 2)); optDiv.style.left = ol + 'px'; optDiv.style.height = Math.min(nh, 520) + 'px'; optDiv.style.overflowY = 'auto'; }
   } else {
     wrapper.style.width = '1040px';
     wrapper.style.maxWidth = '';
@@ -2405,7 +2418,7 @@ function applyGameScale() {
     cd.style.height = COMPACT_H + 'px';
     if (canvas)  { canvas.width = COMPACT_W; canvas.height = COMPACT_H; updateWindowSize(COMPACT_W, COMPACT_H); }
     if (menuDiv) { menuDiv.style.width = COMPACT_W + 'px'; menuDiv.style.height = COMPACT_H + 'px'; }
-    if (optDiv)  { optDiv.style.left = '165px'; optDiv.style.height = COMPACT_H + 'px'; }
+    if (optDiv)  { optDiv.style.left = Math.round((COMPACT_W - 620) / 2) + 'px'; optDiv.style.height = COMPACT_H + 'px'; optDiv.style.overflowY = 'auto'; }
   }
 }
 function _onWindowResize() { if (gameScale === 'full') applyGameScale(); }
@@ -2644,19 +2657,21 @@ function drawHatAt(pctx, cx, topY, rPix, cfg) {
 
     // Collect all points for chaser
     var allPts = [];
-    if (anim === 'chaser') drawing.forEach(function(s){ s.forEach(function(p){ allPts.push(p); }); });
+    if (anim === 'chaser') drawing.forEach(function(s){ var sp=s.pts||s; if(sp)sp.forEach(function(p){ allPts.push(p); }); });
 
     drawing.forEach(function(stroke, si) {
-      if (!stroke || stroke.length < 2) return;
+      var sp = stroke.pts !== undefined ? stroke.pts : stroke;
+      if (!sp || sp.length < 2) return;
+      var strokeCol = stroke.color || '#ffffff';
       if (anim === 'rainbow') {
         pctx.strokeStyle = 'hsl(' + ((si / Math.max(drawing.length,1) * 360 + T / 18) % 360) + ',100%,68%)';
       } else {
-        pctx.strokeStyle = '#ffffff';
+        pctx.strokeStyle = strokeCol;
       }
       pctx.beginPath();
-      for (var i = 0; i < stroke.length; i++) {
-        var hx = (stroke[i].x - 0.5) * 2.5 * rPix;
-        var hy = -(1 - stroke[i].y) * 2.5 * rPix;
+      for (var i = 0; i < sp.length; i++) {
+        var hx = (sp[i].x - 0.5) * 2.5 * rPix;
+        var hy = -(1 - sp[i].y) * 2.5 * rPix;
         if (anim === 'wave') hy += Math.sin(hx / (rPix * 0.45) + T / 420) * rPix * 0.09;
         if (i === 0) pctx.moveTo(hx, hy); else pctx.lineTo(hx, hy);
       }
@@ -2669,7 +2684,7 @@ function drawHatAt(pctx, cx, topY, rPix, cfg) {
     if (anim === 'chaser' && allPts.length > 1) {
       var ci = Math.floor(T / 40) % allPts.length;
       var cp = allPts[ci];
-      var cpx = (cp.x - 0.5) * 2.5 * rPix, cpy = -(1 - cp.y) * 2.5 * rPix;
+      var cpx = (cp.x - 0.5) * 2.5 * rPix, cpy = -(1 - cp.y) * 2.5 * rPix; // jshint ignore:line
       pctx.save();
       pctx.shadowColor = '#fff'; pctx.shadowBlur = 10;
       pctx.fillStyle = '#ffffff';
@@ -2686,8 +2701,9 @@ function drawHatAt(pctx, cx, topY, rPix, cfg) {
         var r2 = (((seed+3) * 1664525 + 1013904223) >>> 0) / 4294967296;
         var r3 = (((seed+7) * 1664525 + 1013904223) >>> 0) / 4294967296;
         var ds = drawing[Math.floor(r1 * drawing.length)];
-        if (!ds || !ds.length) continue;
-        var dp = ds[Math.floor(r2 * ds.length)];
+        var dsp = ds ? (ds.pts || ds) : null;
+        if (!dsp || !dsp.length) continue;
+        var dp = dsp[Math.floor(r2 * dsp.length)];
         pctx.fillStyle = 'hsl(' + Math.floor(40 + r3*70) + ',100%,80%)';
         pctx.beginPath(); pctx.arc((dp.x-0.5)*2.5*rPix, -(1-dp.y)*2.5*rPix, Math.max(1.5, rPix*0.07)*(0.5+r3*0.5), 0, TWO_PI); pctx.fill();
       }
@@ -2740,85 +2756,214 @@ function updateSlimePreview() {
 }
 
 // ── custom hat drawing ────────────────────────────────────
-var _drawCtx = null, _drawing = false, _currentStroke = [];
+var _drawing = false, _currentStroke = [], _drawingCanvas = null;
 
-// GUIDE_Y = the y position in the drawing canvas that maps to the slime top (hat anchor = 0).
-// The canvas is DW×(GUIDE_Y+SLIME_REF) so the drawing area above GUIDE_Y is exactly square (DW×DW... adjusted).
-// Hat coordinate: x in [0,1] → [-1.25*r, 1.25*r]; y in [0,1] where 1=slime top, 0=topmost point.
+// Hat coordinate: x in [0,1] → [-1.25*r, 1.25*r]; y in [0,1] where 1=slime top, 0=topmost.
+// DRAW_W/GUIDE_Y are the baseline canvas dimensions used for brush-size scaling only.
+// Normalization uses actual canvas display dimensions so any canvas size works.
 var DRAW_W   = 140;
-var GUIDE_Y  = 140;  // drawing area is 140×140 — matches hat x/y extents (both 2.5*r units)
-var SLIME_REF = 24;  // extra pixels below guide to show slime silhouette
+var GUIDE_Y  = 140;
+var SLIME_REF = 24;
+
+// Drawing tool state
+var _drawColor   = '#ffffff';
+var _drawBrush   = 'pen';    // 'pen' | 'marker' | 'eraser'
+var _drawSize    = 4;        // brush size in px at DRAW_W baseline
+var _drawColorIdx = 0;
+var _drawColors  = ['#ffffff','#ffff00','#ff4444','#44ff88','#44aaff','#ff44ff','#ff8800','#aaaaaa'];
+
+// Color picker state
+var _cpHue = 120, _cpSat = 1.0, _cpVal = 1.0;
+var _cpSVDown = false, _cpHSDown = false;
+
+function hsvToHex(h, s, v) {
+  var i = Math.floor(h / 60) % 6, f = h/60 - Math.floor(h/60);
+  var p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
+  var rgb = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i];
+  return '#' + rgb.map(function(x){ return ('0'+Math.round(x*255).toString(16)).slice(-2); }).join('');
+}
+function hexToHsv(hex) {
+  hex = (hex||'#00ff00').replace(/^#/,'');
+  if (hex.length===3) hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  var r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
+  var max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  var h=0, s=max?d/max:0, v=max;
+  if (d) { if(max===r) h=((g-b)/d+6)%6*60; else if(max===g) h=((b-r)/d+2)*60; else h=((r-g)/d+4)*60; }
+  return {h:h,s:s,v:v};
+}
+function drawSVSquare() {
+  var cv = document.getElementById('ColorSVCanvas'); if (!cv) return;
+  var c = cv.getContext('2d'), w = cv.width, h = cv.height;
+  var hg = c.createLinearGradient(0,0,w,0);
+  hg.addColorStop(0,'#ffffff'); hg.addColorStop(1, hsvToHex(_cpHue,1,1));
+  c.fillStyle = hg; c.fillRect(0,0,w,h);
+  var vg = c.createLinearGradient(0,0,0,h);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,1)');
+  c.fillStyle = vg; c.fillRect(0,0,w,h);
+  var cx2 = _cpSat*w, cy2 = (1-_cpVal)*h;
+  c.strokeStyle = _cpVal > 0.4 ? '#000' : '#fff'; c.lineWidth = 1.5;
+  c.beginPath(); c.arc(cx2,cy2,5,0,Math.PI*2); c.stroke();
+  c.strokeStyle = _cpVal > 0.4 ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.6)'; c.lineWidth = 1;
+  c.beginPath(); c.arc(cx2,cy2,7,0,Math.PI*2); c.stroke();
+}
+function drawHueStrip() {
+  var cv = document.getElementById('ColorHueStrip'); if (!cv) return;
+  var c = cv.getContext('2d'), w = cv.width, h = cv.height;
+  var g = c.createLinearGradient(0,0,w,0);
+  for (var i=0;i<=360;i+=30) g.addColorStop(i/360, hsvToHex(i,1,1));
+  c.fillStyle = g; c.fillRect(0,0,w,h);
+  var x = (_cpHue/360)*w;
+  c.strokeStyle = '#fff'; c.lineWidth = 2;
+  c.strokeRect(x-2, 0, 4, h);
+}
+function _cpUpdate() {
+  playerBodyColor = hsvToHex(_cpHue,_cpSat,_cpVal);
+  localStorage.setItem('slimeBodyColor', playerBodyColor);
+  var pb = document.getElementById('ColorPreviewBox'); if (pb) pb.style.background = playerBodyColor;
+  var hi = document.getElementById('ColorHexInput'); if (hi) hi.value = playerBodyColor;
+  updateSlimePreview(); sendCustomization();
+}
+function applyColorHex(hex) {
+  hex = hex.trim(); if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+  var hsv = hexToHsv(hex); _cpHue=hsv.h; _cpSat=hsv.s; _cpVal=hsv.v;
+  drawSVSquare(); drawHueStrip(); _cpUpdate();
+}
+function setBodyColorHex(hex) {
+  var hsv = hexToHsv(hex); _cpHue=hsv.h; _cpSat=hsv.s; _cpVal=hsv.v;
+  drawSVSquare(); drawHueStrip(); _cpUpdate();
+}
+function initColorPicker() {
+  var sv = document.getElementById('ColorSVCanvas');
+  var hs = document.getElementById('ColorHueStrip');
+  if (!sv || sv._cpInit) return;
+  sv._cpInit = true;
+  var hsv = hexToHsv(playerBodyColor||'#00ff00');
+  _cpHue=hsv.h; _cpSat=hsv.s; _cpVal=hsv.v;
+  drawSVSquare(); drawHueStrip();
+  var pb = document.getElementById('ColorPreviewBox'); if (pb) pb.style.background = playerBodyColor||'#00ff00';
+  var hi = document.getElementById('ColorHexInput'); if (hi) hi.value = playerBodyColor||'#00ff00';
+  function pickSV(e) {
+    var rect=sv.getBoundingClientRect();
+    var ex=e.touches?e.touches[0].clientX:e.clientX, ey=e.touches?e.touches[0].clientY:e.clientY;
+    _cpSat=Math.max(0,Math.min(1,(ex-rect.left)/rect.width));
+    _cpVal=Math.max(0,Math.min(1,1-(ey-rect.top)/rect.height));
+    drawSVSquare(); drawHueStrip(); _cpUpdate();
+  }
+  function pickHS(e) {
+    var rect=hs.getBoundingClientRect();
+    var ex=e.touches?e.touches[0].clientX:e.clientX;
+    _cpHue=Math.max(0,Math.min(360,((ex-rect.left)/rect.width)*360));
+    drawSVSquare(); drawHueStrip(); _cpUpdate();
+  }
+  sv.addEventListener('mousedown',function(e){_cpSVDown=true;pickSV(e);});
+  sv.addEventListener('touchstart',function(e){_cpSVDown=true;pickSV(e);e.preventDefault();},{passive:false});
+  sv.addEventListener('touchmove',function(e){if(_cpSVDown)pickSV(e);e.preventDefault();},{passive:false});
+  sv.addEventListener('touchend',function(){_cpSVDown=false;});
+  hs.addEventListener('mousedown',function(e){_cpHSDown=true;pickHS(e);});
+  hs.addEventListener('touchstart',function(e){_cpHSDown=true;pickHS(e);e.preventDefault();},{passive:false});
+  hs.addEventListener('touchmove',function(e){if(_cpHSDown)pickHS(e);e.preventDefault();},{passive:false});
+  hs.addEventListener('touchend',function(){_cpHSDown=false;});
+  document.addEventListener('mousemove',function(e){if(_cpSVDown)pickSV(e);else if(_cpHSDown)pickHS(e);});
+  document.addEventListener('mouseup',function(){_cpSVDown=false;_cpHSDown=false;});
+}
 
 function normalizeDrawPt(e, dc) {
   var rect = dc.getBoundingClientRect();
   var ex = e.touches ? e.touches[0].clientX : e.clientX;
   var ey = e.touches ? e.touches[0].clientY : e.clientY;
-  // x: [0, DW] → [0, 1]; y: [0, GUIDE_Y] → [0, 1] (clamp to drawing area only)
+  var guideH = rect.height * GUIDE_Y / (GUIDE_Y + SLIME_REF);
   return {
-    x: Math.max(0, Math.min(1, (ex - rect.left)  / DRAW_W)),
-    y: Math.max(0, Math.min(1, (ey - rect.top)   / GUIDE_Y))
+    x: Math.max(0, Math.min(1, (ex - rect.left) / rect.width)),
+    y: Math.max(0, Math.min(1, (ey - rect.top)  / guideH))
   };
 }
 
-function redrawHatCanvas() {
-  var dc = document.getElementById('HatDrawCanvas');
-  if (!dc) return;
-  _drawCtx = _drawCtx || dc.getContext('2d');
-  var w = DRAW_W, h = dc.height;
-  _drawCtx.clearRect(0, 0, w, h);
-  _drawCtx.fillStyle = '#040012'; _drawCtx.fillRect(0, 0, w, h);
-  // fine grid
-  _drawCtx.strokeStyle = 'rgba(0,255,200,0.06)'; _drawCtx.lineWidth = 0.5;
-  for (var gx=0; gx<=w; gx+=14) { _drawCtx.beginPath(); _drawCtx.moveTo(gx,0); _drawCtx.lineTo(gx,GUIDE_Y); _drawCtx.stroke(); }
-  for (var gy=0; gy<=GUIDE_Y; gy+=14) { _drawCtx.beginPath(); _drawCtx.moveTo(0,gy); _drawCtx.lineTo(w,gy); _drawCtx.stroke(); }
-  // center crosshair
-  _drawCtx.strokeStyle = 'rgba(0,255,200,0.12)'; _drawCtx.lineWidth = 0.5;
-  _drawCtx.beginPath(); _drawCtx.moveTo(w/2, 0); _drawCtx.lineTo(w/2, GUIDE_Y); _drawCtx.stroke();
-  // guide line at slime top (GUIDE_Y)
-  _drawCtx.strokeStyle = 'rgba(0,255,200,0.45)'; _drawCtx.lineWidth = 1.5; _drawCtx.setLineDash([5,3]);
-  _drawCtx.beginPath(); _drawCtx.moveTo(0, GUIDE_Y); _drawCtx.lineTo(w, GUIDE_Y); _drawCtx.stroke();
-  _drawCtx.setLineDash([]);
-  // slime silhouette below guide
-  var slimeCx = w/2, slimeCy = h - 2;
-  var slimeR = (h - GUIDE_Y) * 1.1;
-  _drawCtx.fillStyle = 'rgba(0,200,100,0.22)';
-  _drawCtx.beginPath(); _drawCtx.arc(slimeCx, slimeCy, slimeR, Math.PI, 0); _drawCtx.fill();
-  _drawCtx.strokeStyle = 'rgba(0,255,150,0.3)'; _drawCtx.lineWidth = 1;
-  _drawCtx.beginPath(); _drawCtx.arc(slimeCx, slimeCy, slimeR, Math.PI, 0); _drawCtx.stroke();
-  // stored strokes — map normalized coords back to canvas pixels
-  _drawCtx.strokeStyle = '#ffffff'; _drawCtx.lineWidth = 2; _drawCtx.lineCap = 'round'; _drawCtx.lineJoin = 'round';
-  playerHatDrawing.forEach(function(stroke) {
-    if (!stroke || stroke.length < 2) return;
-    _drawCtx.beginPath();
-    _drawCtx.moveTo(stroke[0].x * DRAW_W, stroke[0].y * GUIDE_Y);
-    stroke.slice(1).forEach(function(p) { _drawCtx.lineTo(p.x * DRAW_W, p.y * GUIDE_Y); });
-    _drawCtx.stroke();
-  });
-  if (_currentStroke.length > 1) {
-    _drawCtx.beginPath();
-    _drawCtx.moveTo(_currentStroke[0].x * DRAW_W, _currentStroke[0].y * GUIDE_Y);
-    _currentStroke.slice(1).forEach(function(p) { _drawCtx.lineTo(p.x * DRAW_W, p.y * GUIDE_Y); });
-    _drawCtx.stroke();
-  }
-  _drawCtx.fillStyle = 'rgba(0,255,200,0.18)'; _drawCtx.font = '8px Courier New';
-  _drawCtx.fillText('draw above the line · center = ' + String.fromCharCode(8593), 5, 10);
+function _renderStrokeOnCanvas(dctx, stroke, rw, guideYpx) {
+  var pts = stroke.pts !== undefined ? stroke.pts : stroke;
+  if (!pts || pts.length < 2) return;
+  var color = stroke.color || '#ffffff';
+  var sz = stroke.size || 2;
+  var brush = stroke.brush || 'pen';
+  dctx.save();
+  dctx.lineWidth = sz * (rw / DRAW_W);
+  dctx.lineCap = 'round'; dctx.lineJoin = 'round';
+  dctx.globalAlpha = (brush === 'marker') ? 0.5 : 1.0;
+  dctx.strokeStyle = (brush === 'eraser') ? '#040012' : color;
+  dctx.beginPath();
+  dctx.moveTo(pts[0].x * rw, pts[0].y * guideYpx);
+  for (var i=1; i<pts.length; i++) dctx.lineTo(pts[i].x * rw, pts[i].y * guideYpx);
+  dctx.stroke();
+  dctx.restore();
 }
 
-function initHatDrawCanvas() {
-  var dc = document.getElementById('HatDrawCanvas');
+function redrawHatCanvas(dc, drawCtx) {
+  if (!dc) dc = document.getElementById('HatDrawCanvas');
+  if (!dc) return;
+  var dctx = drawCtx || (dc._ctx = dc._ctx || dc.getContext('2d'));
+  var rw = dc.width, rh = dc.height;
+  var guideYpx = rh * GUIDE_Y / (GUIDE_Y + SLIME_REF);
+  var gridStep = Math.round(rw / 12);
+
+  dctx.clearRect(0, 0, rw, rh);
+  dctx.fillStyle = '#040012'; dctx.fillRect(0, 0, rw, rh);
+
+  // grid
+  dctx.strokeStyle = 'rgba(0,255,200,0.06)'; dctx.lineWidth = 0.5;
+  for (var gx=0; gx<=rw; gx+=gridStep) { dctx.beginPath(); dctx.moveTo(gx,0); dctx.lineTo(gx,guideYpx); dctx.stroke(); }
+  for (var gy=0; gy<=guideYpx; gy+=gridStep) { dctx.beginPath(); dctx.moveTo(0,gy); dctx.lineTo(rw,gy); dctx.stroke(); }
+
+  // center line
+  dctx.strokeStyle = 'rgba(0,255,200,0.12)'; dctx.lineWidth = 0.5;
+  dctx.beginPath(); dctx.moveTo(rw/2,0); dctx.lineTo(rw/2,guideYpx); dctx.stroke();
+
+  // guide line
+  dctx.strokeStyle = 'rgba(0,255,200,0.45)'; dctx.lineWidth = 1.5; dctx.setLineDash([5,3]);
+  dctx.beginPath(); dctx.moveTo(0,guideYpx); dctx.lineTo(rw,guideYpx); dctx.stroke();
+  dctx.setLineDash([]);
+
+  // slime silhouette
+  var slimeCy = rh - 1, slimeR = (rh - guideYpx) * 1.15;
+  if (slimeR > 2) {
+    dctx.fillStyle = 'rgba(0,200,100,0.18)';
+    dctx.beginPath(); dctx.arc(rw/2, slimeCy, slimeR, Math.PI, 0); dctx.fill();
+    dctx.strokeStyle = 'rgba(0,255,150,0.25)'; dctx.lineWidth = 1;
+    dctx.beginPath(); dctx.arc(rw/2, slimeCy, slimeR, Math.PI, 0); dctx.stroke();
+  }
+
+  // stored strokes
+  playerHatDrawing.forEach(function(stroke) { _renderStrokeOnCanvas(dctx, stroke, rw, guideYpx); });
+
+  // current stroke (in progress)
+  if (_drawing && _drawingCanvas === dc && _currentStroke.length > 1) {
+    _renderStrokeOnCanvas(dctx, {pts:_currentStroke, color:_drawColor, size:_drawSize, brush:_drawBrush}, rw, guideYpx);
+  }
+}
+
+function initHatDrawCanvas(dc) {
+  if (!dc) dc = document.getElementById('HatDrawCanvas');
   if (!dc || dc._init) return;
   dc._init = true;
-  _drawCtx = dc.getContext('2d');
-  redrawHatCanvas();
-  function start(e) { _drawing=true; _currentStroke=[normalizeDrawPt(e,dc)]; e.preventDefault(); }
-  function move(e)  {
-    if(!_drawing) return;
-    _currentStroke.push(normalizeDrawPt(e,dc)); redrawHatCanvas(); e.preventDefault();
+  dc._ctx = dc.getContext('2d');
+  redrawHatCanvas(dc, dc._ctx);
+
+  function start(e) {
+    _drawing=true; _drawingCanvas=dc;
+    _currentStroke=[normalizeDrawPt(e,dc)]; e.preventDefault();
+  }
+  function move(e) {
+    if (!_drawing || _drawingCanvas !== dc) return;
+    _currentStroke.push(normalizeDrawPt(e,dc));
+    redrawHatCanvas(dc, dc._ctx); e.preventDefault();
   }
   function end(e) {
-    if(!_drawing) return; _drawing=false;
-    if(_currentStroke.length>1) { playerHatDrawing.push(_currentStroke); saveHatDrawing(); }
-    _currentStroke=[]; redrawHatCanvas(); updateSlimePreview();
+    if (!_drawing || _drawingCanvas !== dc) return;
+    _drawing=false; _drawingCanvas=null;
+    if (_currentStroke.length > 1) {
+      playerHatDrawing.push({pts:_currentStroke.slice(), color:_drawColor, size:_drawSize, brush:_drawBrush});
+      saveHatDrawing();
+    }
+    _currentStroke=[];
+    redrawHatCanvas(dc, dc._ctx); updateSlimePreview();
   }
   dc.addEventListener('mousedown',start); dc.addEventListener('mousemove',move);
   dc.addEventListener('mouseup',end); dc.addEventListener('mouseleave',end);
@@ -2834,22 +2979,73 @@ function saveHatDrawing() {
 function clearHatDrawing() {
   playerHatDrawing = []; _currentStroke = [];
   try { localStorage.removeItem('slimeHatDrawing'); } catch(e) {}
-  redrawHatCanvas(); updateSlimePreview(); sendCustomization();
+  var dc = document.getElementById('HatDrawCanvas'); if (dc) redrawHatCanvas(dc, dc._ctx);
+  var fc = document.getElementById('HatFullscreenCanvas'); if (fc && fc._init) redrawHatCanvas(fc, fc._ctx);
+  updateSlimePreview(); sendCustomization();
+}
+
+function setDrawBrush(b) {
+  _drawBrush = b; updateDrawToolUI();
+}
+function setDrawSize(s) {
+  _drawSize = s; updateDrawToolUI();
+}
+function cycleDrawColor() {
+  _drawColorIdx = (_drawColorIdx + 1) % _drawColors.length;
+  _drawColor = _drawColors[_drawColorIdx];
+  updateDrawToolUI();
+}
+function updateDrawToolUI() {
+  var brushes = ['Pen','Marker','Eraser'];
+  var brushKeys = ['pen','marker','eraser'];
+  brushKeys.forEach(function(k, i) {
+    var el  = document.getElementById('DrawBrush'  + brushes[i]);
+    var el2 = document.getElementById('FSDrawBrush'+ brushes[i]);
+    if (el)  el.classList.toggle('active',  _drawBrush === k);
+    if (el2) el2.classList.toggle('active', _drawBrush === k);
+  });
+  var sizes = [['S',2],['M',5],['L',11],['XL',22]];
+  sizes.forEach(function(p) {
+    var el  = document.getElementById('DrawSize'  + p[0]);
+    var el2 = document.getElementById('FSDrawSize'+ p[0]);
+    if (el)  el.classList.toggle('active',  _drawSize === p[1]);
+    if (el2) el2.classList.toggle('active', _drawSize === p[1]);
+  });
+  var dot  = document.getElementById('DrawColorDot');
+  var dot2 = document.getElementById('FSDrawColorDot');
+  if (dot)  dot.style.background  = _drawColor;
+  if (dot2) dot2.style.background = _drawColor;
+}
+
+function openHatFullscreen() {
+  var ov = document.getElementById('HatFullscreenOverlay');
+  if (!ov) return;
+  ov.classList.add('fs-open');
+  var fc = document.getElementById('HatFullscreenCanvas');
+  if (fc) { initHatDrawCanvas(fc); redrawHatCanvas(fc, fc._ctx || fc.getContext('2d')); }
+  updateDrawToolUI();
+}
+function closeHatFullscreen() {
+  var ov = document.getElementById('HatFullscreenOverlay');
+  if (ov) ov.classList.remove('fs-open');
+  var dc = document.getElementById('HatDrawCanvas');
+  if (dc) redrawHatCanvas(dc, dc._ctx || dc.getContext('2d'));
+  updateSlimePreview();
 }
 
 function syncCustomizationUI() {
+  // Initialize HSV color picker (lazy — only if DOM is ready)
+  initColorPicker();
+  // Quick preset swatches (subset of BODY_COLORS)
   var sc = document.getElementById('ColorSwatches');
   if (sc) {
     sc.innerHTML = '';
-    BODY_COLORS.forEach(function(col) {
+    BODY_COLORS.slice(0,6).forEach(function(col) {
       var d = document.createElement('div');
       d.className = 'swatch' + (col === playerBodyColor ? ' active' : '');
       d.style.background = col;
       d.title = col;
-      d.onclick = function() {
-        playerBodyColor = col; localStorage.setItem('slimeBodyColor', col);
-        syncCustomizationUI(); sendCustomization();
-      };
+      d.onclick = function() { setBodyColorHex(col); syncCustomizationUI(); };
       sc.appendChild(d);
     });
   }
@@ -2868,7 +3064,14 @@ function syncCustomizationUI() {
     });
   }
   var ds = document.getElementById('HatDrawSection');
-  if (ds) { ds.style.display = playerHat === 'custom' ? 'block' : 'none'; if (playerHat==='custom') initHatDrawCanvas(); }
+  if (ds) {
+    ds.style.display = playerHat === 'custom' ? 'block' : 'none';
+    if (playerHat === 'custom') {
+      var dc = document.getElementById('HatDrawCanvas');
+      initHatDrawCanvas(dc);
+      if (dc) redrawHatCanvas(dc, dc._ctx || dc.getContext('2d'));
+    }
+  }
 
   var as = document.getElementById('HatAnimSection');
   if (as) as.style.display = (playerHat !== 'none') ? 'block' : 'none';
@@ -3119,6 +3322,10 @@ function bodyload() {
   playerHat       = localStorage.getItem('slimeHat')       || 'none';
   playerHatAnim   = localStorage.getItem('slimeHatAnim')   || 'none';
   try { playerHatDrawing = JSON.parse(localStorage.getItem('slimeHatDrawing') || '[]'); } catch(e) { playerHatDrawing = []; }
+  // migrate old format: strokes were plain arrays of points, now wrapped in {pts, color, size, brush}
+  playerHatDrawing = playerHatDrawing.map(function(s) {
+    return Array.isArray(s) ? {pts:s, color:'#ffffff', size:4, brush:'pen'} : s;
+  });
   hatConfigs.left.color = playerBodyColor; hatConfigs.left.hat = playerHat; hatConfigs.left.drawing = playerHatDrawing; hatConfigs.left.anim = playerHatAnim;
   syncCustomizationUI();
 
@@ -3187,7 +3394,7 @@ function bodyload() {
         </div>
       </div>
 
-      <div id="OptionsDiv" style="position:absolute;width:718px;height:auto;top:14px;left:16px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:12px 16px 14px;box-sizing:border-box;">
+      <div id="OptionsDiv" style="position:absolute;width:620px;height:auto;top:14px;left:16px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.3);z-index:10;padding:12px 16px 14px;box-sizing:border-box;overflow-y:auto;">
 
         <!-- header -->
         <div style="display:flex;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(0,255,200,.15);">
@@ -3196,18 +3403,48 @@ function bodyload() {
         </div>
 
         <!-- 3-column body -->
-        <div style="display:flex;gap:20px;align-items:flex-start;">
+        <div style="display:flex;gap:18px;align-items:flex-start;">
 
-          <!-- col 1: slime customization -->
-          <div style="flex:1;min-width:0;">
+          <!-- col 1: color picker -->
+          <div style="width:196px;flex-shrink:0;">
             <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">SLIME COLOR</div>
-            <div id="ColorSwatches" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;"></div>
+            <div id="ColorPickerWrap">
+              <canvas id="ColorSVCanvas" width="200" height="150" style="width:100%;display:block;cursor:crosshair;border:1px solid rgba(0,255,200,.15);border-radius:2px;"></canvas>
+              <canvas id="ColorHueStrip" width="200" height="14" style="width:100%;display:block;cursor:pointer;border:1px solid rgba(0,255,200,.15);margin-top:4px;border-radius:2px;"></canvas>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">
+                <div id="ColorPreviewBox" style="width:24px;height:24px;border:1px solid rgba(0,255,200,.35);flex-shrink:0;border-radius:3px;"></div>
+                <input id="ColorHexInput" type="text" maxlength="7" placeholder="#00ff00"
+                       style="width:62px;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;font-family:'Courier New',monospace;font-size:10px;padding:3px 5px;"
+                       onchange="applyColorHex(this.value)"
+                       onkeydown="if(event.key==='Enter')applyColorHex(this.value)">
+                <div id="ColorSwatches" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- col 2: hat + draw -->
+          <div style="flex:1;min-width:0;">
             <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">HAT</div>
             <div id="HatPicker" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"></div>
             <div id="HatDrawSection" style="display:none;margin-top:6px;">
-              <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">Draw your hat:</div>
-              <canvas id="HatDrawCanvas" width="120" height="140" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:4px;"></canvas>
-              <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:2px 7px;">✕ Clear</button>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;">Draw your hat:</div>
+                <button onclick="openHatFullscreen()" class="hat-opt" style="font-size:7px;padding:1px 6px;">&#11036; EXPAND</button>
+              </div>
+              <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:3px;align-items:center;">
+                <button id="DrawBrushPen"    onclick="setDrawBrush('pen')"    class="draw-tool-btn active">&#9998; Pen</button>
+                <button id="DrawBrushMarker" onclick="setDrawBrush('marker')" class="draw-tool-btn">&#9646; Marker</button>
+                <button id="DrawBrushEraser" onclick="setDrawBrush('eraser')" class="draw-tool-btn">&#9702; Erase</button>
+                <div id="DrawColorDot" onclick="cycleDrawColor()" title="Brush color (click to cycle)" style="width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,255,200,.4);cursor:pointer;flex-shrink:0;background:#ffffff;margin-left:2px;"></div>
+              </div>
+              <div style="display:flex;gap:3px;margin-bottom:5px;">
+                <button id="DrawSizeS"  onclick="setDrawSize(2)"  class="draw-tool-btn active">S</button>
+                <button id="DrawSizeM"  onclick="setDrawSize(5)"  class="draw-tool-btn">M</button>
+                <button id="DrawSizeL"  onclick="setDrawSize(11)" class="draw-tool-btn">L</button>
+                <button id="DrawSizeXL" onclick="setDrawSize(22)" class="draw-tool-btn">XL</button>
+              </div>
+              <canvas id="HatDrawCanvas" width="174" height="202" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;margin-bottom:4px;max-width:100%;"></canvas>
+              <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:2px 7px;">&#10005; Clear</button>
             </div>
             <div id="HatAnimSection" style="display:none;margin-top:6px;">
               <div style="color:rgba(0,255,200,.25);font-size:8px;letter-spacing:1px;margin-bottom:4px;">HAT ANIMATION</div>
@@ -3215,17 +3452,13 @@ function bodyload() {
             </div>
           </div>
 
-          <!-- col 2: preview + music -->
-          <div style="flex-shrink:0;width:150px;">
+          <!-- col 3: preview + music + settings -->
+          <div style="flex-shrink:0;width:145px;">
             <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">PREVIEW</div>
             <canvas id="SlimePreview" width="100" height="90" style="border:1px solid rgba(0,255,200,.18);display:block;margin-bottom:10px;"></canvas>
             <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">VICTORY MUSIC</div>
             <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:4px 6px;font-family:'Courier New',monospace;font-size:10px;margin-bottom:5px;"></select>
-            <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:9px;letter-spacing:2px;padding:3px 10px;cursor:pointer;font-family:inherit;width:100%;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
-          </div>
-
-          <!-- col 3: settings -->
-          <div style="flex-shrink:0;width:148px;">
+            <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.6);font-size:9px;letter-spacing:2px;padding:3px 10px;cursor:pointer;font-family:inherit;width:100%;margin-bottom:12px;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.6)';">&#9654; PREVIEW</button>
             <div style="color:rgba(0,255,200,.35);font-size:8px;letter-spacing:2px;margin-bottom:5px;">GAME SIZE</div>
             <div style="display:flex;gap:4px;margin-bottom:12px;">
               <button id="ScaleFull" onclick="setGameScale('full')" class="hat-opt" style="flex:1;">Fullscreen</button>
@@ -3292,4 +3525,29 @@ function bodyload() {
 </div>
 
 <div id="PlayerTooltip"></div>
+
+<!-- Hat Fullscreen Drawing Studio -->
+<div id="HatFullscreenOverlay">
+  <div style="position:relative;padding:18px 22px;background:#040012;border:1px solid rgba(0,255,200,.3);border-radius:4px;display:flex;flex-direction:column;align-items:center;">
+    <div style="display:flex;align-items:center;width:100%;margin-bottom:12px;">
+      <span style="color:#00ffcc;letter-spacing:4px;font-size:11px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.4);">&#9998; Hat Studio</span>
+      <button onclick="closeHatFullscreen()" class="hat-opt" style="margin-left:auto;font-size:9px;padding:3px 10px;">&#10005; DONE</button>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center;width:100%;">
+      <button id="FSDrawBrushPen"    onclick="setDrawBrush('pen')"    class="draw-tool-btn active">&#9998; Pen</button>
+      <button id="FSDrawBrushMarker" onclick="setDrawBrush('marker')" class="draw-tool-btn">&#9646; Marker</button>
+      <button id="FSDrawBrushEraser" onclick="setDrawBrush('eraser')" class="draw-tool-btn">&#9702; Erase</button>
+      <div id="FSDrawColorDot" onclick="cycleDrawColor()" title="Brush color" style="width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,255,200,.4);cursor:pointer;flex-shrink:0;background:#ffffff;"></div>
+      <span style="color:#333;margin:0 4px;">|</span>
+      <button id="FSDrawSizeS"  onclick="setDrawSize(2)"  class="draw-tool-btn active">S</button>
+      <button id="FSDrawSizeM"  onclick="setDrawSize(5)"  class="draw-tool-btn">M</button>
+      <button id="FSDrawSizeL"  onclick="setDrawSize(11)" class="draw-tool-btn">L</button>
+      <button id="FSDrawSizeXL" onclick="setDrawSize(22)" class="draw-tool-btn">XL</button>
+      <button onclick="clearHatDrawing()" class="hat-opt" style="margin-left:auto;font-size:9px;padding:3px 10px;">&#10005; Clear All</button>
+    </div>
+    <canvas id="HatFullscreenCanvas" width="500" height="580" style="border:1px solid rgba(0,255,200,.3);cursor:crosshair;display:block;max-width:90vw;max-height:75vh;"></canvas>
+    <div style="color:rgba(0,255,200,.2);font-size:8px;letter-spacing:1px;margin-top:8px;">draw above the dashed line &nbsp;&middot;&nbsp; center &#8593;</div>
+  </div>
+</div>
+
 </body></html>
