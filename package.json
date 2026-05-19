@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node tests/physics.test.js",
+    "check": "node --check server.js && node --check physics.js && node --check ws-config.js && node --check Input.js && node --check SlimeAI.js && node --check MentalSlimeAI.js && node --check js/client-state.js && node --check js/render-maps.js && node --check js/render-game.js && node --check js/local-game.js && node --check js/online-state.js && node --check js/online-effects.js && node --check js/lobby-ui.js && node --check js/online-game.js && node --check js/menus.js && node --check js/replay.js && node --check js/customization-hats.js && node --check js/hat-studio.js && node --check js/options-ui.js && node --check js/audio.js && node --check js/bootstrap.js"
   },
   "dependencies": {
     "express": "^4.18.2",

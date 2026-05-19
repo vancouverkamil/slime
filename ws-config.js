@@ -1,4 +1,8 @@
 // WebSocket server URL for online multiplayer.
-// When null, falls back to the same host (works for self-hosted / local dev).
-// Updated to point at the dedicated game server once deployed.
-window.SLIME_WS_URL = 'wss://slime-7wuo.onrender.com';
+// Local/self-hosted builds use the same origin; static hosted builds use the
+// deployed websocket server.
+(function() {
+  var host = window.location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
+  window.SLIME_WS_URL = isLocal ? null : 'wss://slime-7wuo.onrender.com';
+})();
