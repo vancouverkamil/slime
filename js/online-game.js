@@ -2,8 +2,11 @@ function handleServerMessage(msg) {
   if (msg.type === 'connected') {
     currentLobbies = msg.lobbies || [];
     updatePlayerCount(msg.totalPlayers);
+    if (msg.profile) applyAccount(msg.profile);
     var savedN = localStorage.getItem('slimeName');
-    if (savedN) {
+    if (currentAccount) {
+      myPlayerName = currentAccount.displayName || currentAccount.username;
+    } else if (savedN) {
       myPlayerName = savedN;
       if (lobbySocket && lobbySocket.readyState === 1)
         lobbySocket.send(JSON.stringify({ type: 'set_name', name: savedN, wins: totalWins, rank: getPlayerRank() }));
@@ -75,13 +78,14 @@ function handleServerMessage(msg) {
 
   } else if (msg.type === 'point') {
     rallyCount = 0;
-    shakeFrames = 8; shakeAmt = 5;
+    if (screenFxEnabled) { shakeFrames = 8; shakeAmt = 5; }
+    playSfx('score');
     if (msg.scorer === 'left') {
       leftStreak++; rightStreak = 0;
-      spawnParticles(slimeLeft.x, slimeLeft.y + 80, '#66ffcc');
+      if (screenFxEnabled) spawnParticles(slimeLeft.x, slimeLeft.y + 80, '#66ffcc');
     } else {
       rightStreak++; leftStreak = 0;
-      spawnParticles(slimeRight.x, slimeRight.y + 80, '#ff66aa');
+      if (screenFxEnabled) spawnParticles(slimeRight.x, slimeRight.y + 80, '#ff66aa');
     }
     if (!isSpectator) {
       onlinePointText = (mySide === msg.scorer) ? 'YOU SCORED' : 'OPPONENT SCORES';
@@ -104,6 +108,7 @@ function handleServerMessage(msg) {
   } else if (msg.type === 'game_over') {
     showLeaveBtn(false); hideEscMenu();
     clearInterval(onlineInputInterval); onlineInputInterval = null;
+    playSfx(msg.winner === mySide ? 'win' : 'score');
     var _w = msg.winner, _sp = isSpectator;
     playHighlights(_w, function() {
       if (_sp) finishSpectating(_w);
@@ -230,11 +235,11 @@ function applyServerState(msg) {
   slimeRight.x = msg.slimeRight.x; slimeRight.y = msg.slimeRight.y;
   slimeLeftScore = msg.scoreLeft; slimeRightScore = msg.scoreRight;
 
-  tickParticles();
+  if (screenFxEnabled) tickParticles();
 
   // screen shake offset
   var sx = 0, sy = 0;
-  if (shakeFrames > 0) {
+  if (screenFxEnabled && shakeFrames > 0) {
     sx = (Math.random()-.5)*shakeAmt*2; sy = (Math.random()-.5)*shakeAmt*2;
     shakeFrames--;
   }
@@ -242,7 +247,7 @@ function applyServerState(msg) {
   renderBackground();
   ball.render(); slimeLeft.render(); slimeRight.render();
   drawHat(slimeLeft, hatConfigs.left); drawHat(slimeRight, hatConfigs.right);
-  drawParticles();
+  if (screenFxEnabled) drawParticles();
   drawOnlineHUD();
   if (sx || sy) ctx.restore();
 

@@ -1,6 +1,7 @@
-function spawnParticles(x, y, color) {
-  for (var i = 0; i < 10; i++) {
-    var a = (i / 10) * TWO_PI;
+function spawnParticles(x, y, color, count) {
+  count = count || 10;
+  for (var i = 0; i < count; i++) {
+    var a = (i / count) * TWO_PI;
     var sp = 2 + Math.random() * 4;
     particles.push({
       x:x*pixelsPerUnitX, y:courtYPix - y*pixelsPerUnitY,

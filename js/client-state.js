@@ -65,6 +65,9 @@ var slimeAI, updateCount, leftWon, slowMotion, logString;
 var final4Mode = false, final4Index = 0, final4WinPending = false;
 var localMapId = null;
 var gameScale = (typeof localStorage !== 'undefined' && localStorage.getItem('slime_scale')) || 'compact';
+var gameSfxEnabled = (typeof localStorage === 'undefined' || localStorage.getItem('slime_sfx') !== 'off');
+var screenFxEnabled = (typeof localStorage === 'undefined' || localStorage.getItem('slime_screenFx') !== 'off');
+var localRallyCount = 0, localLastBallSide = null, localPointFlash = null, localPointFlashEnd = 0;
 
 // ── barrier physics (client-side, local modes only) ───────
 var MAP_BARRIERS_CLIENT = {
@@ -143,12 +146,25 @@ function collisionBallSlime(s) {
       ball.velocityX = Math.min(Math.max(ball.velocityX + Math.trunc(s.velocityX - 2*dx*dot/dist), -MAX_VELOCITY_X), MAX_VELOCITY_X);
       ball.velocityY = Math.min(Math.max(ball.velocityY + Math.trunc(s.velocityY - 2*dy*dot/dist), -MAX_VELOCITY_Y), MAX_VELOCITY_Y);
     }
+    return true;
   }
+  return false;
 }
 function updateBall() {
   ball.velocityY = Math.max(ball.velocityY - 1, -MAX_VELOCITY_Y);
   ball.x += ball.velocityX; ball.y += ball.velocityY;
-  collisionBallSlime(slimeLeft); collisionBallSlime(slimeRight);
+  var hitLeft = collisionBallSlime(slimeLeft);
+  var hitRight = collisionBallSlime(slimeRight);
+  if (hitLeft || hitRight) {
+    playSfx('hit');
+    if (screenFxEnabled) {
+      var hs = hitLeft ? slimeLeft : slimeRight;
+      spawnParticles(hs.x, hs.y + 78, hitLeft ? '#66ffcc' : '#ff66aa', 6);
+    }
+  }
+  var side = ball.x < 500 ? 'left' : 'right';
+  if (localLastBallSide && localLastBallSide !== side) localRallyCount++;
+  localLastBallSide = side;
   if (ball.x < 15)   { ball.x = 15;  ball.velocityX = -ball.velocityX; }
   else if (ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
   if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
@@ -160,6 +176,14 @@ function updateBall() {
   if (_bars) for (var _bi = 0; _bi < _bars.length; _bi++) applyBarrierClient(_bars[_bi]);
   if (ball.y < 0) {
     leftWon = ball.x > 500; (leftWon ? slimeLeftScore++ : slimeRightScore++);
+    localPointFlash = leftWon ? 'LEFT SCORES' : 'RIGHT SCORES';
+    localPointFlashEnd = Date.now() + 700;
+    localRallyCount = 0; localLastBallSide = null;
+    playSfx('score');
+    if (screenFxEnabled) {
+      shakeFrames = 8; shakeAmt = 4;
+      spawnParticles(leftWon ? slimeLeft.x : slimeRight.x, 90, leftWon ? '#66ffcc' : '#ff66aa', 12);
+    }
     endPoint(); return true;
   }
   return false;

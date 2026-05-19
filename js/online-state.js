@@ -51,6 +51,7 @@ function getTintedCanvas(img, color) {
 }
 
 function connectLobby() {
+  if (lobbySocket) return;
   var wsUrl = window.SLIME_WS_URL ||
     ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
   try { lobbySocket = new WebSocket(wsUrl); } catch(e) { return; }

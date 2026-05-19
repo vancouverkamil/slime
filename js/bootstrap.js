@@ -82,7 +82,12 @@ function bodyload() {
   // Sync scale buttons to saved preference
   var fb = document.getElementById('ScaleFull'), cb = document.getElementById('ScaleCompact');
   if (fb && cb) { fb.classList.toggle('active', gameScale === 'full'); cb.classList.toggle('active', gameScale === 'compact'); }
+  var sfx = document.getElementById('GameSfx'), fx = document.getElementById('ScreenFx');
+  if (sfx) sfx.checked = gameSfxEnabled;
+  if (fx) fx.checked = screenFxEnabled;
 
-  toInitialMenu();
-  connectLobby();
+  loadAccount().then(function() {
+    toInitialMenu();
+    connectLobby();
+  });
 }

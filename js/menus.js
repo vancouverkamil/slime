@@ -17,6 +17,8 @@ function start(startAsOnePlayer) {
   final4Mode = false; final4WinPending = false;
   onePlayer = startAsOnePlayer;
   slimeLeftScore = 0; slimeRightScore = 0;
+  localRallyCount = 0; localLastBallSide = null; localPointFlash = null; particles = [];
+  shakeFrames = 0; shakeAmt = 0;
   slimeLeft.img = greenSlimeImage;
   slimeLeft.color = playerBodyColor;
   slimeLeft.tintColor = playerBodyColor;
@@ -74,6 +76,10 @@ function loadOptions() {
   legacyGraphics = document.getElementById('LegacyGraphics').checked;
   slowMotion     = document.getElementById('SlowMotion').checked;
   physicsLog     = document.getElementById('PhysicsLog').checked ? 120 : 0;
+  var sfx = document.getElementById('GameSfx');
+  var fx  = document.getElementById('ScreenFx');
+  if (sfx) gameSfxEnabled = sfx.checked;
+  if (fx)  screenFxEnabled = fx.checked;
 }
 function showOptions() {
   if (gameState === GAME_STATE_RUNNING)      gameState = GAME_STATE_MENU_PAUSE;
@@ -149,6 +155,8 @@ function startFinal4Round() {
   backTextColor       = boss.backTextColor;
   onePlayer           = true;
   slimeLeftScore      = 0; slimeRightScore = 0;
+  localRallyCount = 0; localLastBallSide = null; localPointFlash = null; particles = [];
+  shakeFrames = 0; shakeAmt = 0;
   slimeLeft.img       = greenSlimeImage;
   slimeLeft.color     = playerBodyColor;
   slimeLeft.tintColor = playerBodyColor;

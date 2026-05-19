@@ -15,6 +15,7 @@ function startNextPoint() {
 function endMatch() {
   gameState = GAME_STATE_SHOW_WINNER;
   clearInterval(gameIntervalObject);
+  playSfx(leftWon ? 'win' : 'score');
   var msg;
 
   if (final4Mode) {

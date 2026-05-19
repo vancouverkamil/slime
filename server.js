@@ -2,7 +2,11 @@ const express  = require('express');
 const http     = require('http');
 const { WebSocketServer } = require('ws');
 const path     = require('path');
+const { loadLocalEnv } = require('./local-env');
 const { newBall, newSlime, initRound, tick } = require('./physics');
+const { createAccountStore, normalizeUsername } = require('./account-store');
+
+loadLocalEnv();
 
 const WIN_AMOUNT = 7;
 const TICK_MS    = 20;
@@ -15,6 +19,8 @@ const ROOM_NAMES = [
 ];
 
 const app = express();
+const accounts = createAccountStore();
+app.use(express.json({ limit: '256kb' }));
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'slime_volleyball.html')));
 const server = http.createServer(app);
@@ -32,6 +38,85 @@ const rooms = ROOM_NAMES.map((name, id) => ({
   interval:   null,
   phase:      'empty', // 'empty' | 'waiting' | 'playing'
 }));
+
+function parseCookies(header) {
+  const cookies = {};
+  String(header || '').split(';').forEach((part) => {
+    const idx = part.indexOf('=');
+    if (idx === -1) return;
+    cookies[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim());
+  });
+  return cookies;
+}
+
+function sessionCookie(token) {
+  return `slime_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}`;
+}
+
+function clearSessionCookie() {
+  return 'slime_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0';
+}
+
+async function getReqUser(req) {
+  const token = parseCookies(req.headers.cookie).slime_session;
+  return await accounts.getUserBySession(token);
+}
+
+function sendUser(res, user) {
+  res.json({ user: accounts.publicProfile(user) });
+}
+
+app.get('/api/me', async (req, res) => {
+  sendUser(res, await getReqUser(req));
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const user = await accounts.register(req.body.username, req.body.password);
+    const token = await accounts.createSession(user.id);
+    res.setHeader('Set-Cookie', sessionCookie(token));
+    sendUser(res, user);
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Could not create account.' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const user = await accounts.login(req.body.username, req.body.password);
+  if (!user) {
+    res.status(401).json({ error: 'Invalid username or password.' });
+    return;
+  }
+  const token = await accounts.createSession(user.id);
+  res.setHeader('Set-Cookie', sessionCookie(token));
+  sendUser(res, user);
+});
+
+app.post('/api/auth/logout', async (req, res) => {
+  const token = parseCookies(req.headers.cookie).slime_session;
+  await accounts.deleteSession(token);
+  res.setHeader('Set-Cookie', clearSessionCookie());
+  res.json({ ok: true });
+});
+
+app.get('/api/profiles/:username', async (req, res) => {
+  const user = await accounts.findByUsername(normalizeUsername(req.params.username));
+  if (!user) {
+    res.status(404).json({ error: 'Profile not found.' });
+    return;
+  }
+  res.json({ user: accounts.publicProfile(user) });
+});
+
+app.post('/api/me/slime', async (req, res) => {
+  const user = await getReqUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'Login required.' });
+    return;
+  }
+  const updated = await accounts.updateSlime(user.id, req.body || {});
+  sendUser(res, updated);
+});
 
 // ── helpers ──────────────────────────────────────────────
 function send(ws, msg) {
@@ -59,7 +144,17 @@ function getLobbySnapshot() {
 }
 function getPlayerList() {
   const list = [];
-  allClients.forEach((info) => { list.push({ name: info.name, status: info.state, wins: info.wins || 0, rank: info.rank || 'PRIVATE' }); });
+  allClients.forEach((info) => {
+    list.push({
+      name: info.name,
+      username: info.username || null,
+      status: info.state,
+      wins: info.wins || 0,
+      rank: info.rank || 'PRIVATE',
+      matches: info.matches || 0,
+      account: !!info.userId,
+    });
+  });
   return list;
 }
 function pushLobbyState() {
@@ -74,6 +169,12 @@ function pushLobbyState() {
 function randomName() {
   return 'Player' + (Math.floor(Math.random() * 9000) + 1000);
 }
+function getRank(wins) {
+  if (wins >= 10) return 'LIEUTENANT';
+  if (wins >= 6) return 'SERGEANT';
+  if (wins >= 3) return 'CORPORAL';
+  return 'PRIVATE';
+}
 
 // Simple per-client chat rate limiter: max 5 messages per 3 s
 function chatAllowed(info) {
@@ -85,14 +186,33 @@ function chatAllowed(info) {
 }
 
 // ── connection ────────────────────────────────────────────
-wss.on('connection', (ws) => {
-  const info = { name: randomName(), room: null, role: null, gameHandler: null, state: 'lobby', chatCount: 0, chatReset: 0, hat: 'none', hatAnim: 'none', bodyColor: '#00ff00', hatDrawing: [] };
+wss.on('connection', async (ws, req) => {
+  const user = await accounts.getUserBySession(parseCookies(req.headers.cookie).slime_session);
+  const profile = accounts.publicProfile(user);
+  const info = {
+    userId: user ? user.id : null,
+    username: user ? user.username : null,
+    name: user ? user.displayName : randomName(),
+    wins: user ? user.stats.wins : 0,
+    matches: user ? user.stats.matches : 0,
+    rank: user ? getRank(user.stats.wins) : 'PRIVATE',
+    room: null,
+    role: null,
+    gameHandler: null,
+    state: 'lobby',
+    chatCount: 0,
+    chatReset: 0,
+    hat: profile && profile.slime ? profile.slime.hat : 'none',
+    hatAnim: profile && profile.slime ? profile.slime.hatAnim : 'none',
+    bodyColor: profile && profile.slime ? profile.slime.color : '#00ff00',
+    hatDrawing: profile && profile.slime ? profile.slime.hatDrawing : [],
+  };
   allClients.set(ws, info);
 
-  send(ws, { type: 'connected', name: info.name, totalPlayers: allClients.size, lobbies: getLobbySnapshot(), playerList: getPlayerList() });
+  send(ws, { type: 'connected', name: info.name, profile, totalPlayers: allClients.size, lobbies: getLobbySnapshot(), playerList: getPlayerList() });
   pushLobbyState();
 
-  ws.on('message', (raw) => {
+  ws.on('message', async (raw) => {
     try {
       const msg = JSON.parse(raw);
       // In-game inputs route to game handler; chat still handled normally
@@ -105,10 +225,10 @@ wss.on('connection', (ws) => {
           info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
           info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
         }
-        if (msg.type === 'customize') handleCustomize(ws, info, msg);
+        if (msg.type === 'customize') await handleCustomize(ws, info, msg);
         return;
       }
-      handleMsg(ws, info, msg);
+      await handleMsg(ws, info, msg);
     } catch (_) {}
   });
 
@@ -120,7 +240,7 @@ wss.on('connection', (ws) => {
 });
 
 // ── message routing ───────────────────────────────────────
-function handleMsg(ws, info, msg) {
+async function handleMsg(ws, info, msg) {
   if (msg.type === 'chat') {
     relayChat(info, msg);
   } else if (msg.type === 'set_name') {
@@ -131,7 +251,7 @@ function handleMsg(ws, info, msg) {
   } else if (msg.type === 'join_room') {
     handleJoinRoom(ws, info, msg.roomId);
   } else if (msg.type === 'customize') {
-    handleCustomize(ws, info, msg);
+    await handleCustomize(ws, info, msg);
   } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
     leaveRoom(ws, info, false);
     info.state = 'lobby';
@@ -139,14 +259,15 @@ function handleMsg(ws, info, msg) {
   }
 }
 
-function handleCustomize(ws, info, msg) {
-  if (!info.room) return;
-  const room = info.room;
+async function handleCustomize(ws, info, msg) {
   const hat     = String(msg.hat      || 'none').slice(0, 20);
   const hatAnim = String(msg.hatAnim  || 'none').slice(0, 20);
   const color   = String(msg.color    || '#00ff00').slice(0, 20);
   const drawing = Array.isArray(msg.hatDrawing) ? msg.hatDrawing.slice(0, 300) : [];
   info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing;
+  if (info.userId) await accounts.updateSlime(info.userId, { hat, hatAnim, color, hatDrawing: drawing });
+  if (!info.room) return;
+  const room = info.room;
   const sideIdx = room.players.findIndex(p => p.ws === ws);
   if (sideIdx === -1) return;
   const side = sideIdx === 0 ? 'left' : 'right';
@@ -273,7 +394,7 @@ function startRoomGame(room) {
     room.state.inputRight = { movement: 0, jump: false };
   }
 
-  function gameTick() {
+  async function gameTick() {
     if (room.state.phase !== 'playing') return;
     const result = tick(room.state);
     if (result !== 0) {
@@ -282,7 +403,17 @@ function startRoomGame(room) {
       broadcastState();
       if (room.state.scoreLeft >= WIN_AMOUNT || room.state.scoreRight >= WIN_AMOUNT) {
         room.state.phase = 'done';
-        bcast({ type: 'game_over', winner: room.state.scoreLeft >= WIN_AMOUNT ? 'left' : 'right' });
+        const winner = room.state.scoreLeft >= WIN_AMOUNT ? 'left' : 'right';
+        await accounts.recordMatch(left.info.userId, right.info.userId, winner, room.state.scoreLeft, room.state.scoreRight);
+        for (const playerInfo of [left.info, right.info]) {
+          if (!playerInfo.userId) continue;
+          const user = await accounts.findById(playerInfo.userId);
+          if (!user) continue;
+          playerInfo.wins = user.stats.wins;
+          playerInfo.matches = user.stats.matches;
+          playerInfo.rank = getRank(user.stats.wins);
+        }
+        bcast({ type: 'game_over', winner });
         endRoomGame();
         return;
       }
@@ -332,7 +463,16 @@ function startRoomGame(room) {
   left.ws.on('close',  cleanup);
   right.ws.on('close', cleanup);
 
-  room.interval = setInterval(gameTick, TICK_MS);
+  room.interval = setInterval(() => {
+    gameTick().catch((err) => {
+      console.error('game tick failed', err);
+      clearInterval(room.interval);
+      room.interval = null;
+      room.state = null;
+      room.phase = 'empty';
+      pushLobbyState();
+    });
+  }, TICK_MS);
   pushLobbyState();
 }
 

@@ -5,6 +5,7 @@
 <script type="text/javascript" src="SlimeAI.js"></script>
 <script type="text/javascript" src="MentalSlimeAI.js"></script>
 <script type="text/javascript" src="js/client-state.js"></script>
+<script type="text/javascript" src="js/accounts.js"></script>
 <script type="text/javascript" src="js/render-maps.js"></script>
 <script type="text/javascript" src="js/render-game.js"></script>
 <script type="text/javascript" src="js/local-game.js"></script>
@@ -144,6 +145,11 @@
                 <div style="color:#3a3a3a;font-size:9px;letter-spacing:.4px;margin-bottom:12px;">Plays when you win a match.</div>
                 <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;max-width:300px;display:block;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:10px;margin-bottom:10px;"></select>
                 <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.55);font-size:9px;letter-spacing:2px;padding:6px 16px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.55)';">&#9654; PREVIEW</button>
+                <div class="opt-section-title" style="margin-top:18px;">Match Effects</div>
+                <div style="display:flex;flex-direction:column;gap:9px;">
+                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="GameSfx" type="checkbox" onchange="setGameSfx(this.checked)"> Sound Effects</label>
+                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="ScreenFx" type="checkbox" onchange="setScreenFx(this.checked)"> Screen Effects</label>
+                </div>
               </div>
 
               <!-- ── DISPLAY ── -->
@@ -180,6 +186,27 @@
 
     <div id="Sidebar">
       <div id="PlayerCountDiv">&#9679; <span id="PlayerCountNum">0</span> online</div>
+      <div id="AccountPanel">
+        <div id="AccountGuest">
+          <div class="account-title">Account</div>
+          <input id="AccountUser" class="account-input" type="text" maxlength="20" placeholder="username">
+          <input id="AccountPass" class="account-input" type="password" maxlength="64" placeholder="password">
+          <div class="account-actions">
+            <button onclick="accountLogin()">LOGIN</button>
+            <button onclick="accountRegister()">CREATE</button>
+          </div>
+          <div id="AccountMessage"></div>
+        </div>
+        <div id="AccountSignedIn" style="display:none;">
+          <div class="account-title">Profile</div>
+          <div id="AccountName"></div>
+          <div id="AccountStats"></div>
+          <div class="account-actions">
+            <button onclick="showMyProfile()">VIEW</button>
+            <button onclick="accountLogout()">LOGOUT</button>
+          </div>
+        </div>
+      </div>
       <div id="PlayerNameDiv">
         <span id="PlayerNameLabel">ID: <b id="PlayerNameDisplay">...</b></span>
         <span id="PlayerNameEditBtn" onclick="startEditName()" title="Change name">✏</span>
@@ -216,6 +243,12 @@
 </div>
 
 <div id="PlayerTooltip"></div>
+<div id="ProfileOverlay">
+  <div id="ProfileCard">
+    <button id="ProfileClose" onclick="hideProfile()">&#10005;</button>
+    <div id="ProfileContent"></div>
+  </div>
+</div>
 
 <!-- Hat Fullscreen Drawing Studio -->
 <div id="HatFullscreenOverlay">

@@ -52,9 +52,12 @@ function updateOnlineList(list) {
     var badge = (p.rank && p.rank !== 'PRIVATE')
       ? '<span style="color:' + rankCol + ';font-size:6px;margin-left:3px;">' + p.rank.slice(0,3) + '</span>'
       : '';
+    var nameHtml = p.username
+      ? '<span onclick="showProfile(\'' + escHtml(p.username) + '\')" style="cursor:pointer;color:#00ffcc;">' + escHtml(p.name) + '</span>'
+      : escHtml(p.name);
     return '<div class="opl' + cls + '" style="display:flex;align-items:center;justify-content:space-between;cursor:default;" ' +
       'onmouseover="showPlayerTip(' + i + ',this)" onmouseout="hidePlayerTip()">' +
-      '<span>' + escHtml(p.name) + badge + '</span>' +
+      '<span>' + nameHtml + badge + '</span>' +
       '<span style="color:#555;font-size:8px;">' + tag + '</span>' +
       '</div>';
   }).join('');
@@ -144,6 +147,8 @@ function showPlayerTip(idx, el) {
     '<div style="font-weight:bold;color:#fff;font-size:10px;margin-bottom:5px;letter-spacing:.5px;">' + escHtml(p.name) + '</div>' +
     '<div style="color:' + rankCol + ';letter-spacing:1.5px;font-size:8px;margin-bottom:3px;">' + (p.rank || 'PRIVATE') + '</div>' +
     '<div style="color:#00ffcc;font-size:8px;margin-bottom:3px;">' + (p.wins||0) + ' WIN' + ((p.wins||0)!==1?'S':'') + '</div>' +
+    '<div style="color:#777;font-size:8px;margin-bottom:3px;">' + (p.matches||0) + ' MATCH' + ((p.matches||0)!==1?'ES':'') + '</div>' +
+    (p.username ? '<div style="color:#444;font-size:7px;margin-bottom:3px;">Click name for profile</div>' : '') +
     '<div style="color:#555;font-size:7px;letter-spacing:.5px;">' + statusLabel + '</div>';
   var r = el.getBoundingClientRect();
   tip.style.left  = Math.max(0, r.left - 155) + 'px';
