@@ -261,10 +261,13 @@ function drawSlimeverseWorld() {
     cx.lineTo(vp + (w - vp) * frac, ly);
     cx.stroke();
   }
-  // Convergence lines
+  // Convergence lines — world-tiled so they scroll with camX like the stars do
+  var floorTile = 220;
+  var floorOff  = camX % floorTile;
   cx.strokeStyle = 'rgba(0,255,200,.04)';
-  for (var vl = 0; vl <= 16; vl++) {
-    cx.beginPath(); cx.moveTo((vl / 16) * w, floorFY); cx.lineTo(vp, hY); cx.stroke();
+  for (var vl = -1; vl <= Math.ceil(w / floorTile) + 1; vl++) {
+    var bx = vl * floorTile - floorOff;
+    cx.beginPath(); cx.moveTo(bx, floorFY); cx.lineTo(vp, hY); cx.stroke();
   }
   // Front edge
   cx.strokeStyle = 'rgba(0,255,200,.28)'; cx.lineWidth = 2;
