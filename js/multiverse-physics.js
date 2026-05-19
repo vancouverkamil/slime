@@ -7,7 +7,7 @@ var MV_MOVE_VZ  = 5;     // depth speed
 var MV_JUMP_VY  = -22;   // initial jump velocity  (upward = negative; gravity adds each tick)
 var MV_GRAVITY  = 1.35;  // gravity per tick  (matches server tickSlimeverse)
 
-// Local predicted player state — updated every RAF frame before rendering.
+// Local predicted player state — stepped at a fixed 16ms rate (not every RAF frame).
 var mvLocal = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onFloor: true };
 
 // ── Core functions ─────────────────────────────────────────────────────────
@@ -39,13 +39,13 @@ function mvStep(s, world) {
 }
 
 // Gentle correction toward the authoritative server position.
-// X: suppressed while the player is actively pressing left/right so client
-// prediction dominates during movement (avoids mid-run snap). Hard-snap only
-// for genuine teleports (400+ units = spawn / respawn, never normal drift).
+// With a fixed 16ms client tick the max honest drift is RTT/2 × 7 px ≈ 87 px at
+// 200 ms latency — nowhere near 800.  The hard-snap therefore only fires on a
+// genuine server teleport (spawn / respawn), never during normal movement.
 function mvReconcile(local, server, alpha) {
   var movingX = !!(keysDown[KEY_A] || keysDown[KEY_LEFT] || keysDown[KEY_D] || keysDown[KEY_RIGHT]);
   if (!movingX) local.x += (server.x - local.x) * alpha;
-  if (Math.abs(local.x - server.x) > 400) local.x = server.x;
+  if (Math.abs(local.x - server.x) > 800) local.x = server.x;
   local.y += (server.y - local.y) * alpha;
   local.z += (server.z - local.z) * alpha;
   if (Math.abs(local.z - server.z) > 70) local.z = server.z;

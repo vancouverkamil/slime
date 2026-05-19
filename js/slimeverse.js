@@ -7,6 +7,11 @@ var slimeverseInputInterval = null;
 var slimeverseFrame     = 0;
 var slimeverseCamera    = { x: 0 };
 
+// Fixed-timestep accumulator — physics steps at exactly 16 ms regardless of
+// monitor refresh rate.  mvLastTime = 0 means "initialise on next frame".
+var mvLastTime = 0;
+var mvAccum    = 0;
+
 // Store exterior
 var SV_STORE_X          = 1800;
 var SV_STORE_Z          = 60;
@@ -60,6 +65,7 @@ function startSlimeverse() {
   slimeverseActive  = true;
   svStoreInside     = false;
   svStoreTransition = 0;
+  mvLastTime = 0; mvAccum = 0;
   onlineMode = false; isSpectator = false; currentRoomId = null;
   hideSpecBadge(); showLeaveBtn(true); hideBottomBar();
   canvas.style.display = 'block';
@@ -131,11 +137,15 @@ function startSlimeverseInput() {
 }
 
 // ── Main render loop ──────────────────────────────────────────────────────
-function renderSlimeverse() {
+// RAF passes a DOMHighResTimeStamp as the first argument.
+function renderSlimeverse(ts) {
   if (!slimeverseActive) return;
 
   // ── Store interior branch ─────────────────────────────────────────────
   if (svStoreInside) {
+    // Keep mvLastTime current so exiting the store doesn't spike the accumulator.
+    mvLastTime = ts || 0;
+
     var sl = !!(keysDown[KEY_A] || keysDown[KEY_LEFT]);
     var sr = !!(keysDown[KEY_D] || keysDown[KEY_RIGHT]);
     svStorePlayerVx = (sl && !sr) ? -5 : (sr && !sl) ? 5 : 0;
@@ -173,10 +183,23 @@ function renderSlimeverse() {
   // ── Slimeverse exterior ───────────────────────────────────────────────
   slimeverseFrame++;
 
-  // Client-side prediction tick (runs every RAF frame ~16ms — silky smooth)
+  // ── Fixed-timestep physics accumulator ───────────────────────────────
+  // Runs physics at exactly 16 ms per step regardless of monitor refresh rate.
+  // Without this, a 144 Hz display runs ~2.3× more steps than the server,
+  // accumulating 500+ px of drift and triggering the hard-snap every ~1 s.
+  if (mvLastTime === 0) mvLastTime = ts;
+  var dt = ts - mvLastTime;
+  mvLastTime = ts;
+  // Clamp to 5 steps max — prevents a spiral of death after a long pause.
+  if (dt > 80) dt = 80;
+  mvAccum += dt;
+
   var inp = mvGetInput();
-  mvApplyInput(mvLocal, inp);
-  mvStep(mvLocal, slimeverseWorld);
+  while (mvAccum >= 16) {
+    mvApplyInput(mvLocal, inp);
+    mvStep(mvLocal, slimeverseWorld);
+    mvAccum -= 16;
+  }
 
   // Camera tracks local predicted position (instant, no wait for server round-trip)
   slimeverseCamera.x += (mvLocal.x - viewWidth / 2 - slimeverseCamera.x) * 0.15;
@@ -185,7 +208,6 @@ function renderSlimeverse() {
   drawSlimeverseWorld();
 
   // Draw all players — use predicted local state for self
-  var selfP = slimeversePlayers[slimeverseSelfId];
   Object.keys(slimeversePlayers)
     .map(function(id) { return slimeversePlayers[id]; })
     .sort(function(a, b) { return (b.z || 0) - (a.z || 0); })
@@ -396,12 +418,14 @@ function enterStoreInterior() {
   svStorePlayerVx   = 0;
   svStoreCamera.x   = Math.max(0, Math.min(SV_STORE_WORLD_W - viewWidth, svStorePlayerX - viewWidth / 2));
   svStoreTransition = 1.0;
+  mvLastTime = 0; mvAccum = 0; // reset so exterior timing is clean when we return
   if (lobbySocket && lobbySocket.readyState === 1)
     lobbySocket.send(JSON.stringify({ type: 'slimeverse_enter_store' }));
 }
 
 function exitStoreInterior() {
   svStoreInside = false;
+  mvLastTime = 0; mvAccum = 0; // reset — store branch kept mvLastTime current so this is safe
   if (lobbySocket && lobbySocket.readyState === 1)
     lobbySocket.send(JSON.stringify({ type: 'slimeverse_exit_store' }));
   var me = slimeversePlayers[slimeverseSelfId];
