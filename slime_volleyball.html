@@ -206,6 +206,7 @@
           <div id="AccountStats"></div>
           <div class="account-actions">
             <button onclick="showMyProfile()">VIEW</button>
+            <button onclick="openInventory()">INVENTORY</button>
             <button onclick="accountLogout()">LOGOUT</button>
           </div>
         </div>
@@ -251,6 +252,17 @@
   <div id="ProfileCard">
     <button id="ProfileClose" onclick="hideProfile()">&#10005;</button>
     <div id="ProfileContent"></div>
+  </div>
+</div>
+
+<div id="InventoryOverlay">
+  <div id="InventoryCard">
+    <div id="InventoryHeader">
+      <span id="InventoryTitle">// INVENTORY //</span>
+      <span id="InventoryCoins"></span>
+      <button id="InventoryClose" onclick="hideInventory()">&#10005;</button>
+    </div>
+    <div id="InventoryGrid"></div>
   </div>
 </div>
 

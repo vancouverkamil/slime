@@ -71,6 +71,8 @@ function defaultUser(username, password) {
     },
     achievements: [],
     recentMatches: [],
+    coins: 1,
+    inventory: [],
   };
 }
 
@@ -224,6 +226,20 @@ class AccountStore {
     this.save();
   }
 
+  purchaseItem(userId, hatId, price) {
+    const user = this.findById(userId);
+    if (!user) return null;
+    const coins = user.coins || 1;
+    if (coins < price) throw new Error('Not enough SC.');
+    const inv = user.inventory || [];
+    if (inv.includes(hatId)) throw new Error('Already owned.');
+    user.coins = coins - price;
+    user.inventory = inv.concat([hatId]);
+    user.updatedAt = nowIso();
+    this.save();
+    return user;
+  }
+
   publicProfile(user) {
     if (!user) return null;
     return {
@@ -236,6 +252,8 @@ class AccountStore {
       slime: user.slime,
       achievements: user.achievements || [],
       recentMatches: user.recentMatches || [],
+      coins: user.coins || 1,
+      inventory: user.inventory || [],
     };
   }
 }
@@ -263,6 +281,8 @@ class PostgresAccountStore {
         recent_matches JSONB NOT NULL DEFAULT '[]'::jsonb
       )
     `;
+    await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER NOT NULL DEFAULT 1`;
+    await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS inventory JSONB NOT NULL DEFAULT '[]'::jsonb`;
     await this.sql`
       CREATE TABLE IF NOT EXISTS sessions (
         token TEXT PRIMARY KEY,
@@ -286,6 +306,8 @@ class PostgresAccountStore {
       slime: row.slime,
       achievements: row.achievements,
       recentMatches: row.recent_matches,
+      coins: typeof row.coins === 'number' ? row.coins : 1,
+      inventory: Array.isArray(row.inventory) ? row.inventory : [],
     };
   }
 
@@ -346,13 +368,15 @@ class PostgresAccountStore {
     await this.sql`
       INSERT INTO users (
         id, username, display_name, password_salt, password_hash,
-        created_at, updated_at, stats, slime, achievements, recent_matches
+        created_at, updated_at, stats, slime, achievements, recent_matches,
+        coins, inventory
       )
       VALUES (
         ${user.id}, ${user.username}, ${user.displayName}, ${user.passwordSalt}, ${user.passwordHash},
         ${user.createdAt}, ${user.updatedAt}, ${JSON.stringify(user.stats)}::jsonb,
         ${JSON.stringify(user.slime)}::jsonb, ${JSON.stringify(user.achievements)}::jsonb,
-        ${JSON.stringify(user.recentMatches)}::jsonb
+        ${JSON.stringify(user.recentMatches)}::jsonb,
+        ${user.coins}, ${JSON.stringify(user.inventory)}::jsonb
       )
     `;
     return user;
@@ -429,6 +453,23 @@ class PostgresAccountStore {
 
     await apply(left, 'left', right, scoreLeft, scoreRight);
     await apply(right, 'right', left, scoreRight, scoreLeft);
+  }
+
+  async purchaseItem(userId, hatId, price) {
+    await this.ready;
+    const user = await this.findById(userId);
+    if (!user) return null;
+    if ((user.coins || 1) < price) throw new Error('Not enough SC.');
+    if ((user.inventory || []).includes(hatId)) throw new Error('Already owned.');
+    const rows = await this.sql`
+      UPDATE users
+      SET coins = coins - ${price},
+          inventory = inventory || ${JSON.stringify([hatId])}::jsonb,
+          updated_at = now()
+      WHERE id = ${userId}
+      RETURNING *
+    `;
+    return this.rowToUser(rows[0]);
   }
 
   publicProfile(user) {

@@ -181,6 +181,29 @@ app.post('/api/me/slime', async (req, res) => {
   sendUser(res, updated);
 });
 
+const SHOP_ITEMS = {
+  devil:      { price: 400,  name: 'Devil Horns' },
+  prismatic:  { price: 600,  name: 'Prismatic Crown' },
+  dragonfire: { price: 800,  name: 'Dragon Horns' },
+  cosmic:     { price: 1200, name: 'Cosmic Crown' },
+  angelic:    { price: 1500, name: 'Triple Halo' },
+  overlord:   { price: 2500, name: 'Overlord Crown' },
+};
+
+app.post('/api/me/buy', async (req, res) => {
+  const user = await getReqUser(req);
+  if (!user) { res.status(401).json({ error: 'Login required.' }); return; }
+  const hatId = String(req.body.hat || '');
+  const item = SHOP_ITEMS[hatId];
+  if (!item) { res.status(400).json({ error: 'Unknown item.' }); return; }
+  try {
+    const updated = await accounts.purchaseItem(user.id, hatId, item.price);
+    sendUser(res, updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Purchase failed.' });
+  }
+});
+
 // ── helpers ──────────────────────────────────────────────
 function send(ws, msg) {
   if (ws.readyState === 1) ws.send(JSON.stringify(msg));

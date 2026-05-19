@@ -16,6 +16,8 @@ var mvAccum    = 0;
 var SV_STORE_X          = 1800;
 var SV_STORE_Z          = 60;
 var svStoreKeyDebounce  = 0;
+var svStoreMsg          = '';
+var svStoreMsgTimer     = 0;
 
 // Store interior
 var svStoreInside       = false;
@@ -31,11 +33,12 @@ var SV_HORIZ_FRAC  = 0.36;
 var SV_FAR_SCALE   = 0.05;   // at maxZ the player is ~5% size (1-2 px radius)
 
 var SV_STORE_ITEMS = [
-  { hat: 'party',  name: 'Party Hat',   price: 5  },
-  { hat: 'tophat', name: 'Top Hat',     price: 10 },
-  { hat: 'halo',   name: 'Halo',        price: 15 },
-  { hat: 'cowboy', name: 'Cowboy Hat',  price: 25 },
-  { hat: 'crown',  name: 'Royal Crown', price: 50 },
+  { hat: 'devil',      name: 'Devil Horns',     price: 400  },
+  { hat: 'prismatic',  name: 'Prismatic Crown',  price: 600  },
+  { hat: 'dragonfire', name: 'Dragon Horns',     price: 800  },
+  { hat: 'cosmic',     name: 'Cosmic Crown',     price: 1200 },
+  { hat: 'angelic',    name: 'Triple Halo',      price: 1500 },
+  { hat: 'overlord',   name: 'Overlord Crown',   price: 2500 },
 ];
 
 // Shelf world-X positions (one per item type)
@@ -181,7 +184,7 @@ function renderSlimeverse(ts) {
     svStoreCamera.x += (svStorePlayerX - viewWidth / 2 - svStoreCamera.x) * 0.15;
     svStoreCamera.x = Math.max(0, Math.min(SV_STORE_WORLD_W - viewWidth, svStoreCamera.x));
 
-    // E key — equip item from nearest shelf
+    // E key — buy / equip item from nearest shelf
     var now0 = Date.now();
     if (keysDown[KEY_E] && now0 - svStoreKeyDebounce > 200) {
       var nearIdx = svNearestShelf(svStorePlayerX);
@@ -190,10 +193,44 @@ function renderSlimeverse(ts) {
         svStoreKeyDebounce = now0;
         var it = SV_STORE_ITEMS[nearIdx % SV_STORE_ITEMS.length];
         if (it) {
-          playerHat = it.hat;
-          try { localStorage.setItem('slimeHat', it.hat); } catch(e2) {}
-          sendCustomization();
-          if (typeof syncCustomizationUI === 'function') syncCustomizationUI();
+          var alreadyOwned = currentAccount && Array.isArray(currentAccount.inventory) && currentAccount.inventory.indexOf(it.hat) !== -1;
+          if (alreadyOwned) {
+            // Just equip — already owned
+            playerHat = it.hat;
+            try { localStorage.setItem('slimeHat', it.hat); } catch(e2) {}
+            sendCustomization();
+            if (typeof syncCustomizationUI === 'function') syncCustomizationUI();
+            svStoreMsg = 'EQUIPPED: ' + it.name.toUpperCase();
+            svStoreMsgTimer = Date.now();
+          } else if (!currentAccount) {
+            svStoreMsg = 'LOG IN TO BUY ITEMS';
+            svStoreMsgTimer = Date.now();
+          } else {
+            var _coins = currentAccount.coins || 1;
+            if (_coins < it.price) {
+              svStoreMsg = 'NOT ENOUGH SC  (NEED ' + it.price + ')';
+              svStoreMsgTimer = Date.now();
+            } else {
+              svStoreMsg = 'BUYING...';
+              svStoreMsgTimer = Date.now();
+              (function(hatId, hatName) {
+                accountRequest('/api/me/buy', { method: 'POST', body: JSON.stringify({ hat: hatId }) })
+                  .then(function(body) {
+                    currentAccount = body.user;
+                    playerHat = hatId;
+                    try { localStorage.setItem('slimeHat', hatId); } catch(e3) {}
+                    sendCustomization();
+                    if (typeof syncCustomizationUI === 'function') syncCustomizationUI();
+                    svStoreMsg = 'BOUGHT: ' + hatName.toUpperCase() + '!';
+                    svStoreMsgTimer = Date.now();
+                  })
+                  .catch(function(err) {
+                    svStoreMsg = (err && err.message) ? err.message.toUpperCase() : 'BUY FAILED';
+                    svStoreMsgTimer = Date.now();
+                  });
+              })(it.hat, it.name);
+            }
+          }
         }
       }
     }
@@ -481,8 +518,8 @@ function drawSlimeverseStoreBuilding(bx, by, sc) {
   cx.fillRect(bx - sgW / 2, by - bh + 8 * sc, sgW, sgH);
   cx.strokeRect(bx - sgW / 2, by - bh + 8 * sc, sgW, sgH);
   cx.fillStyle = '#ffcc00'; cx.textAlign = 'center';
-  cx.font = 'bold ' + Math.max(6, Math.round(9 * sc)) + 'px Courier New';
-  cx.fillText('GOY SLOP HAT SHOP', bx, by - bh + 8 * sc + sgH * 0.7);
+  cx.font = 'bold ' + Math.max(7, Math.round(11 * sc)) + 'px Courier New';
+  cx.fillText('GOY SLOP HAT SHOP', bx, by - bh + 8 * sc + sgH * 0.72);
 
   // Door
   var dw = 30 * sc, dh = 46 * sc;
@@ -536,7 +573,7 @@ function drawSlimeversePlayer(p) {
   drawHatAt(ctx, sx, sy - r + 1, r, { hat: p.hat || 'none', anim: p.hatAnim || 'none', drawing: p.hatDrawing || [] });
 
   var label = (p.name || 'Player') + '  L' + (p.level || 1);
-  var fSz = Math.max(6, Math.round(9 * sc));
+  var fSz = Math.max(8, Math.round(11 * sc));
   ctx.font = 'bold ' + fSz + 'px Courier New';
   var tw = ctx.measureText(label).width + 10;
   ctx.fillStyle = 'rgba(0,0,14,.52)';
@@ -550,7 +587,7 @@ function drawSlimeversePlayer(p) {
 function drawStoreEnterPrompt() {
   var cx = ctx, px = viewWidth / 2, py = viewHeight * SV_FLOOR_FRAC - 24;
   var msg = 'PRESS  E  TO  ENTER  SHOP';
-  cx.save(); cx.font = 'bold 9px Courier New';
+  cx.save(); cx.font = 'bold 12px Courier New';
   var tw = cx.measureText(msg).width + 22;
   cx.fillStyle = 'rgba(0,0,20,.72)'; cx.strokeStyle = 'rgba(180,100,255,.65)'; cx.lineWidth = 1;
   cx.fillRect(px - tw / 2, py - 15, tw, 18); cx.strokeRect(px - tw / 2, py - 15, tw, 18);
@@ -674,8 +711,8 @@ function drawStoreInteriorScene() {
   cx.fillStyle = 'rgba(0,20,40,.88)'; cx.strokeStyle = 'rgba(0,255,200,.32)'; cx.lineWidth = 1;
   cx.fillRect(w * 0.22, ceilY + 13, w * 0.56, 24);
   cx.strokeRect(w * 0.22, ceilY + 13, w * 0.56, 24);
-  cx.fillStyle = '#00ffcc'; cx.font = 'bold 10px Courier New'; cx.textAlign = 'center';
-  cx.fillText('// GOY SLOP HAT SHOP //', w / 2, ceilY + 30); cx.textAlign = 'left';
+  cx.fillStyle = '#00ffcc'; cx.font = 'bold 13px Courier New'; cx.textAlign = 'center';
+  cx.fillText('// GOY SLOP HAT SHOP //', w / 2, ceilY + 32); cx.textAlign = 'left';
 
   // ── Players ──────────────────────────────────────────────────────────
   // Sort: draw players farther from local player first (crude depth)
@@ -748,12 +785,12 @@ function drawWarehouseShelf(cx, sx, floorY, ceilY, itemIdx, isNear) {
   // Price tag
   cx.fillStyle = '#ffcc00';
   cx.fillRect(sx - 24, shelfTop + (shelfH / (levels + 1)) - 2, 48, 15);
-  cx.fillStyle = '#1a1a00'; cx.font = 'bold 8px Courier New'; cx.textAlign = 'center';
-  cx.fillText(item.price + ' SC', sx, shelfTop + (shelfH / (levels + 1)) + 10);
+  cx.fillStyle = '#1a1a00'; cx.font = 'bold 10px Courier New'; cx.textAlign = 'center';
+  cx.fillText(item.price + ' SC', sx, shelfTop + (shelfH / (levels + 1)) + 11);
 
   // Item name label
-  cx.fillStyle = isNear ? '#cc88ff' : '#66666e'; cx.font = '7px Courier New';
-  cx.fillText(item.name.toUpperCase(), sx, shelfTop + 11);
+  cx.fillStyle = isNear ? '#cc88ff' : '#66666e'; cx.font = '9px Courier New';
+  cx.fillText(item.name.toUpperCase(), sx, shelfTop + 13);
 
   // Near highlight glow
   if (isNear) {
@@ -792,10 +829,10 @@ function drawStoreInteriorPlayer(cx, sx, floorY, opts) {
   cx.fillStyle = 'rgba(0,0,0,.28)';
   cx.beginPath(); cx.ellipse(sx, floorY + 5, r * 0.75, 5, 0, 0, TWO_PI); cx.fill();
   if (opts && opts.name) {
-    cx.font = 'bold 9px Courier New'; cx.textAlign = 'center';
+    cx.font = 'bold 11px Courier New'; cx.textAlign = 'center';
     var tw = cx.measureText(opts.name).width + 10;
     cx.fillStyle = 'rgba(0,0,14,.52)';
-    cx.fillRect(sx - tw / 2, floorY - r * 1.85 - 9, tw, 13);
+    cx.fillRect(sx - tw / 2, floorY - r * 1.85 - 10, tw, 14);
     cx.fillStyle = '#00ffcc';
     cx.fillText(opts.name, sx, floorY - r * 1.85);
     cx.textAlign = 'left';
@@ -808,33 +845,49 @@ function drawStoreInteriorHud(cx, w, h, floorY) {
   // Info bar
   cx.fillStyle = 'rgba(0,0,16,.72)'; cx.strokeStyle = 'rgba(180,100,255,.28)'; cx.lineWidth = 1;
   cx.fillRect(10, 10, 290, 36); cx.strokeRect(10, 10, 290, 36);
-  cx.fillStyle = '#cc88ff'; cx.font = 'bold 9px Courier New';
-  cx.fillText('// GOY SLOP HAT SHOP //', 20, 24);
-  cx.fillStyle = '#444'; cx.font = '8px Courier New';
-  cx.fillText('A/D move  ·  E equip item  ·  ESC exit', 20, 38);
+  cx.fillStyle = '#cc88ff'; cx.font = 'bold 12px Courier New';
+  cx.fillText('// GOY SLOP HAT SHOP //', 20, 26);
+  cx.fillStyle = '#555'; cx.font = '10px Courier New';
+  cx.fillText('A/D move  ·  E buy/equip  ·  ESC exit', 20, 40);
 
   // Coins
+  var _sc = currentAccount ? (currentAccount.coins || 1) : (totalWins || 0);
   cx.fillStyle = 'rgba(0,0,16,.72)';
-  cx.fillRect(w - 140, 10, 130, 22);
-  cx.fillStyle = '#ffcc00'; cx.font = 'bold 9px Courier New'; cx.textAlign = 'right';
-  cx.fillText('SC: ' + (totalWins || 0), w - 16, 25); cx.textAlign = 'left';
+  cx.fillRect(w - 160, 10, 150, 24);
+  cx.fillStyle = '#ffcc00'; cx.font = 'bold 12px Courier New'; cx.textAlign = 'right';
+  cx.fillText('SC: ' + _sc, w - 16, 27); cx.textAlign = 'left';
+
+  // Feedback message
+  if (svStoreMsg && (Date.now() - svStoreMsgTimer) < 2500) {
+    cx.save();
+    var _msgA = Math.min(1, (2500 - (Date.now() - svStoreMsgTimer)) / 400);
+    cx.globalAlpha = _msgA;
+    cx.font = 'bold 12px Courier New'; cx.textAlign = 'center';
+    cx.fillStyle = 'rgba(0,0,20,.85)';
+    var _mw = cx.measureText(svStoreMsg).width + 28;
+    cx.fillRect(w/2 - _mw/2, h/2 - 30, _mw, 26);
+    cx.fillStyle = '#ffcc44';
+    cx.fillText(svStoreMsg, w/2, h/2 - 12);
+    cx.textAlign = 'left'; cx.globalAlpha = 1; cx.restore();
+  }
 
   // Shelf proximity prompt
   var nearIdx = svNearestShelf(svStorePlayerX);
   if (nearIdx !== null) {
     var it = SV_STORE_ITEMS[nearIdx % SV_STORE_ITEMS.length];
     if (it) {
+      var _owned = currentAccount && Array.isArray(currentAccount.inventory) && currentAccount.inventory.indexOf(it.hat) !== -1;
       cx.save();
-      cx.font = 'bold 9px Courier New';
+      cx.font = 'bold 12px Courier New';
       var line1 = it.name + '  —  ' + it.price + ' SC';
-      var line2 = '[ E ]  EQUIP';
-      var pw = Math.max(cx.measureText(line1).width, cx.measureText(line2).width) + 32;
+      var line2 = _owned ? '[ E ]  EQUIP (OWNED)' : '[ E ]  BUY';
+      var pw = Math.max(cx.measureText(line1).width, cx.measureText(line2).width) + 36;
       var phx = (w - pw) / 2;
-      cx.fillStyle = 'rgba(0,0,20,.88)'; cx.strokeStyle = 'rgba(180,100,255,.72)'; cx.lineWidth = 1;
-      cx.fillRect(phx, floorY - 58, pw, 50); cx.strokeRect(phx, floorY - 58, pw, 50);
+      cx.fillStyle = 'rgba(0,0,20,.9)'; cx.strokeStyle = _owned ? 'rgba(0,255,180,.72)' : 'rgba(180,100,255,.72)'; cx.lineWidth = 1.5;
+      cx.fillRect(phx, floorY - 62, pw, 54); cx.strokeRect(phx, floorY - 62, pw, 54);
       cx.fillStyle = '#cc88ff'; cx.textAlign = 'center';
-      cx.fillText(line1, w / 2, floorY - 38);
-      cx.fillStyle = '#00ffcc'; cx.fillText(line2, w / 2, floorY - 20);
+      cx.fillText(line1, w / 2, floorY - 40);
+      cx.fillStyle = _owned ? '#00ffcc' : '#ffcc44'; cx.fillText(line2, w / 2, floorY - 20);
       cx.textAlign = 'left'; cx.restore();
     }
   }
@@ -843,12 +896,12 @@ function drawStoreInteriorHud(cx, w, h, floorY) {
 // ── Exterior HUD ──────────────────────────────────────────────────────────
 function drawSlimeverseHud() {
   ctx.save();
-  ctx.font = 'bold 9px Courier New';
+  ctx.font = 'bold 12px Courier New';
   ctx.fillStyle = 'rgba(0,0,16,.62)'; ctx.strokeStyle = 'rgba(0,255,200,.2)';
-  ctx.fillRect(10, 10, 320, 36); ctx.strokeRect(10, 10, 320, 36);
-  ctx.fillStyle = '#00ffcc'; ctx.fillText('SLIMEVERSE // GLASS DOME', 20, 24);
-  ctx.fillStyle = '#444'; ctx.font = '8px Courier New';
-  ctx.fillText('A/D move  ·  W/SPC jump  ·  UP/DN depth  ·  E store  ·  ESC exit', 20, 38);
+  ctx.fillRect(10, 10, 380, 38); ctx.strokeRect(10, 10, 380, 38);
+  ctx.fillStyle = '#00ffcc'; ctx.fillText('SLIMEVERSE // GLASS DOME', 20, 26);
+  ctx.fillStyle = '#555'; ctx.font = '10px Courier New';
+  ctx.fillText('A/D move  ·  W/SPC jump  ·  UP/DN depth  ·  E store  ·  ESC exit', 20, 40);
   ctx.restore();
 }
 

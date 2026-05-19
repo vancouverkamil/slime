@@ -420,3 +420,19 @@ input[type='checkbox'] { margin-right:1em; accent-color:#00ffcc; }
 .profile-match.loss span:first-child { color:#ff66aa; }
 .profile-empty { color:#444; font-size:10px; letter-spacing:.5px; padding:10px 0; }
 
+/* ── Inventory overlay ─────────────────────────────────────────────────────── */
+#InventoryOverlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,12,.88); align-items:center; justify-content:center; }
+#InventoryCard { position:relative; width:480px; max-width:94vw; max-height:90vh; background:#05000f; border:1px solid rgba(180,100,255,.45); box-shadow:0 0 48px rgba(140,60,255,.18); padding:18px; overflow:auto; }
+#InventoryHeader { display:flex; align-items:center; gap:10px; margin-bottom:14px; border-bottom:1px solid rgba(180,100,255,.18); padding-bottom:12px; }
+#InventoryTitle { color:#cc88ff; font-size:12px; letter-spacing:4px; text-shadow:0 0 12px rgba(180,100,255,.4); flex:1; }
+#InventoryCoins { color:#ffcc00; font-size:11px; letter-spacing:2px; }
+#InventoryClose { background:transparent; border:1px solid rgba(255,80,130,.35); color:#ff6699; cursor:pointer; padding:2px 7px; font-family:inherit; }
+#InventoryGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.inv-slot { border:1px solid rgba(180,100,255,.18); background:rgba(140,60,255,.04); aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:default; min-height:90px; padding:6px; box-sizing:border-box; transition:border-color .15s, background .15s; }
+.inv-slot.inv-hat { cursor:pointer; }
+.inv-slot.inv-hat:hover { border-color:rgba(180,100,255,.7); background:rgba(140,60,255,.14); }
+.inv-slot.inv-empty { border-color:rgba(255,255,255,.05); background:rgba(0,0,0,.1); }
+.inv-slot.inv-coin { border-color:rgba(255,204,0,.3); background:rgba(255,204,0,.04); cursor:default; }
+.inv-icon { width:44px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:22px; color:#ffcc00; }
+.inv-label { color:#888; font-size:7px; letter-spacing:1px; text-align:center; margin-top:4px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.inv-coin .inv-label { color:#ffcc00; font-size:9px; font-weight:bold; }
