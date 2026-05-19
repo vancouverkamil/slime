@@ -333,10 +333,8 @@ function tickSlimeverse() {
   if (slimeverseClients.size === 0) return;
   const maxZ = SLIMEVERSE_WORLD.maxZ;
   slimeverseClients.forEach((sv) => {
-    const targetVx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
-    sv.vx += (targetVx - sv.vx) * 0.28;
-    const targetVz = sv.fwd && !sv.back ? -5 : sv.back && !sv.fwd ? 5 : 0;
-    sv.vz += (targetVz - sv.vz) * 0.22;
+    sv.vx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
+    sv.vz = sv.fwd  && !sv.back ? -5 : sv.back  && !sv.fwd  ? 5 : 0;
     if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -22;
     sv.jump = false;
     sv.vy = Math.min(26, sv.vy + 1.35);

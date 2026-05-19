@@ -15,12 +15,11 @@ var keysDown = {};
 addEventListener("keydown", function(e) {
   // ESC: close store or leave slimeverse
   if (e.keyCode === 27) {
-    if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
-      if (typeof slimeverseStoreOpen !== 'undefined' && slimeverseStoreOpen) {
-        if (typeof closeSlimeverseStore === 'function') closeSlimeverseStore();
-      } else {
-        if (typeof leaveSlimeverse === 'function') leaveSlimeverse();
-      }
+    if (typeof svStoreInside !== 'undefined' && svStoreInside) {
+      if (typeof exitStoreInterior === 'function') exitStoreInterior();
+      e.preventDefault();
+    } else if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
+      if (typeof leaveSlimeverse === 'function') leaveSlimeverse();
       e.preventDefault();
     }
     return;

@@ -1,22 +1,29 @@
-var slimeverseActive = false;
-var slimeversePlayers = {};
-var slimeverseSelfId = null;
-var slimeverseWorld = { width: 4500, height: 2250, floorY: 1980, maxZ: 600 };
+// ── State ─────────────────────────────────────────────────────────────────
+var slimeverseActive    = false;
+var slimeversePlayers   = {};
+var slimeverseSelfId    = null;
+var slimeverseWorld     = { width: 4500, height: 2250, floorY: 1980, maxZ: 600 };
 var slimeverseInputInterval = null;
-var slimeverseFrame = 0;
-var slimeverseCamera = { x: 0 };
-var slimeverseStoreOpen = false;
-var svStoreSelectedIdx = 0;
-var svStoreKeyDebounce = 0;
+var slimeverseFrame     = 0;
+var slimeverseCamera    = { x: 0 };
 
-// Perspective display constants
-var SV_FLOOR_FRAC  = 0.82;  // screen-Y fraction where z=0 (front) renders
-var SV_HORIZ_FRAC  = 0.37;  // screen-Y fraction for the horizon (z=maxZ)
-var SV_FAR_SCALE   = 0.28;  // player scale at max depth
+// Store exterior
+var SV_STORE_X          = 1800;
+var SV_STORE_Z          = 60;
+var svStoreKeyDebounce  = 0;
 
-// Store world position (near-front so player reaches it by pressing DOWN)
-var SV_STORE_X = 1800;
-var SV_STORE_Z = 60;
+// Store interior
+var svStoreInside       = false;
+var svStorePlayerX      = 1050;
+var svStorePlayerVx     = 0;
+var svStoreCamera       = { x: 0 };
+var svStoreTransition   = 0;   // 1→0 fade-in on enter
+var SV_STORE_WORLD_W    = 2700;
+
+// Perspective display
+var SV_FLOOR_FRAC  = 0.82;
+var SV_HORIZ_FRAC  = 0.37;
+var SV_FAR_SCALE   = 0.28;
 
 var SV_STORE_ITEMS = [
   { hat: 'party',  name: 'Party Hat',   price: 5  },
@@ -26,29 +33,23 @@ var SV_STORE_ITEMS = [
   { hat: 'crown',  name: 'Royal Crown', price: 50 },
 ];
 
-// ── Perspective helpers ───────────────────────────────────────
-function svDepthT(z) {
-  return Math.max(0, Math.min(1, (z || 0) / (slimeverseWorld.maxZ || 600)));
-}
-function svGroundY(z) {
-  return viewHeight * (SV_FLOOR_FRAC + (SV_HORIZ_FRAC - SV_FLOOR_FRAC) * svDepthT(z));
-}
-function svScaleAt(z) {
-  return 1.0 - (1.0 - SV_FAR_SCALE) * svDepthT(z);
-}
+// Shelf world-X positions (one per item type)
+var SV_SHELF_X = [250, 650, 1050, 1450, 1850, 2250];
+
+// ── Perspective helpers ───────────────────────────────────────────────────
+function svDepthT(z) { return Math.max(0, Math.min(1, (z || 0) / (slimeverseWorld.maxZ || 600))); }
+function svGroundY(z) { return viewHeight * (SV_FLOOR_FRAC + (SV_HORIZ_FRAC - SV_FLOOR_FRAC) * svDepthT(z)); }
+function svScaleAt(z) { return 1.0 - (1.0 - SV_FAR_SCALE) * svDepthT(z); }
 function svSX(worldX, z) {
-  var t = svDepthT(z);
-  var rawX = worldX - slimeverseCamera.x;
-  var vp = viewWidth / 2;
-  return vp + (rawX - vp) * (1 - t * 0.55);
+  var t = svDepthT(z), vp = viewWidth / 2;
+  return vp + (worldX - slimeverseCamera.x - vp) * (1 - t * 0.55);
 }
 function svSY(worldY, z) {
-  var groundY = svGroundY(z);
   var jumpH = Math.max(0, (slimeverseWorld.floorY || 1980) - (worldY || slimeverseWorld.floorY));
-  return groundY - jumpH * svScaleAt(z) * 0.45;
+  return svGroundY(z) - jumpH * svScaleAt(z) * 0.45;
 }
 
-// ── Lifecycle ─────────────────────────────────────────────────
+// ── Lifecycle ─────────────────────────────────────────────────────────────
 function startSlimeverse() {
   if (!lobbySocket || lobbySocket.readyState !== 1) {
     addChatMessage(null, 'Still connecting to server...');
@@ -56,14 +57,11 @@ function startSlimeverse() {
   }
   showingLobbySelect = false;
   leaveLobby();
-  slimeverseActive = true;
-  slimeverseStoreOpen = false;
-  onlineMode = false;
-  isSpectator = false;
-  currentRoomId = null;
-  hideSpecBadge();
-  showLeaveBtn(true);
-  hideBottomBar();
+  slimeverseActive  = true;
+  svStoreInside     = false;
+  svStoreTransition = 0;
+  onlineMode = false; isSpectator = false; currentRoomId = null;
+  hideSpecBadge(); showLeaveBtn(true); hideBottomBar();
   canvas.style.display = 'block';
   menuDiv.style.display = 'none';
   lobbySocket.send(JSON.stringify({ type: 'enter_slimeverse' }));
@@ -74,16 +72,13 @@ function startSlimeverse() {
 
 function leaveSlimeverse() {
   if (!slimeverseActive) return;
-  slimeverseActive = false;
-  slimeverseStoreOpen = false;
-  if (slimeverseInputInterval) {
-    clearInterval(slimeverseInputInterval);
-    slimeverseInputInterval = null;
-  }
+  slimeverseActive  = false;
+  svStoreInside     = false;
+  svStoreTransition = 0;
+  if (slimeverseInputInterval) { clearInterval(slimeverseInputInterval); slimeverseInputInterval = null; }
   slimeversePlayers = {};
-  if (lobbySocket && lobbySocket.readyState === 1) {
+  if (lobbySocket && lobbySocket.readyState === 1)
     lobbySocket.send(JSON.stringify({ type: 'leave_slimeverse' }));
-  }
   showLeaveBtn(false);
   canvas.style.display = 'none';
   menuDiv.style.display = 'block';
@@ -95,20 +90,21 @@ function handleSlimeverseMessage(msg) {
   if (msg.type === 'slimeverse_joined') {
     slimeverseActive = true;
     slimeverseSelfId = msg.selfId;
-    slimeverseWorld = msg.world || slimeverseWorld;
-    if (msg.player) slimeversePlayers[msg.player.id] = msg.player;
+    slimeverseWorld  = msg.world || slimeverseWorld;
+    if (msg.player) {
+      slimeversePlayers[msg.player.id] = msg.player;
+      mvSyncFromServer(mvLocal, msg.player, slimeverseWorld);
+    }
     return true;
   }
   if (msg.type === 'slimeverse_state') {
     (msg.players || []).forEach(function(p) {
       slimeversePlayers[p.id] = Object.assign(slimeversePlayers[p.id] || {}, p);
+      if (p.id === slimeverseSelfId) mvReconcile(mvLocal, p, 0.06);
     });
     return true;
   }
-  if (msg.type === 'slimeverse_leave') {
-    delete slimeversePlayers[msg.id];
-    return true;
-  }
+  if (msg.type === 'slimeverse_leave') { delete slimeversePlayers[msg.id]; return true; }
   if (msg.type === 'slimeverse_customized' && msg.player) {
     slimeversePlayers[msg.player.id] = Object.assign(slimeversePlayers[msg.player.id] || {}, msg.player);
     return true;
@@ -116,114 +112,123 @@ function handleSlimeverseMessage(msg) {
   return false;
 }
 
-// ── Input ─────────────────────────────────────────────────────
+// ── Input (send to server) ────────────────────────────────────────────────
 function startSlimeverseInput() {
   if (slimeverseInputInterval) clearInterval(slimeverseInputInterval);
   slimeverseInputInterval = setInterval(function() {
     if (!slimeverseActive || !lobbySocket || lobbySocket.readyState !== 1) return;
-    if (slimeverseStoreOpen) return;
-    var left = !!(keysDown[KEY_A] || keysDown[KEY_LEFT]);
-    var right = !!(keysDown[KEY_D] || keysDown[KEY_RIGHT]);
-    var jump  = !!(keysDown[KEY_W] || keysDown[KEY_SPACE]);
-    var fwd   = !!keysDown[KEY_DOWN];  // toward camera = decrease z
-    var back  = !!keysDown[KEY_UP];    // away from camera = increase z
-    if (jump) { keysDown[KEY_W] = false; keysDown[KEY_SPACE] = false; }
-    lobbySocket.send(JSON.stringify({ type: 'slimeverse_input', left, right, jump, fwd, back }));
+    if (svStoreInside) return;
+    var inp = mvGetInput();
+    lobbySocket.send(JSON.stringify({
+      type: 'slimeverse_input',
+      left: inp.left, right: inp.right,
+      jump: inp.jump, fwd: inp.fwd, back: inp.back,
+    }));
   }, 16);
 }
 
-// ── Render loop ───────────────────────────────────────────────
+// ── Main render loop ──────────────────────────────────────────────────────
 function renderSlimeverse() {
   if (!slimeverseActive) return;
-  slimeverseFrame++;
 
-  var me = slimeversePlayers[slimeverseSelfId];
-  if (me) {
-    slimeverseCamera.x += ((me.x || 0) - viewWidth / 2 - slimeverseCamera.x) * 0.12;
-  }
-  slimeverseCamera.x = Math.max(0, Math.min(slimeverseWorld.width - viewWidth, slimeverseCamera.x));
+  // ── Store interior branch ─────────────────────────────────────────────
+  if (svStoreInside) {
+    var sl = !!(keysDown[KEY_A] || keysDown[KEY_LEFT]);
+    var sr = !!(keysDown[KEY_D] || keysDown[KEY_RIGHT]);
+    svStorePlayerVx = (sl && !sr) ? -5 : (sr && !sl) ? 5 : 0;
+    svStorePlayerX = Math.max(80, Math.min(SV_STORE_WORLD_W - 80, svStorePlayerX + svStorePlayerVx));
+    svStoreCamera.x += (svStorePlayerX - viewWidth / 2 - svStoreCamera.x) * 0.15;
+    svStoreCamera.x = Math.max(0, Math.min(SV_STORE_WORLD_W - viewWidth, svStoreCamera.x));
 
-  drawSlimeverseWorld();
-
-  // Draw players far-to-near so near players render on top
-  Object.keys(slimeversePlayers)
-    .map(function(id) { return slimeversePlayers[id]; })
-    .sort(function(a, b) { return (b.z || 0) - (a.z || 0); })
-    .forEach(drawSlimeversePlayer);
-
-  // Store proximity check
-  if (me && !slimeverseStoreOpen) {
-    var dz = Math.abs((me.z || 0) - SV_STORE_Z);
-    var dx = Math.abs((me.x || 0) - SV_STORE_X);
-    if (dz < 90 && dx < 230) {
-      drawStoreEnterPrompt();
-      var now = Date.now();
-      if (keysDown[KEY_E] && now - svStoreKeyDebounce > 200) {
+    // E key — equip item from nearest shelf
+    var now0 = Date.now();
+    if (keysDown[KEY_E] && now0 - svStoreKeyDebounce > 200) {
+      var nearIdx = svNearestShelf(svStorePlayerX);
+      if (nearIdx !== null) {
         keysDown[KEY_E] = false;
-        svStoreKeyDebounce = now;
-        openSlimeverseStore();
-      }
-    }
-  }
-
-  // Store UI + navigation when open
-  if (slimeverseStoreOpen) {
-    var now2 = Date.now();
-    if (now2 - svStoreKeyDebounce > 150) {
-      if (keysDown[KEY_UP]) {
-        keysDown[KEY_UP] = false;
-        svStoreSelectedIdx = Math.max(0, svStoreSelectedIdx - 1);
-        svStoreKeyDebounce = now2;
-      } else if (keysDown[KEY_DOWN]) {
-        keysDown[KEY_DOWN] = false;
-        svStoreSelectedIdx = Math.min(SV_STORE_ITEMS.length - 1, svStoreSelectedIdx + 1);
-        svStoreKeyDebounce = now2;
-      } else if (keysDown[KEY_E]) {
-        keysDown[KEY_E] = false;
-        svStoreKeyDebounce = now2;
-        var item = SV_STORE_ITEMS[svStoreSelectedIdx];
-        if (item) {
-          playerHat = item.hat;
-          try { localStorage.setItem('slimeHat', item.hat); } catch(e) {}
+        svStoreKeyDebounce = now0;
+        var it = SV_STORE_ITEMS[nearIdx % SV_STORE_ITEMS.length];
+        if (it) {
+          playerHat = it.hat;
+          try { localStorage.setItem('slimeHat', it.hat); } catch(e2) {}
           sendCustomization();
           if (typeof syncCustomizationUI === 'function') syncCustomizationUI();
         }
       }
     }
-    drawStoreUI();
+
+    drawStoreInteriorScene();
+    if (svStoreTransition > 0) {
+      svStoreTransition = Math.max(0, svStoreTransition - 0.055);
+      ctx.fillStyle = 'rgba(0,0,0,' + svStoreTransition + ')';
+      ctx.fillRect(0, 0, viewWidth, viewHeight);
+    }
+    requestAnimationFrame(renderSlimeverse);
+    return;
+  }
+
+  // ── Slimeverse exterior ───────────────────────────────────────────────
+  slimeverseFrame++;
+
+  // Client-side prediction tick (runs every RAF frame ~16ms — silky smooth)
+  var inp = mvGetInput();
+  mvApplyInput(mvLocal, inp);
+  mvStep(mvLocal, slimeverseWorld);
+
+  // Camera tracks local predicted position (instant, no wait for server round-trip)
+  slimeverseCamera.x += (mvLocal.x - viewWidth / 2 - slimeverseCamera.x) * 0.15;
+  slimeverseCamera.x = Math.max(0, Math.min(slimeverseWorld.width - viewWidth, slimeverseCamera.x));
+
+  drawSlimeverseWorld();
+
+  // Draw all players — use predicted local state for self
+  var selfP = slimeversePlayers[slimeverseSelfId];
+  Object.keys(slimeversePlayers)
+    .map(function(id) { return slimeversePlayers[id]; })
+    .sort(function(a, b) { return (b.z || 0) - (a.z || 0); })
+    .forEach(function(p) {
+      if (p.id === slimeverseSelfId) {
+        drawSlimeversePlayer(Object.assign({}, p, { x: mvLocal.x, y: mvLocal.y, z: mvLocal.z }));
+      } else {
+        drawSlimeversePlayer(p);
+      }
+    });
+
+  // Store proximity prompt
+  var dx = Math.abs(mvLocal.x - SV_STORE_X);
+  var dz = Math.abs(mvLocal.z - SV_STORE_Z);
+  if (dz < 90 && dx < 240) {
+    drawStoreEnterPrompt();
+    var now = Date.now();
+    if (keysDown[KEY_E] && now - svStoreKeyDebounce > 200) {
+      keysDown[KEY_E] = false;
+      svStoreKeyDebounce = now;
+      enterStoreInterior();
+    }
   }
 
   drawSlimeverseHud();
   requestAnimationFrame(renderSlimeverse);
 }
 
-// ── World drawing ─────────────────────────────────────────────
+// ── World drawing ─────────────────────────────────────────────────────────
 function drawSlimeverseWorld() {
-  var cx = ctx;
-  var w = viewWidth, h = viewHeight;
-  var t = Date.now() / 1000;
-  var camX = slimeverseCamera.x;
-
+  var cx = ctx, w = viewWidth, h = viewHeight;
   var hY = viewHeight * SV_HORIZ_FRAC;
   var floorFY = viewHeight * SV_FLOOR_FRAC;
-  var vp = w / 2;
+  var vp = w / 2, camX = slimeverseCamera.x;
 
   // Sky
   var skyG = cx.createLinearGradient(0, 0, 0, hY + 30);
-  skyG.addColorStop(0, '#00162b');
-  skyG.addColorStop(0.65, '#01284a');
-  skyG.addColorStop(1, '#042038');
-  cx.fillStyle = skyG;
-  cx.fillRect(0, 0, w, hY + 30);
+  skyG.addColorStop(0, '#00162b'); skyG.addColorStop(0.65, '#01284a'); skyG.addColorStop(1, '#042038');
+  cx.fillStyle = skyG; cx.fillRect(0, 0, w, hY + 30);
 
-  // Stars (parallax)
+  // Stars
   for (var s = 0; s < 55; s++) {
     var sx = (((s * 313 - camX * 0.04) % (w * 1.8)) + w * 1.8) % (w * 1.8) - w * 0.4;
     var sy2 = (s * 197) % (hY * 0.92);
     cx.strokeStyle = 'rgba(190,245,255,' + (0.07 + (s % 4) * 0.025) + ')';
-    cx.beginPath();
-    cx.arc(sx, sy2, 0.8 + (s % 3) * 0.45, 0, TWO_PI);
-    cx.stroke();
+    cx.beginPath(); cx.arc(sx, sy2, 0.8 + (s % 3) * 0.45, 0, TWO_PI); cx.stroke();
   }
 
   // Horizon glow
@@ -231,75 +236,54 @@ function drawSlimeverseWorld() {
   hgG.addColorStop(0, 'rgba(0,200,160,0)');
   hgG.addColorStop(0.5, 'rgba(0,255,200,.07)');
   hgG.addColorStop(1, 'rgba(0,255,200,0)');
-  cx.fillStyle = hgG;
-  cx.fillRect(0, hY - 18, w, 46);
+  cx.fillStyle = hgG; cx.fillRect(0, hY - 18, w, 46);
 
-  // Floor below front edge (solid fill to screen bottom)
-  cx.fillStyle = '#0a1a14';
-  cx.fillRect(0, floorFY, w, h - floorFY);
+  // Below-floor fill
+  cx.fillStyle = '#0a1a14'; cx.fillRect(0, floorFY, w, h - floorFY);
 
   // Perspective floor trapezoid
   var floorG = cx.createLinearGradient(0, floorFY, 0, hY);
-  floorG.addColorStop(0, '#18402e');
-  floorG.addColorStop(1, '#0a1a14');
+  floorG.addColorStop(0, '#18402e'); floorG.addColorStop(1, '#0a1a14');
   cx.fillStyle = floorG;
   cx.beginPath();
-  cx.moveTo(0, floorFY);
-  cx.lineTo(w, floorFY);
-  cx.lineTo(vp + w * 0.65, hY);
-  cx.lineTo(vp - w * 0.65, hY);
-  cx.closePath();
-  cx.fill();
+  cx.moveTo(0, floorFY); cx.lineTo(w, floorFY);
+  cx.lineTo(vp + w * 0.65, hY); cx.lineTo(vp - w * 0.65, hY);
+  cx.closePath(); cx.fill();
 
-  // Grid depth lines (horizontal)
+  // Depth grid — horizontal lines
   cx.lineWidth = 1;
   for (var d = 0; d <= 14; d++) {
     var frac = d / 14;
     var ly = floorFY + (hY - floorFY) * frac;
-    var lLeft  = vp + (0 - vp) * frac;
-    var lRight = vp + (w - vp) * frac;
     cx.strokeStyle = 'rgba(0,255,200,' + (0.04 + (1 - frac) * 0.04) + ')';
     cx.beginPath();
-    cx.moveTo(lLeft, ly);
-    cx.lineTo(lRight, ly);
+    cx.moveTo(vp + (0 - vp) * frac, ly);
+    cx.lineTo(vp + (w - vp) * frac, ly);
     cx.stroke();
   }
-
-  // Grid vertical lines (converge to vanishing point)
+  // Convergence lines
   cx.strokeStyle = 'rgba(0,255,200,.04)';
   for (var vl = 0; vl <= 16; vl++) {
-    var bx2 = (vl / 16) * w;
-    cx.beginPath();
-    cx.moveTo(bx2, floorFY);
-    cx.lineTo(vp, hY);
-    cx.stroke();
+    cx.beginPath(); cx.moveTo((vl / 16) * w, floorFY); cx.lineTo(vp, hY); cx.stroke();
   }
-
-  // Front edge line
-  cx.strokeStyle = 'rgba(0,255,200,.28)';
-  cx.lineWidth = 2;
-  cx.beginPath();
-  cx.moveTo(0, floorFY);
-  cx.lineTo(w, floorFY);
-  cx.stroke();
+  // Front edge
+  cx.strokeStyle = 'rgba(0,255,200,.28)'; cx.lineWidth = 2;
+  cx.beginPath(); cx.moveTo(0, floorFY); cx.lineTo(w, floorFY); cx.stroke();
   cx.lineWidth = 1;
 
   // Store building
-  var storeSX = svSX(SV_STORE_X, SV_STORE_Z);
-  var storeGY = svGroundY(SV_STORE_Z);
-  var storeSc = svScaleAt(SV_STORE_Z);
-  drawSlimeverseStoreBuilding(storeSX, storeGY, storeSc);
+  drawSlimeverseStoreBuilding(svSX(SV_STORE_X, SV_STORE_Z), svGroundY(SV_STORE_Z), svScaleAt(SV_STORE_Z));
 }
 
-// ── Store building ────────────────────────────────────────────
+// ── Store building (exterior) ─────────────────────────────────────────────
 function drawSlimeverseStoreBuilding(bx, by, sc) {
   var cx = ctx;
   var bw = 145 * sc, bh = 115 * sc, roofH = 38 * sc;
 
   // Shadow
-  cx.fillStyle = 'rgba(0,0,0,.25)';
+  cx.fillStyle = 'rgba(0,0,0,.22)';
   cx.beginPath();
-  cx.ellipse(bx, by + 3 * sc, bw * 0.55, 8 * sc, 0, 0, TWO_PI);
+  cx.ellipse(bx, by + 3 * sc, bw * 0.52, 7 * sc, 0, 0, TWO_PI);
   cx.fill();
 
   // Body
@@ -309,79 +293,56 @@ function drawSlimeverseStoreBuilding(bx, by, sc) {
   cx.fillRect(bx - bw / 2, by - bh, bw, bh);
   cx.strokeRect(bx - bw / 2, by - bh, bw, bh);
 
-  // Roof triangle
-  cx.fillStyle = '#280a50';
-  cx.strokeStyle = 'rgba(200,120,255,.6)';
+  // Roof
+  cx.fillStyle = '#280a50'; cx.strokeStyle = 'rgba(200,120,255,.6)';
   cx.beginPath();
   cx.moveTo(bx - bw / 2 - 10 * sc, by - bh);
   cx.lineTo(bx, by - bh - roofH);
   cx.lineTo(bx + bw / 2 + 10 * sc, by - bh);
-  cx.closePath();
-  cx.fill();
-  cx.stroke();
+  cx.closePath(); cx.fill(); cx.stroke();
 
-  // Sign banner
+  // Sign
   var sgW = bw * 0.86, sgH = 18 * sc;
-  cx.fillStyle = '#0d0022';
-  cx.strokeStyle = 'rgba(255,180,0,.55)';
+  cx.fillStyle = '#0d0022'; cx.strokeStyle = 'rgba(255,180,0,.55)';
   cx.fillRect(bx - sgW / 2, by - bh + 8 * sc, sgW, sgH);
   cx.strokeRect(bx - sgW / 2, by - bh + 8 * sc, sgW, sgH);
-  cx.fillStyle = '#ffcc00';
+  cx.fillStyle = '#ffcc00'; cx.textAlign = 'center';
   cx.font = 'bold ' + Math.max(6, Math.round(9 * sc)) + 'px Courier New';
-  cx.textAlign = 'center';
   cx.fillText('GENERAL STORE', bx, by - bh + 8 * sc + sgH * 0.7);
 
   // Door
   var dw = 30 * sc, dh = 46 * sc;
-  cx.fillStyle = '#080015';
-  cx.strokeStyle = 'rgba(140,80,255,.45)';
+  cx.fillStyle = '#080015'; cx.strokeStyle = 'rgba(140,80,255,.45)';
   cx.fillRect(bx - dw / 2, by - dh, dw, dh);
   cx.strokeRect(bx - dw / 2, by - dh, dw, dh);
-  // Door knob
   cx.fillStyle = 'rgba(255,180,0,.7)';
-  cx.beginPath();
-  cx.arc(bx + dw * 0.28, by - dh * 0.42, 2 * sc, 0, TWO_PI);
-  cx.fill();
+  cx.beginPath(); cx.arc(bx + dw * 0.28, by - dh * 0.42, 2 * sc, 0, TWO_PI); cx.fill();
 
   // Windows
   [-0.31, 0.31].forEach(function(side) {
-    var wx = bx + side * bw, wy = by - bh + 40 * sc;
-    var ww = 24 * sc, wh = 22 * sc;
-    cx.fillStyle = 'rgba(180,100,255,.1)';
-    cx.strokeStyle = 'rgba(180,100,255,.4)';
-    cx.fillRect(wx - ww / 2, wy, ww, wh);
-    cx.strokeRect(wx - ww / 2, wy, ww, wh);
+    var wx = bx + side * bw, wy = by - bh + 40 * sc, ww = 24 * sc, wh = 22 * sc;
+    cx.fillStyle = 'rgba(180,100,255,.1)'; cx.strokeStyle = 'rgba(180,100,255,.4)';
+    cx.fillRect(wx - ww / 2, wy, ww, wh); cx.strokeRect(wx - ww / 2, wy, ww, wh);
     cx.strokeStyle = 'rgba(180,100,255,.18)';
     cx.beginPath();
-    cx.moveTo(wx, wy);
-    cx.lineTo(wx, wy + wh);
-    cx.moveTo(wx - ww / 2, wy + wh / 2);
-    cx.lineTo(wx + ww / 2, wy + wh / 2);
+    cx.moveTo(wx, wy); cx.lineTo(wx, wy + wh);
+    cx.moveTo(wx - ww / 2, wy + wh / 2); cx.lineTo(wx + ww / 2, wy + wh / 2);
     cx.stroke();
   });
 
-  // Ambient glow
-  cx.shadowColor = 'rgba(160,80,255,.35)';
-  cx.shadowBlur = 18 * sc;
-  cx.strokeStyle = 'rgba(180,100,255,.0)';
-  cx.strokeRect(bx - bw / 2, by - bh, bw, bh);
-  cx.shadowBlur = 0;
-
-  cx.textAlign = 'left';
-  cx.lineWidth = 1;
+  // Glow
+  cx.shadowColor = 'rgba(160,80,255,.3)'; cx.shadowBlur = 16 * sc;
+  cx.strokeStyle = 'rgba(180,100,255,.0)'; cx.strokeRect(bx - bw / 2, by - bh, bw, bh);
+  cx.shadowBlur = 0; cx.textAlign = 'left'; cx.lineWidth = 1;
 }
 
-// ── Player ────────────────────────────────────────────────────
+// ── Player (exterior) ─────────────────────────────────────────────────────
 function drawSlimeversePlayer(p) {
-  var z = p.z || 0;
-  var sc = svScaleAt(z);
-  var sx = svSX(p.x || 0, z);
-  var sy = svSY(p.y || slimeverseWorld.floorY, z);
-
+  var z = p.z || 0, sc = svScaleAt(z);
+  var sx = svSX(p.x || 0, z), sy = svSY(p.y || slimeverseWorld.floorY, z);
   if (sx < -100 || sx > viewWidth + 100 || sy < -150 || sy > viewHeight + 100) return;
 
-  var r = 24 * sc;
-  var color = p.color || '#00ff00';
+  var r = 24 * sc, color = p.color || '#00ff00';
   ctx.save();
   ctx.globalAlpha = p.id === slimeverseSelfId ? 1 : 0.88;
 
@@ -390,25 +351,15 @@ function drawSlimeversePlayer(p) {
     var imgSc = (r * 2) / tc.width;
     ctx.drawImage(tc, sx - r, sy - tc.height * imgSc * 0.72, tc.width * imgSc, tc.height * imgSc);
   } else {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(sx, sy, r, Math.PI, TWO_PI);
-    ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(sx, sy, r, Math.PI, TWO_PI); ctx.fill();
   }
 
-  // Eyes
   ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.arc(sx + r * 0.25, sy - r * 0.42, r * 0.18, 0, TWO_PI);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(sx + r * 0.25, sy - r * 0.42, r * 0.18, 0, TWO_PI); ctx.fill();
   ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.arc(sx + r * 0.30, sy - r * 0.42, r * 0.08, 0, TWO_PI);
-  ctx.fill();
-
+  ctx.beginPath(); ctx.arc(sx + r * 0.30, sy - r * 0.42, r * 0.08, 0, TWO_PI); ctx.fill();
   drawHatAt(ctx, sx, sy - r + 1, r, { hat: p.hat || 'none', anim: p.hatAnim || 'none', drawing: p.hatDrawing || [] });
 
-  // Name label
   var label = (p.name || 'Player') + '  L' + (p.level || 1);
   var fSz = Math.max(6, Math.round(9 * sc));
   ctx.font = 'bold ' + fSz + 'px Courier New';
@@ -416,139 +367,283 @@ function drawSlimeversePlayer(p) {
   ctx.fillStyle = 'rgba(0,0,14,.52)';
   ctx.fillRect(sx - tw / 2, sy - r * 1.8 - fSz, tw, fSz + 4);
   ctx.fillStyle = p.id === slimeverseSelfId ? '#ffd966' : '#00ffcc';
-  ctx.textAlign = 'center';
-  ctx.fillText(label, sx, sy - r * 1.8);
-  ctx.textAlign = 'left';
-
+  ctx.textAlign = 'center'; ctx.fillText(label, sx, sy - r * 1.8); ctx.textAlign = 'left';
   ctx.restore();
 }
 
-// ── Store UI ──────────────────────────────────────────────────
+// ── Store enter prompt ────────────────────────────────────────────────────
 function drawStoreEnterPrompt() {
-  var cx = ctx;
-  var px = viewWidth / 2, py = viewHeight * SV_FLOOR_FRAC - 24;
+  var cx = ctx, px = viewWidth / 2, py = viewHeight * SV_FLOOR_FRAC - 24;
   var msg = 'PRESS  E  TO ENTER STORE';
-  cx.save();
-  cx.font = 'bold 9px Courier New';
+  cx.save(); cx.font = 'bold 9px Courier New';
   var tw = cx.measureText(msg).width + 22;
-  cx.fillStyle = 'rgba(0,0,20,.72)';
-  cx.strokeStyle = 'rgba(180,100,255,.65)';
+  cx.fillStyle = 'rgba(0,0,20,.72)'; cx.strokeStyle = 'rgba(180,100,255,.65)'; cx.lineWidth = 1;
+  cx.fillRect(px - tw / 2, py - 15, tw, 18); cx.strokeRect(px - tw / 2, py - 15, tw, 18);
+  cx.fillStyle = '#cc88ff'; cx.textAlign = 'center'; cx.fillText(msg, px, py - 1);
+  cx.textAlign = 'left'; cx.restore();
+}
+
+// ── Store enter / exit ────────────────────────────────────────────────────
+function enterStoreInterior() {
+  svStoreInside     = true;
+  svStorePlayerX    = 1050;   // start near Halo shelf (middle of store)
+  svStorePlayerVx   = 0;
+  svStoreCamera.x   = Math.max(0, Math.min(SV_STORE_WORLD_W - viewWidth, svStorePlayerX - viewWidth / 2));
+  svStoreTransition = 1.0;    // black → clear fade
+}
+
+function exitStoreInterior() {
+  svStoreInside = false;
+  // Snap local physics back to store entrance so the player reappears there
+  var me = slimeversePlayers[slimeverseSelfId];
+  if (me) { mvLocal.x = me.x || SV_STORE_X; mvLocal.z = me.z || SV_STORE_Z; }
+}
+
+// ── Store interior scene ──────────────────────────────────────────────────
+function drawStoreInteriorScene() {
+  var cx = ctx, w = viewWidth, h = viewHeight;
+  var floorY = h * 0.76;
+  var ceilY  = h * 0.07;
+  var camX   = svStoreCamera.x;
+
+  // Base fill
+  cx.fillStyle = '#1c1c22'; cx.fillRect(0, 0, w, h);
+
+  // ── Back wall ──────────────────────────────────────────────────────
+  var wallG = cx.createLinearGradient(0, ceilY, 0, floorY);
+  wallG.addColorStop(0, '#28282f'); wallG.addColorStop(1, '#1e1e24');
+  cx.fillStyle = wallG; cx.fillRect(0, ceilY, w, floorY - ceilY);
+
+  // Subtle horizontal panel lines on wall
+  cx.strokeStyle = 'rgba(255,255,255,.022)'; cx.lineWidth = 1;
+  for (var py = ceilY + 44; py < floorY; py += 52) {
+    cx.beginPath(); cx.moveTo(0, py); cx.lineTo(w, py); cx.stroke();
+  }
+
+  // ── Ceiling ────────────────────────────────────────────────────────
+  cx.fillStyle = '#111116'; cx.fillRect(0, 0, w, ceilY + 12);
+  cx.fillStyle = '#191920';
+  for (var beam = 0; beam < 4; beam++) cx.fillRect(0, ceilY - 2 + beam * 7, w, 4);
+  cx.strokeStyle = 'rgba(255,255,255,.07)'; cx.lineWidth = 2;
+  cx.beginPath(); cx.moveTo(0, ceilY); cx.lineTo(w, ceilY); cx.stroke(); cx.lineWidth = 1;
+
+  // ── Industrial pendant lights ──────────────────────────────────────
+  var lightStep = 280;
+  var firstLight = Math.floor(camX / lightStep) * lightStep - lightStep;
+  for (var lx = firstLight; lx < camX + w + lightStep; lx += lightStep) {
+    var lsx = lx - camX;
+    if (lsx < -120 || lsx > w + 120) continue;
+
+    // Cord
+    cx.strokeStyle = 'rgba(90,90,100,.55)'; cx.lineWidth = 1.5;
+    cx.beginPath(); cx.moveTo(lsx, ceilY); cx.lineTo(lsx, ceilY + 36); cx.stroke();
+
+    // Fixture
+    cx.fillStyle = '#666672';
+    cx.fillRect(lsx - 30, ceilY + 34, 60, 10);
+    cx.strokeStyle = '#888890'; cx.lineWidth = 1;
+    cx.strokeRect(lsx - 30, ceilY + 34, 60, 10);
+
+    // Ceiling bounce
+    var cgrd = cx.createRadialGradient(lsx, ceilY + 39, 0, lsx, ceilY + 39, 52);
+    cgrd.addColorStop(0, 'rgba(255,245,200,.16)'); cgrd.addColorStop(1, 'rgba(255,245,200,0)');
+    cx.fillStyle = cgrd; cx.fillRect(lsx - 52, ceilY, 104, 44);
+
+    // Light cone to floor
+    cx.beginPath();
+    cx.moveTo(lsx - 30, ceilY + 44);
+    cx.lineTo(lsx - 150, floorY);
+    cx.lineTo(lsx + 150, floorY);
+    cx.lineTo(lsx + 30, ceilY + 44);
+    cx.closePath();
+    var lcone = cx.createLinearGradient(lsx, ceilY + 44, lsx, floorY);
+    lcone.addColorStop(0, 'rgba(255,245,200,.09)'); lcone.addColorStop(1, 'rgba(255,245,200,.03)');
+    cx.fillStyle = lcone; cx.fill();
+  }
+
+  // ── Shelving units ─────────────────────────────────────────────────
+  SV_SHELF_X.forEach(function(worldX, idx) {
+    var screenX = worldX - camX;
+    if (screenX < -200 || screenX > w + 200) return;
+    var isNear = Math.abs(svStorePlayerX - worldX) < 110;
+    drawWarehouseShelf(cx, screenX, floorY, ceilY, idx % SV_STORE_ITEMS.length, isNear);
+  });
+
+  // ── Floor ──────────────────────────────────────────────────────────
+  var floorG = cx.createLinearGradient(0, floorY, 0, h);
+  floorG.addColorStop(0, '#3c3c44'); floorG.addColorStop(0.35, '#2e2e36'); floorG.addColorStop(1, '#252530');
+  cx.fillStyle = floorG; cx.fillRect(0, floorY, w, h - floorY);
+
+  // Tile grid
+  cx.strokeStyle = 'rgba(255,255,255,.038)'; cx.lineWidth = 1;
+  var tileSize = 80, tileOff = camX % tileSize;
+  for (var tx = -tileOff; tx < w + tileSize; tx += tileSize) {
+    cx.beginPath(); cx.moveTo(tx, floorY); cx.lineTo(tx, h); cx.stroke();
+  }
+  for (var ty = floorY + 32; ty < h; ty += 64) {
+    cx.beginPath(); cx.moveTo(0, ty); cx.lineTo(w, ty); cx.stroke();
+  }
+
+  // Safety stripe
+  cx.strokeStyle = 'rgba(255,200,0,.48)'; cx.lineWidth = 10;
+  cx.setLineDash([30, 20]);
+  cx.beginPath(); cx.moveTo(0, floorY + 5); cx.lineTo(w, floorY + 5); cx.stroke();
+  cx.setLineDash([]); cx.lineWidth = 1;
+
+  // ── Aisle sign ──────────────────────────────────────────────────────
+  cx.fillStyle = 'rgba(0,20,40,.88)'; cx.strokeStyle = 'rgba(0,255,200,.32)'; cx.lineWidth = 1;
+  cx.fillRect(w * 0.22, ceilY + 13, w * 0.56, 24);
+  cx.strokeRect(w * 0.22, ceilY + 13, w * 0.56, 24);
+  cx.fillStyle = '#00ffcc'; cx.font = 'bold 10px Courier New'; cx.textAlign = 'center';
+  cx.fillText('// HAT & COSMETICS EMPORIUM //', w / 2, ceilY + 30); cx.textAlign = 'left';
+
+  // ── Player slime ────────────────────────────────────────────────────
+  drawStoreInteriorPlayer(cx, svStorePlayerX - camX, floorY);
+
+  // ── HUD ─────────────────────────────────────────────────────────────
+  drawStoreInteriorHud(cx, w, h, floorY);
+}
+
+// ── Warehouse shelf ────────────────────────────────────────────────────────
+function drawWarehouseShelf(cx, sx, floorY, ceilY, itemIdx, isNear) {
+  var shelfH  = (floorY - ceilY) * 0.65;
+  var shelfTop = floorY - shelfH;
+  var shelfW  = 130;
+  var levels  = 3;
+
+  // Back panel
+  cx.fillStyle = '#38383f';
+  cx.strokeStyle = isNear ? 'rgba(180,100,255,.55)' : '#484850';
+  cx.lineWidth = isNear ? 2 : 1;
+  cx.fillRect(sx - shelfW / 2, shelfTop, shelfW, shelfH);
+  cx.strokeRect(sx - shelfW / 2, shelfTop, shelfW, shelfH);
   cx.lineWidth = 1;
-  cx.fillRect(px - tw / 2, py - 15, tw, 18);
-  cx.strokeRect(px - tw / 2, py - 15, tw, 18);
-  cx.fillStyle = '#cc88ff';
-  cx.textAlign = 'center';
-  cx.fillText(msg, px, py - 1);
+
+  // Vertical support poles
+  [-1, 1].forEach(function(side) {
+    var px = sx + side * (shelfW / 2 - 5);
+    cx.fillStyle = '#555560';
+    cx.fillRect(px - 3, shelfTop, 6, shelfH);
+  });
+
+  // Shelf boards
+  for (var lvl = 0; lvl < levels; lvl++) {
+    var boardY = shelfTop + (shelfH / (levels + 1)) * (lvl + 1);
+    cx.fillStyle = '#5a5a64';
+    cx.fillRect(sx - shelfW / 2, boardY, shelfW, 7);
+    cx.strokeStyle = '#747480';
+    cx.strokeRect(sx - shelfW / 2, boardY, shelfW, 7);
+  }
+
+  // Items on middle shelf
+  var item = SV_STORE_ITEMS[itemIdx];
+  if (!item) return;
+  var midBoardY = shelfTop + (shelfH / (levels + 1)) * 2;
+
+  [-35, 0, 35].forEach(function(ox) {
+    var ix = sx + ox;
+    cx.fillStyle = '#2a2a32'; cx.beginPath(); cx.arc(ix, midBoardY - 14, 11, Math.PI, TWO_PI); cx.fill();
+    drawHatAt(cx, ix, midBoardY - 14, 11, { hat: item.hat, anim: 'none', drawing: [] });
+  });
+
+  // Price tag
+  cx.fillStyle = '#ffcc00';
+  cx.fillRect(sx - 24, shelfTop + (shelfH / (levels + 1)) - 2, 48, 15);
+  cx.fillStyle = '#1a1a00'; cx.font = 'bold 8px Courier New'; cx.textAlign = 'center';
+  cx.fillText(item.price + ' SC', sx, shelfTop + (shelfH / (levels + 1)) + 10);
+
+  // Item name label
+  cx.fillStyle = isNear ? '#cc88ff' : '#66666e'; cx.font = '7px Courier New';
+  cx.fillText(item.name.toUpperCase(), sx, shelfTop + 11);
+
+  // Near highlight glow
+  if (isNear) {
+    cx.shadowColor = 'rgba(180,100,255,.45)'; cx.shadowBlur = 14;
+    cx.strokeStyle = 'rgba(180,100,255,.0)'; cx.strokeRect(sx - shelfW / 2, shelfTop, shelfW, shelfH);
+    cx.shadowBlur = 0;
+  }
   cx.textAlign = 'left';
+}
+
+// ── Interior player ───────────────────────────────────────────────────────
+function drawStoreInteriorPlayer(cx, sx, floorY) {
+  var r = 28;
+  cx.save();
+  if (greenSlimeImage && greenSlimeImage.complete) {
+    var tc = getTintedCanvas(greenSlimeImage, playerBodyColor);
+    var imgSc = (r * 2) / tc.width;
+    cx.drawImage(tc, sx - r, floorY - tc.height * imgSc, tc.width * imgSc, tc.height * imgSc);
+  } else {
+    cx.fillStyle = playerBodyColor || '#00ff00';
+    cx.beginPath(); cx.arc(sx, floorY, r, Math.PI, TWO_PI); cx.fill();
+  }
+  cx.fillStyle = '#fff';
+  cx.beginPath(); cx.arc(sx + r * 0.25, floorY - r * 0.6, r * 0.18, 0, TWO_PI); cx.fill();
+  cx.fillStyle = '#000';
+  cx.beginPath(); cx.arc(sx + r * 0.30, floorY - r * 0.6, r * 0.08, 0, TWO_PI); cx.fill();
+  drawHatAt(cx, sx, floorY - r + 1, r,
+    { hat: playerHat || 'none', anim: playerHatAnim || 'none', drawing: playerHatDrawing || [] });
+  // Floor shadow
+  cx.fillStyle = 'rgba(0,0,0,.28)';
+  cx.beginPath(); cx.ellipse(sx, floorY + 5, r * 0.75, 5, 0, 0, TWO_PI); cx.fill();
   cx.restore();
 }
 
-function openSlimeverseStore() {
-  slimeverseStoreOpen = true;
-  svStoreSelectedIdx = 0;
-}
+// ── Interior HUD ──────────────────────────────────────────────────────────
+function drawStoreInteriorHud(cx, w, h, floorY) {
+  // Info bar
+  cx.fillStyle = 'rgba(0,0,16,.72)'; cx.strokeStyle = 'rgba(180,100,255,.28)'; cx.lineWidth = 1;
+  cx.fillRect(10, 10, 290, 36); cx.strokeRect(10, 10, 290, 36);
+  cx.fillStyle = '#cc88ff'; cx.font = 'bold 9px Courier New';
+  cx.fillText('// GENERAL STORE // WAREHOUSE', 20, 24);
+  cx.fillStyle = '#444'; cx.font = '8px Courier New';
+  cx.fillText('A/D move  ·  E equip item  ·  ESC exit', 20, 38);
 
-function closeSlimeverseStore() {
-  slimeverseStoreOpen = false;
-}
+  // Coins
+  cx.fillStyle = 'rgba(0,0,16,.72)';
+  cx.fillRect(w - 140, 10, 130, 22);
+  cx.fillStyle = '#ffcc00'; cx.font = 'bold 9px Courier New'; cx.textAlign = 'right';
+  cx.fillText('SC: ' + (totalWins || 0), w - 16, 25); cx.textAlign = 'left';
 
-function drawStoreUI() {
-  var cx = ctx;
-  var w = viewWidth, h = viewHeight;
-  var panW = Math.min(480, w - 40);
-  var itemH = 40;
-  var panH = Math.min(60 + SV_STORE_ITEMS.length * itemH + 30, h - 40);
-  var px = (w - panW) / 2, py = (h - panH) / 2;
-
-  // Dim backdrop
-  cx.fillStyle = 'rgba(0,0,18,.85)';
-  cx.fillRect(0, 0, w, h);
-
-  // Panel
-  cx.fillStyle = '#080018';
-  cx.strokeStyle = 'rgba(180,100,255,.55)';
-  cx.lineWidth = 2;
-  cx.fillRect(px, py, panW, panH);
-  cx.strokeRect(px, py, panW, panH);
-  cx.lineWidth = 1;
-
-  // Corner accents
-  var ca = 12;
-  cx.strokeStyle = 'rgba(255,180,0,.5)';
-  [[px, py], [px + panW, py], [px, py + panH], [px + panW, py + panH]].forEach(function(c, i) {
-    var sx2 = i % 2 === 0 ? 1 : -1, sy3 = i < 2 ? 1 : -1;
-    cx.beginPath();
-    cx.moveTo(c[0], c[1] + sy3 * ca);
-    cx.lineTo(c[0], c[1]);
-    cx.lineTo(c[0] + sx2 * ca, c[1]);
-    cx.stroke();
-  });
-
-  // Title
-  cx.textAlign = 'center';
-  cx.fillStyle = '#cc88ff';
-  cx.font = 'bold 12px Courier New';
-  cx.fillText('// GENERAL STORE //', px + panW / 2, py + 22);
-
-  // Currency display
-  cx.font = '8px Courier New';
-  cx.fillStyle = '#ffcc00';
-  cx.fillText('SC (Slime Coins): ' + (totalWins || 0), px + panW / 2, py + 36);
-
-  // Item list
-  var listX = px + 18, listY = py + 52;
-  SV_STORE_ITEMS.forEach(function(item, i) {
-    var iy = listY + i * itemH;
-    var isSel = i === svStoreSelectedIdx;
-    var canAfford = (totalWins || 0) >= item.price;
-
-    cx.fillStyle = isSel ? 'rgba(180,100,255,.16)' : 'rgba(255,255,255,.025)';
-    cx.strokeStyle = isSel ? 'rgba(180,100,255,.7)' : 'rgba(255,255,255,.07)';
-    cx.lineWidth = isSel ? 1.5 : 1;
-    cx.fillRect(listX, iy, panW - 36, itemH - 5);
-    cx.strokeRect(listX, iy, panW - 36, itemH - 5);
-
-    // Hat preview icon
-    drawHatAt(cx, listX + 22, iy + (itemH - 5) * 0.52, 13, { hat: item.hat, anim: 'none', drawing: [] });
-
-    // Name
-    cx.textAlign = 'left';
-    cx.fillStyle = isSel ? '#cc88ff' : (canAfford ? '#888' : '#444');
-    cx.font = 'bold 9px Courier New';
-    cx.fillText(item.name, listX + 42, iy + 14);
-
-    // Price
-    cx.fillStyle = canAfford ? '#ffcc00' : '#555';
-    cx.font = '8px Courier New';
-    cx.fillText(item.price + ' SC', listX + 42, iy + 26);
-
-    // Equip hint
-    if (isSel) {
-      cx.fillStyle = '#00ffcc';
-      cx.textAlign = 'right';
-      cx.fillText('[ E ] EQUIP', listX + panW - 54, iy + 20);
+  // Shelf proximity prompt
+  var nearIdx = svNearestShelf(svStorePlayerX);
+  if (nearIdx !== null) {
+    var it = SV_STORE_ITEMS[nearIdx % SV_STORE_ITEMS.length];
+    if (it) {
+      cx.save();
+      cx.font = 'bold 9px Courier New';
+      var line1 = it.name + '  —  ' + it.price + ' SC';
+      var line2 = '[ E ]  EQUIP';
+      var pw = Math.max(cx.measureText(line1).width, cx.measureText(line2).width) + 32;
+      var phx = (w - pw) / 2;
+      cx.fillStyle = 'rgba(0,0,20,.88)'; cx.strokeStyle = 'rgba(180,100,255,.72)'; cx.lineWidth = 1;
+      cx.fillRect(phx, floorY - 58, pw, 50); cx.strokeRect(phx, floorY - 58, pw, 50);
+      cx.fillStyle = '#cc88ff'; cx.textAlign = 'center';
+      cx.fillText(line1, w / 2, floorY - 38);
+      cx.fillStyle = '#00ffcc'; cx.fillText(line2, w / 2, floorY - 20);
+      cx.textAlign = 'left'; cx.restore();
     }
-  });
-
-  // Controls footer
-  cx.textAlign = 'center';
-  cx.fillStyle = '#2a2a2a';
-  cx.font = '8px Courier New';
-  cx.fillText('UP / DOWN to browse   ·   E to equip   ·   ESC to close', px + panW / 2, py + panH - 10);
-  cx.textAlign = 'left';
+  }
 }
 
-// ── HUD ───────────────────────────────────────────────────────
+// ── Exterior HUD ──────────────────────────────────────────────────────────
 function drawSlimeverseHud() {
   ctx.save();
   ctx.font = 'bold 9px Courier New';
-  ctx.fillStyle = 'rgba(0,0,16,.62)';
-  ctx.fillRect(10, 10, 318, 36);
-  ctx.strokeStyle = 'rgba(0,255,200,.2)';
-  ctx.strokeRect(10, 10, 318, 36);
-  ctx.fillStyle = '#00ffcc';
-  ctx.fillText('SLIMEVERSE // GLASS DOME', 20, 24);
-  ctx.fillStyle = '#444';
-  ctx.fillText('A/D move  W/SPC jump  UP/DN depth  E store  ESC exit', 20, 38);
+  ctx.fillStyle = 'rgba(0,0,16,.62)'; ctx.strokeStyle = 'rgba(0,255,200,.2)';
+  ctx.fillRect(10, 10, 320, 36); ctx.strokeRect(10, 10, 320, 36);
+  ctx.fillStyle = '#00ffcc'; ctx.fillText('SLIMEVERSE // GLASS DOME', 20, 24);
+  ctx.fillStyle = '#444'; ctx.font = '8px Courier New';
+  ctx.fillText('A/D move  ·  W/SPC jump  ·  UP/DN depth  ·  E store  ·  ESC exit', 20, 38);
   ctx.restore();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function svNearestShelf(playerX) {
+  var best = null, bestDist = Infinity;
+  SV_SHELF_X.forEach(function(wx, i) {
+    var d = Math.abs(playerX - wx);
+    if (d < bestDist) { bestDist = d; best = i; }
+  });
+  return bestDist < 110 ? best : null;
 }
