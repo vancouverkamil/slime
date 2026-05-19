@@ -1,4 +1,5 @@
 function handleServerMessage(msg) {
+  if (typeof handleSlimeverseMessage === 'function' && handleSlimeverseMessage(msg)) return;
   if (msg.type === 'connected') {
     currentLobbies = msg.lobbies || [];
     updatePlayerCount(msg.totalPlayers);
@@ -117,6 +118,7 @@ function handleServerMessage(msg) {
     });
 
   } else if (msg.type === 'opponent_disconnected') {
+    if (typeof slimeverseActive !== 'undefined' && slimeverseActive) leaveSlimeverse();
     if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
     clearInterval(onlineInputInterval); onlineInputInterval = null;
     onlineMode = false; isSpectator = false;

@@ -11,6 +11,8 @@ loadLocalEnv();
 
 const WIN_AMOUNT = 7;
 const TICK_MS    = 20;
+const SLIMEVERSE_TICK_MS = 50;
+const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980 };
 
 const ROOM_NAMES = [
   'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
@@ -44,6 +46,7 @@ const wss    = new WebSocketServer({ server });
 
 // All connected clients: ws -> info object
 const allClients = new Map();
+const slimeverseClients = new Map();
 
 // 8 persistent rooms
 const rooms = ROOM_NAMES.map((name, id) => ({
@@ -221,6 +224,20 @@ function getPlayerList() {
   });
   return list;
 }
+function getPublicPlayer(info) {
+  return {
+    id: info.id,
+    name: info.name,
+    username: info.username || null,
+    level: info.progression ? info.progression.level : 1,
+    rankTitle: info.progression ? info.progression.rankTitle : 'Recruit',
+    badge: info.progression ? info.progression.badge : 'REC ^',
+    hat: info.hat || 'none',
+    hatAnim: info.hatAnim || 'none',
+    color: info.bodyColor || '#00ff00',
+    hatDrawing: info.hatDrawing || [],
+  };
+}
 function pushLobbyState() {
   const msg = JSON.stringify({
     type:         'lobby_list',
@@ -232,6 +249,9 @@ function pushLobbyState() {
 }
 function randomName() {
   return 'Player' + (Math.floor(Math.random() * 9000) + 1000);
+}
+function makeClientId() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 function getRank(wins) {
   if (wins >= 10) return 'LIEUTENANT';
@@ -246,6 +266,78 @@ function progressionForUser(user) {
 
 function canUseHat(info, hat) {
   return hat !== 'goldcrown' || !!(info.progression && info.progression.unlocks.goldCrown);
+}
+
+function broadcastSlimeverse(msg) {
+  const str = JSON.stringify(msg);
+  slimeverseClients.forEach((_, sws) => {
+    if (sws.readyState === 1) sws.send(str);
+  });
+}
+
+function leaveSlimeverse(ws, info) {
+  if (!slimeverseClients.has(ws)) return;
+  slimeverseClients.delete(ws);
+  if (info.state === 'slimeverse') info.state = 'lobby';
+  broadcastSlimeverse({ type: 'slimeverse_leave', id: info.id });
+  pushLobbyState();
+}
+
+function enterSlimeverse(ws, info) {
+  leaveRoom(ws, info, false);
+  const spawnIndex = slimeverseClients.size;
+  slimeverseClients.set(ws, {
+    x: 500 + (spawnIndex % 8) * 85,
+    y: SLIMEVERSE_WORLD.floorY,
+    vx: 0,
+    vy: 0,
+    left: false,
+    right: false,
+    jump: false,
+  });
+  info.room = null;
+  info.role = 'wanderer';
+  info.state = 'slimeverse';
+  send(ws, {
+    type: 'slimeverse_joined',
+    selfId: info.id,
+    world: SLIMEVERSE_WORLD,
+    player: getPublicPlayer(info),
+  });
+  pushLobbyState();
+}
+
+function slimeverseSnapshot() {
+  const players = [];
+  slimeverseClients.forEach((sv, sws) => {
+    const info = allClients.get(sws);
+    if (!info) return;
+    players.push({
+      ...getPublicPlayer(info),
+      x: Math.round(sv.x),
+      y: Math.round(sv.y),
+      vx: Math.round(sv.vx * 10) / 10,
+      vy: Math.round(sv.vy * 10) / 10,
+    });
+  });
+  return players;
+}
+
+function tickSlimeverse() {
+  if (slimeverseClients.size === 0) return;
+  slimeverseClients.forEach((sv) => {
+    sv.vx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
+    if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -23;
+    sv.jump = false;
+    sv.vy = Math.min(26, sv.vy + 1.35);
+    sv.x = Math.max(70, Math.min(SLIMEVERSE_WORLD.width - 70, sv.x + sv.vx));
+    sv.y += sv.vy;
+    if (sv.y > SLIMEVERSE_WORLD.floorY) {
+      sv.y = SLIMEVERSE_WORLD.floorY;
+      sv.vy = 0;
+    }
+  });
+  broadcastSlimeverse({ type: 'slimeverse_state', players: slimeverseSnapshot() });
 }
 
 // Simple per-client chat rate limiter: max 5 messages per 3 s
@@ -265,6 +357,7 @@ wss.on('connection', async (ws, req) => {
   const profile = accounts.publicProfile(user);
   const playerProgression = progressionForUser(user);
   const info = {
+    id: makeClientId(),
     userId: user ? user.id : null,
     username: user ? user.username : null,
     name: user ? user.displayName : randomName(),
@@ -309,6 +402,7 @@ wss.on('connection', async (ws, req) => {
   });
 
   ws.on('close', () => {
+    leaveSlimeverse(ws, info);
     leaveRoom(ws, info, true);
     allClients.delete(ws);
     pushLobbyState();
@@ -325,10 +419,24 @@ async function handleMsg(ws, info, msg) {
     info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
     info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
   } else if (msg.type === 'join_room') {
+    leaveSlimeverse(ws, info);
     handleJoinRoom(ws, info, msg.roomId);
   } else if (msg.type === 'customize') {
     await handleCustomize(ws, info, msg);
+  } else if (msg.type === 'enter_slimeverse') {
+    enterSlimeverse(ws, info);
+  } else if (msg.type === 'leave_slimeverse') {
+    leaveSlimeverse(ws, info);
+    pushLobbyState();
+  } else if (msg.type === 'slimeverse_input') {
+    const sv = slimeverseClients.get(ws);
+    if (sv) {
+      sv.left = !!msg.left;
+      sv.right = !!msg.right;
+      if (msg.jump) sv.jump = true;
+    }
   } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
+    leaveSlimeverse(ws, info);
     leaveRoom(ws, info, false);
     info.state = 'lobby';
     pushLobbyState();
@@ -343,6 +451,10 @@ async function handleCustomize(ws, info, msg) {
   if (!canUseHat(info, hat)) hat = 'none';
   info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing;
   if (info.userId) await accounts.updateSlime(info.userId, { hat, hatAnim, color, hatDrawing: drawing });
+  if (info.state === 'slimeverse') {
+    broadcastSlimeverse({ type: 'slimeverse_customized', player: getPublicPlayer(info) });
+    return;
+  }
   if (!info.room) return;
   const room = info.room;
   const sideIdx = room.players.findIndex(p => p.ws === ws);
@@ -578,3 +690,4 @@ function createState() {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Slime server on port ${PORT}`));
+setInterval(tickSlimeverse, SLIMEVERSE_TICK_MS);

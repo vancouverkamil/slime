@@ -128,6 +128,20 @@ body {
   font-family:'Courier New',monospace; transition:all .15s;
   position:relative; overflow:hidden;
 }
+.verseBtn {
+  width:42px; height:42px; border-radius:50%;
+  border:1px solid rgba(0,255,200,.48); color:#00ffcc;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:bold; line-height:1; cursor:pointer;
+  background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.12),rgba(0,255,200,.05) 45%,rgba(0,0,18,.35));
+  box-shadow:0 0 18px rgba(0,255,200,.14), inset 0 0 12px rgba(0,255,200,.05);
+  flex-shrink:0; user-select:none;
+}
+.verseBtn:hover {
+  color:#fff; border-color:#00ffcc;
+  background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.2),rgba(0,255,200,.11) 48%,rgba(0,0,18,.42));
+  box-shadow:0 0 24px rgba(0,255,200,.28), inset 0 0 16px rgba(0,255,200,.08);
+}
 .bigBtn::before {
   content:''; position:absolute; inset:0;
   background:linear-gradient(135deg,rgba(0,255,200,.06) 0%,transparent 70%);

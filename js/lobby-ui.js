@@ -286,6 +286,10 @@ function cancelLobbySelect() {
 }
 
 function leaveLobby() {
+  if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
+    leaveSlimeverse();
+    return;
+  }
   showingLobbySelect = false; onlineMode = false; isSpectator = false;
   if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
   if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }

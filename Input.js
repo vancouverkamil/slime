@@ -13,6 +13,10 @@ var keysDown = {};
 addEventListener("keydown", function(e) {
   //console.log("keydown '" + e.keyCode + "'");
   if(e.keyCode == KEY_SPACE) {
+    if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
+      keysDown[e.keyCode] = true;
+      return;
+    }
     spaceKeyDown();
   } else {
     keysDown[e.keyCode] = true;

@@ -65,6 +65,15 @@ function connectLobby() {
   };
   lobbySocket.onclose = function() {
     lobbySocket = null; updatePlayerCount(0);
+    if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
+      slimeverseActive = false;
+      if (slimeverseInputTimer) { clearInterval(slimeverseInputTimer); slimeverseInputTimer = null; }
+      canvas.style.display = 'none';
+      menuDiv.style.display = 'block';
+      showLeaveBtn(false); showBottomBar(); toInitialMenu();
+      setTimeout(connectLobby, 2000);
+      return;
+    }
     if (onlineMode || isSpectator) {
       clearInterval(onlineInputInterval);
       onlineMode = false; isSpectator = false;
