@@ -26,7 +26,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   }
   if (req.method === 'OPTIONS') {
@@ -68,11 +68,19 @@ function isAllowedOrigin(origin) {
   if (!origin) return false;
   try {
     const url = new URL(origin);
+    const extraOrigins = String(process.env.ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
     return (
       url.hostname === 'localhost' ||
       url.hostname === '127.0.0.1' ||
       url.hostname === 'slime-7wuo.onrender.com' ||
-      url.hostname.endsWith('.vercel.app')
+      url.hostname === 'slime.vercel.app' ||
+      url.hostname === 'slime-nu.vercel.app' ||
+      url.hostname === 'slime-kamils-projects-2416babd.vercel.app' ||
+      (url.hostname.startsWith('slime-') && url.hostname.endsWith('-kamils-projects-2416babd.vercel.app')) ||
+      extraOrigins.includes(origin)
     );
   } catch (_) {
     return false;
@@ -103,8 +111,14 @@ function clearSessionCookie(req) {
 }
 
 async function getReqUser(req) {
-  const token = parseCookies(req.headers.cookie).slime_session;
+  const token = getReqToken(req);
   return await accounts.getUserBySession(token);
+}
+
+function getReqToken(req) {
+  const auth = String(req.headers.authorization || '');
+  if (auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
+  return parseCookies(req.headers.cookie).slime_session;
 }
 
 function sendUser(res, user) {
@@ -120,7 +134,7 @@ app.post('/api/auth/register', async (req, res) => {
     const user = await accounts.register(req.body.username, req.body.password);
     const token = await accounts.createSession(user.id);
     res.setHeader('Set-Cookie', sessionCookie(token, req));
-    sendUser(res, user);
+    res.json({ user: accounts.publicProfile(user), token });
   } catch (err) {
     res.status(400).json({ error: err.message || 'Could not create account.' });
   }
@@ -134,11 +148,11 @@ app.post('/api/auth/login', async (req, res) => {
   }
   const token = await accounts.createSession(user.id);
   res.setHeader('Set-Cookie', sessionCookie(token, req));
-  sendUser(res, user);
+  res.json({ user: accounts.publicProfile(user), token });
 });
 
 app.post('/api/auth/logout', async (req, res) => {
-  const token = parseCookies(req.headers.cookie).slime_session;
+  const token = getReqToken(req);
   await accounts.deleteSession(token);
   res.setHeader('Set-Cookie', clearSessionCookie(req));
   res.json({ ok: true });
@@ -232,7 +246,9 @@ function chatAllowed(info) {
 
 // ── connection ────────────────────────────────────────────
 wss.on('connection', async (ws, req) => {
-  const user = await accounts.getUserBySession(parseCookies(req.headers.cookie).slime_session);
+  const url = new URL(req.url, 'http://localhost');
+  const sessionToken = url.searchParams.get('session') || parseCookies(req.headers.cookie).slime_session;
+  const user = await accounts.getUserBySession(sessionToken);
   const profile = accounts.publicProfile(user);
   const info = {
     userId: user ? user.id : null,

@@ -54,6 +54,9 @@ function connectLobby() {
   if (lobbySocket) return;
   var wsUrl = window.SLIME_WS_URL ||
     ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
+  if (accountSessionToken) {
+    wsUrl += (wsUrl.indexOf('?') === -1 ? '?' : '&') + 'session=' + encodeURIComponent(accountSessionToken);
+  }
   try { lobbySocket = new WebSocket(wsUrl); } catch(e) { return; }
 
   lobbySocket.onmessage = function(e) {

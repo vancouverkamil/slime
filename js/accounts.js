@@ -1,4 +1,5 @@
 var currentAccount = null;
+var accountSessionToken = (typeof localStorage !== 'undefined' && localStorage.getItem('slime_session_token')) || '';
 
 function accountMessage(text, bad) {
   var el = document.getElementById('AccountMessage');
@@ -17,6 +18,7 @@ function accountPayload() {
 function accountRequest(url, options) {
   options = options || {};
   options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+  if (accountSessionToken) options.headers.Authorization = 'Bearer ' + accountSessionToken;
   options.credentials = 'include';
   return fetch(accountUrl(url), options).then(function(res) {
     return res.json().then(function(body) {
@@ -58,6 +60,14 @@ function applyAccount(user) {
   sendCustomization();
 }
 
+function storeAccountToken(token) {
+  accountSessionToken = token || '';
+  try {
+    if (accountSessionToken) localStorage.setItem('slime_session_token', accountSessionToken);
+    else localStorage.removeItem('slime_session_token');
+  } catch(e) {}
+}
+
 function loadAccount() {
   return accountRequest('/api/me', { method: 'GET', headers: {} })
     .then(function(body) { applyAccount(body.user); })
@@ -68,6 +78,7 @@ function accountLogin() {
   accountMessage('Signing in...');
   accountRequest('/api/auth/login', { method: 'POST', body: JSON.stringify(accountPayload()) })
     .then(function(body) {
+      storeAccountToken(body.token);
       applyAccount(body.user);
       accountMessage('');
       reconnectLobby();
@@ -79,6 +90,7 @@ function accountRegister() {
   accountMessage('Creating account...');
   accountRequest('/api/auth/register', { method: 'POST', body: JSON.stringify(accountPayload()) })
     .then(function(body) {
+      storeAccountToken(body.token);
       applyAccount(body.user);
       accountMessage('');
       reconnectLobby();
@@ -89,6 +101,7 @@ function accountRegister() {
 function accountLogout() {
   accountRequest('/api/auth/logout', { method: 'POST', body: '{}' })
     .then(function() {
+      storeAccountToken('');
       currentAccount = null;
       applyAccount(null);
       reconnectLobby();
