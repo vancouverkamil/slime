@@ -42,6 +42,7 @@ function applyAccount(user) {
   if (signed) signed.style.display = user ? 'block' : 'none';
   if (!user) return;
 
+  var prog = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(user.stats ? user.stats.xp : 0) : null);
   totalWins = user.stats ? user.stats.wins : totalWins;
   myPlayerName = user.displayName || user.username;
   playerBodyColor = user.slime && user.slime.color ? user.slime.color : playerBodyColor;
@@ -50,6 +51,7 @@ function applyAccount(user) {
   playerHatDrawing = user.slime && Array.isArray(user.slime.hatDrawing) ? user.slime.hatDrawing : playerHatDrawing;
   if (name) name.textContent = '@' + user.username;
   if (stats) stats.innerHTML =
+    (prog ? '<span style="color:#ffd966;">L' + prog.level + '</span> ' : '') +
     '<span>' + (user.stats.matches || 0) + 'M</span> ' +
     '<span style="color:#66ffcc;">' + (user.stats.wins || 0) + 'W</span> ' +
     '<span style="color:#ff66aa;">' + (user.stats.losses || 0) + 'L</span>';
@@ -131,8 +133,25 @@ function renderSlimePreviewHtml(user) {
     '</div>';
 }
 
+function progressionHtml(user) {
+  var stats = user.stats || {};
+  var p = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(stats.xp || 0) : null);
+  if (!p) return '';
+  var pct = Math.max(0, Math.min(100, Math.round((p.progressToNext || 0) * 100)));
+  var nextText = p.level >= p.maxLevel ? 'MAX LEVEL' : p.currentLevelXp + ' / ' + p.nextLevelXp + ' XP';
+  return '<div class="profile-level-row">' +
+    '<div class="rank-badge">' + escHtml(p.badge) + '</div>' +
+    '<div class="profile-level-main">' +
+      '<div><b>LEVEL ' + p.level + '</b><span>' + escHtml(p.rankTitle) + '</span></div>' +
+      '<div class="xp-bar"><i style="width:' + pct + '%;"></i></div>' +
+      '<div class="profile-sub">' + escHtml(nextText) + (p.unlocks && p.unlocks.goldCrown ? ' · GOLD CROWN UNLOCKED' : ' · GOLD CROWN AT 70') + '</div>' +
+    '</div>' +
+    '</div>';
+}
+
 function renderProfile(user) {
   var stats = user.stats || {};
+  var p = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(stats.xp || 0) : { level: 1, rankTitle: 'Recruit' });
   var matches = stats.matches || 0;
   var winRate = matches ? Math.round((stats.wins || 0) * 100 / matches) + '%' : '0%';
   var recent = (user.recentMatches || []).map(function(m) {
@@ -147,8 +166,12 @@ function renderProfile(user) {
     '<div><div class="profile-name">@' + escHtml(user.username) + '</div>' +
     '<div class="profile-sub">Joined ' + escHtml(String(user.createdAt || '').slice(0, 10)) + '</div></div>' +
     '</div>' +
+    progressionHtml(user) +
     '<div class="profile-tabs"><span class="active">STATS</span><span>ACHIEVEMENTS</span></div>' +
     '<div class="profile-grid">' +
+    profileStat('Level', p.level) +
+    profileStat('Rank', p.rankTitle) +
+    profileStat('Total XP', stats.xp || 0) +
     profileStat('Matches', matches) +
     profileStat('Wins', stats.wins || 0) +
     profileStat('Losses', stats.losses || 0) +

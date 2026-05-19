@@ -25,6 +25,7 @@ var BODY_COLORS = ['#00ff00','#00ffcc','#0066ff','#aa00ff','#ff2200','#ff8800','
 var HAT_OPTIONS = [
   { id:'none',   label:'None'    },
   { id:'crown',  label:'Crown'   },
+  { id:'goldcrown', label:'Gold Crown', minLevel:70 },
   { id:'tophat', label:'Top Hat' },
   { id:'cowboy', label:'Cowboy'  },
   { id:'halo',   label:'Halo'    },

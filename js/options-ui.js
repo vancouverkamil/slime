@@ -77,9 +77,15 @@ function syncCustomizationUI() {
     hp.innerHTML = '';
     HAT_OPTIONS.forEach(function(h) {
       var b = document.createElement('button');
-      b.className = 'hat-opt' + (h.id === playerHat ? ' active' : '');
-      b.textContent = h.label;
+      var locked = h.minLevel && !hasHatUnlock(h.id);
+      b.className = 'hat-opt' + (h.id === playerHat ? ' active' : '') + (locked ? ' locked' : '');
+      b.textContent = locked ? h.label + ' L' + h.minLevel : h.label;
+      if (locked) b.title = 'Reach level ' + h.minLevel + ' to unlock.';
       b.onclick = function() {
+        if (locked) {
+          accountMessage('Gold Crown unlocks at level ' + h.minLevel + '.', true);
+          return;
+        }
         playerHat = h.id; localStorage.setItem('slimeHat', h.id);
         syncCustomizationUI(); sendCustomization();
       };

@@ -108,6 +108,7 @@ function handleServerMessage(msg) {
   } else if (msg.type === 'game_over') {
     showLeaveBtn(false); hideEscMenu();
     clearInterval(onlineInputInterval); onlineInputInterval = null;
+    if (!isSpectator && currentAccount) loadAccount();
     playSfx(msg.winner === mySide ? 'win' : 'score');
     var _w = msg.winner, _sp = isSpectator;
     playHighlights(_w, function() {

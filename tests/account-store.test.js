@@ -3,6 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { AccountStore } = require('../account-store');
+const progression = require('../progression');
 
 function test(name, fn) {
   try {
@@ -26,6 +27,7 @@ test('register stores a public profile without password fields', () => {
 
   assert.strictEqual(profile.username, 'test_player');
   assert.strictEqual(profile.stats.matches, 0);
+  assert.strictEqual(profile.progression.level, 1);
   assert.strictEqual(profile.achievements.length, 0);
   assert.strictEqual(profile.passwordHash, undefined);
   assert.strictEqual(profile.passwordSalt, undefined);
@@ -49,6 +51,8 @@ test('recordMatch updates both linked accounts', () => {
   const right = store.register('righty', 'password123');
 
   store.recordMatch(left.id, right.id, 'left', 7, 4);
+  const leftXp = progression.getMatchXp({ won: true, scoreFor: 7, scoreAgainst: 4 });
+  const rightXp = progression.getMatchXp({ won: false, scoreFor: 4, scoreAgainst: 7 });
 
   const leftProfile = store.publicProfile(store.findByUsername('lefty'));
   const rightProfile = store.publicProfile(store.findByUsername('righty'));
@@ -59,6 +63,7 @@ test('recordMatch updates both linked accounts', () => {
     losses: 0,
     pointsFor: 7,
     pointsAgainst: 4,
+    xp: leftXp,
   });
   assert.deepStrictEqual(rightProfile.stats, {
     matches: 1,
@@ -66,7 +71,9 @@ test('recordMatch updates both linked accounts', () => {
     losses: 1,
     pointsFor: 4,
     pointsAgainst: 7,
+    xp: rightXp,
   });
   assert.strictEqual(leftProfile.recentMatches[0].opponent, 'righty');
+  assert.strictEqual(leftProfile.recentMatches[0].xpGained, leftXp);
   assert.strictEqual(rightProfile.recentMatches[0].result, 'loss');
 });

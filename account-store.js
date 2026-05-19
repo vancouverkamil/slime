@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { neon } = require('@neondatabase/serverless');
+const progression = require('./progression');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'accounts.json');
@@ -31,6 +32,18 @@ function safeHatDrawing(drawing) {
   return Array.isArray(drawing) ? drawing.slice(0, 300) : [];
 }
 
+function normalizeStats(stats) {
+  stats = stats || {};
+  return {
+    matches: Number(stats.matches) || 0,
+    wins: Number(stats.wins) || 0,
+    losses: Number(stats.losses) || 0,
+    pointsFor: Number(stats.pointsFor) || 0,
+    pointsAgainst: Number(stats.pointsAgainst) || 0,
+    xp: Number(stats.xp) || 0,
+  };
+}
+
 function defaultUser(username, password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const createdAt = nowIso();
@@ -48,6 +61,7 @@ function defaultUser(username, password) {
       losses: 0,
       pointsFor: 0,
       pointsAgainst: 0,
+      xp: 0,
     },
     slime: {
       color: '#00ff00',
@@ -159,9 +173,13 @@ class AccountStore {
   updateSlime(userId, slime) {
     const user = this.findById(userId);
     if (!user) return null;
+    const requestedHat = String(slime.hat || user.slime.hat || 'none').slice(0, 20);
+    const hat = requestedHat === 'goldcrown' && !progression.getProgression(normalizeStats(user.stats).xp).unlocks.goldCrown
+      ? 'none'
+      : requestedHat;
     user.slime = {
       color: String(slime.color || user.slime.color || '#00ff00').slice(0, 20),
-      hat: String(slime.hat || user.slime.hat || 'none').slice(0, 20),
+      hat,
       hatAnim: String(slime.hatAnim || user.slime.hatAnim || 'none').slice(0, 20),
       hatDrawing: safeHatDrawing(slime.hatDrawing),
     };
@@ -180,17 +198,21 @@ class AccountStore {
     const apply = (user, side, opponent, scoreFor, scoreAgainst) => {
       if (!user) return;
       const won = winnerSide === side;
+      user.stats = normalizeStats(user.stats);
+      const xpGained = progression.getMatchXp({ won, scoreFor, scoreAgainst });
       user.stats.matches++;
       if (won) user.stats.wins++;
       else user.stats.losses++;
       user.stats.pointsFor += scoreFor;
       user.stats.pointsAgainst += scoreAgainst;
+      user.stats.xp += xpGained;
       user.recentMatches.unshift({
         id: matchId,
         playedAt,
         result: won ? 'win' : 'loss',
         scoreFor,
         scoreAgainst,
+        xpGained,
         opponent: opponent ? opponent.username : 'guest',
       });
       user.recentMatches = user.recentMatches.slice(0, 10);
@@ -209,7 +231,8 @@ class AccountStore {
       username: user.username,
       displayName: user.displayName,
       createdAt: user.createdAt,
-      stats: user.stats,
+      stats: normalizeStats(user.stats),
+      progression: progression.getProgression((user.stats || {}).xp),
       slime: user.slime,
       achievements: user.achievements || [],
       recentMatches: user.recentMatches || [],
@@ -234,7 +257,7 @@ class PostgresAccountStore {
         password_hash TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        stats JSONB NOT NULL DEFAULT '{"matches":0,"wins":0,"losses":0,"pointsFor":0,"pointsAgainst":0}'::jsonb,
+        stats JSONB NOT NULL DEFAULT '{"matches":0,"wins":0,"losses":0,"pointsFor":0,"pointsAgainst":0,"xp":0}'::jsonb,
         slime JSONB NOT NULL DEFAULT '{"color":"#00ff00","hat":"none","hatAnim":"none","hatDrawing":[]}'::jsonb,
         achievements JSONB NOT NULL DEFAULT '[]'::jsonb,
         recent_matches JSONB NOT NULL DEFAULT '[]'::jsonb
@@ -259,7 +282,7 @@ class PostgresAccountStore {
       passwordHash: row.password_hash,
       createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
       updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
-      stats: row.stats,
+      stats: normalizeStats(row.stats),
       slime: row.slime,
       achievements: row.achievements,
       recentMatches: row.recent_matches,
@@ -347,9 +370,13 @@ class PostgresAccountStore {
     await this.ready;
     const user = await this.findById(userId);
     if (!user) return null;
+    const requestedHat = String(slime.hat || user.slime.hat || 'none').slice(0, 20);
+    const hat = requestedHat === 'goldcrown' && !progression.getProgression(normalizeStats(user.stats).xp).unlocks.goldCrown
+      ? 'none'
+      : requestedHat;
     const nextSlime = {
       color: String(slime.color || user.slime.color || '#00ff00').slice(0, 20),
-      hat: String(slime.hat || user.slime.hat || 'none').slice(0, 20),
+      hat,
       hatAnim: String(slime.hatAnim || user.slime.hatAnim || 'none').slice(0, 20),
       hatDrawing: safeHatDrawing(slime.hatDrawing),
     };
@@ -373,12 +400,14 @@ class PostgresAccountStore {
     const apply = async (user, side, opponent, scoreFor, scoreAgainst) => {
       if (!user) return;
       const won = winnerSide === side;
+      const xpGained = progression.getMatchXp({ won, scoreFor, scoreAgainst });
       const stats = {
         matches: (user.stats.matches || 0) + 1,
         wins: (user.stats.wins || 0) + (won ? 1 : 0),
         losses: (user.stats.losses || 0) + (won ? 0 : 1),
         pointsFor: (user.stats.pointsFor || 0) + scoreFor,
         pointsAgainst: (user.stats.pointsAgainst || 0) + scoreAgainst,
+        xp: (user.stats.xp || 0) + xpGained,
       };
       const recentMatches = [{
         id: matchId,
@@ -386,6 +415,7 @@ class PostgresAccountStore {
         result: won ? 'win' : 'loss',
         scoreFor,
         scoreAgainst,
+        xpGained,
         opponent: opponent ? opponent.username : 'guest',
       }].concat(user.recentMatches || []).slice(0, 10);
       await this.sql`

@@ -6,7 +6,17 @@ function getMySlime() {
 
 function sendCustomization() {
   if (!lobbySocket || lobbySocket.readyState !== 1) return;
+  if (playerHat === 'goldcrown' && !hasHatUnlock('goldcrown')) {
+    playerHat = 'none';
+    try { localStorage.setItem('slimeHat', playerHat); } catch(e) {}
+    syncCustomizationUI();
+  }
   lobbySocket.send(JSON.stringify({ type: 'customize', hat: playerHat, hatAnim: playerHatAnim, color: playerBodyColor, hatDrawing: playerHatDrawing }));
+}
+
+function hasHatUnlock(hatId) {
+  if (hatId !== 'goldcrown') return true;
+  return !!(currentAccount && currentAccount.progression && currentAccount.progression.unlocks && currentAccount.progression.unlocks.goldCrown);
 }
 
 // drawHatAt: context-independent hat renderer used by game rendering and preview
@@ -21,8 +31,14 @@ function drawHatAt(pctx, cx, topY, rPix, cfg) {
     var ps = 1 + 0.12 * Math.sin(Date.now() / 280);
     pctx.scale(ps, ps);
   }
-  if (hat === 'crown') {
+  if (hat === 'crown' || hat === 'goldcrown') {
     pctx.fillStyle = '#ffd700'; pctx.strokeStyle = '#b8960c'; pctx.lineWidth = 1;
+    if (hat === 'goldcrown') {
+      pctx.shadowColor = '#ffd700';
+      pctx.shadowBlur = rPix * 0.45;
+      pctx.fillStyle = '#ffe066';
+      pctx.strokeStyle = '#fff1a6';
+    }
     var cw = rPix * 1.1, ch = rPix * 0.55;
     pctx.beginPath();
     pctx.moveTo(-cw/2, 0); pctx.lineTo(-cw/2, -ch*0.55);
@@ -34,6 +50,7 @@ function drawHatAt(pctx, cx, topY, rPix, cfg) {
       pctx.fillStyle = g[0];
       pctx.beginPath(); pctx.arc(g[1], -ch*0.18, rPix*0.09, 0, TWO_PI); pctx.fill();
     });
+    pctx.shadowBlur = 0;
   } else if (hat === 'tophat') {
     pctx.fillStyle = '#111'; pctx.strokeStyle = '#444'; pctx.lineWidth = 1;
     var bw = rPix*1.4, bh = rPix*0.14, hw = rPix*0.78, hh = rPix*0.85;

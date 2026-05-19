@@ -5,6 +5,7 @@ const path     = require('path');
 const { loadLocalEnv } = require('./local-env');
 const { newBall, newSlime, initRound, tick } = require('./physics');
 const { createAccountStore, normalizeUsername } = require('./account-store');
+const progression = require('./progression');
 
 loadLocalEnv();
 
@@ -210,6 +211,10 @@ function getPlayerList() {
       status: info.state,
       wins: info.wins || 0,
       rank: info.rank || 'PRIVATE',
+      level: info.progression ? info.progression.level : 1,
+      rankTitle: info.progression ? info.progression.rankTitle : 'Recruit',
+      badge: info.progression ? info.progression.badge : 'REC ^',
+      prestige: !!(info.progression && info.progression.prestige),
       matches: info.matches || 0,
       account: !!info.userId,
     });
@@ -235,6 +240,14 @@ function getRank(wins) {
   return 'PRIVATE';
 }
 
+function progressionForUser(user) {
+  return progression.getProgression(user && user.stats ? user.stats.xp : 0);
+}
+
+function canUseHat(info, hat) {
+  return hat !== 'goldcrown' || !!(info.progression && info.progression.unlocks.goldCrown);
+}
+
 // Simple per-client chat rate limiter: max 5 messages per 3 s
 function chatAllowed(info) {
   const now = Date.now();
@@ -250,6 +263,7 @@ wss.on('connection', async (ws, req) => {
   const sessionToken = url.searchParams.get('session') || parseCookies(req.headers.cookie).slime_session;
   const user = await accounts.getUserBySession(sessionToken);
   const profile = accounts.publicProfile(user);
+  const playerProgression = progressionForUser(user);
   const info = {
     userId: user ? user.id : null,
     username: user ? user.username : null,
@@ -257,6 +271,7 @@ wss.on('connection', async (ws, req) => {
     wins: user ? user.stats.wins : 0,
     matches: user ? user.stats.matches : 0,
     rank: user ? getRank(user.stats.wins) : 'PRIVATE',
+    progression: playerProgression,
     room: null,
     role: null,
     gameHandler: null,
@@ -321,10 +336,11 @@ async function handleMsg(ws, info, msg) {
 }
 
 async function handleCustomize(ws, info, msg) {
-  const hat     = String(msg.hat      || 'none').slice(0, 20);
+  let hat       = String(msg.hat      || 'none').slice(0, 20);
   const hatAnim = String(msg.hatAnim  || 'none').slice(0, 20);
   const color   = String(msg.color    || '#00ff00').slice(0, 20);
   const drawing = Array.isArray(msg.hatDrawing) ? msg.hatDrawing.slice(0, 300) : [];
+  if (!canUseHat(info, hat)) hat = 'none';
   info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing;
   if (info.userId) await accounts.updateSlime(info.userId, { hat, hatAnim, color, hatDrawing: drawing });
   if (!info.room) return;
@@ -473,6 +489,7 @@ function startRoomGame(room) {
           playerInfo.wins = user.stats.wins;
           playerInfo.matches = user.stats.matches;
           playerInfo.rank = getRank(user.stats.wins);
+          playerInfo.progression = progressionForUser(user);
         }
         bcast({ type: 'game_over', winner });
         endRoomGame();

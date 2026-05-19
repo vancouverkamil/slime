@@ -160,6 +160,47 @@ function hidePlayerTip() {
   if (tip) tip.style.display = 'none';
 }
 
+function updateOnlineList(list) {
+  _playerListCache = list;
+  var el = document.getElementById('OnlineList');
+  if (!el) return;
+  el.innerHTML = list.map(function(p, i) {
+    var cls = p.status === 'playing' ? ' playing' : p.status === 'spectating' ? ' spectating' : '';
+    var tag = p.status === 'playing' ? '&gt;' : p.status === 'spectating' ? 'EYE' : '';
+    var rankCol = p.prestige ? '#ffd966' : p.account ? '#00ffcc' : '#555';
+    var badge = '<span class="level-badge" style="color:' + rankCol + ';">L' + (p.level || 1) + ' ' + escHtml(p.badge || 'REC ^') + '</span>';
+    var nameHtml = p.username
+      ? '<span onclick="showProfile(\'' + escHtml(p.username) + '\')" style="cursor:pointer;color:#00ffcc;">' + escHtml(p.name) + '</span>'
+      : escHtml(p.name);
+    return '<div class="opl' + cls + '" style="display:flex;align-items:center;justify-content:space-between;cursor:default;" ' +
+      'onmouseover="showPlayerTip(' + i + ',this)" onmouseout="hidePlayerTip()">' +
+      '<span>' + nameHtml + badge + '</span>' +
+      '<span style="color:#555;font-size:8px;">' + tag + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function showPlayerTip(idx, el) {
+  var p = _playerListCache[idx];
+  if (!p) return;
+  var tip = document.getElementById('PlayerTooltip');
+  if (!tip) return;
+  var rankCol = p.prestige ? '#ffd966' : p.account ? '#00ffcc' : '#666';
+  var statusLabel = p.status === 'playing' ? '> In Match' : p.status === 'spectating' ? 'Watching' : 'In Lobby';
+  tip.innerHTML =
+    '<div style="font-weight:bold;color:#fff;font-size:10px;margin-bottom:5px;letter-spacing:.5px;">' + escHtml(p.name) + '</div>' +
+    '<div style="color:#ffd966;font-size:10px;margin-bottom:3px;">LEVEL ' + (p.level || 1) + '</div>' +
+    '<div style="color:' + rankCol + ';letter-spacing:1.5px;font-size:8px;margin-bottom:3px;">' + escHtml(p.badge || 'REC ^') + ' · ' + escHtml(p.rankTitle || 'Recruit') + '</div>' +
+    '<div style="color:#00ffcc;font-size:8px;margin-bottom:3px;">' + (p.wins || 0) + ' WIN' + ((p.wins || 0) !== 1 ? 'S' : '') + '</div>' +
+    '<div style="color:#777;font-size:8px;margin-bottom:3px;">' + (p.matches || 0) + ' MATCH' + ((p.matches || 0) !== 1 ? 'ES' : '') + '</div>' +
+    (p.username ? '<div style="color:#444;font-size:7px;margin-bottom:3px;">Click name for profile</div>' : '') +
+    '<div style="color:#555;font-size:7px;letter-spacing:.5px;">' + statusLabel + '</div>';
+  var r = el.getBoundingClientRect();
+  tip.style.left = Math.max(0, r.left - 155) + 'px';
+  tip.style.top = (r.top - 10) + 'px';
+  tip.style.display = 'block';
+}
+
 var MAP_ICONS  = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆','🌙','🌋','🌊','🏗️','🏰','☢️','💀'];
 var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028','#050a1a','#2a0400','#001428','#0a0a0a','#060a04','#021008','#000000'];
 var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc','#aaddff','#ff6622','#00ccff','#ffcc44','#cc3333','#44ff66','#cc44ff'];
