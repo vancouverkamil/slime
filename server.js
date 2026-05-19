@@ -12,7 +12,7 @@ loadLocalEnv();
 const WIN_AMOUNT = 7;
 const TICK_MS    = 20;
 const SLIMEVERSE_TICK_MS = 16;
-const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 600 };
+const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
 
 const ROOM_NAMES = [
   'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
@@ -339,7 +339,7 @@ function tickSlimeverse() {
   slimeverseClients.forEach((sv) => {
     if (sv.inStore) return;
     sv.vx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
-    sv.vz = sv.fwd  && !sv.back ? -5 : sv.back  && !sv.fwd  ? 5 : 0;
+    sv.vz = sv.fwd  && !sv.back ? -8 : sv.back  && !sv.fwd  ? 8 : 0;
     if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -22;
     sv.jump = false;
     sv.vy = Math.min(26, sv.vy + 1.35);

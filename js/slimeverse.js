@@ -2,7 +2,7 @@
 var slimeverseActive    = false;
 var slimeversePlayers   = {};
 var slimeverseSelfId    = null;
-var slimeverseWorld     = { width: 4500, height: 2250, floorY: 1980, maxZ: 600 };
+var slimeverseWorld     = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
 var slimeverseInputInterval = null;
 var slimeverseFrame     = 0;
 var slimeverseCamera    = { x: 0 };
@@ -27,8 +27,8 @@ var SV_STORE_WORLD_W    = 2700;
 
 // Perspective display
 var SV_FLOOR_FRAC  = 0.82;
-var SV_HORIZ_FRAC  = 0.37;
-var SV_FAR_SCALE   = 0.28;
+var SV_HORIZ_FRAC  = 0.36;
+var SV_FAR_SCALE   = 0.05;   // at maxZ the player is ~5% size (1-2 px radius)
 
 var SV_STORE_ITEMS = [
   { hat: 'party',  name: 'Party Hat',   price: 5  },
@@ -41,13 +41,41 @@ var SV_STORE_ITEMS = [
 // Shelf world-X positions (one per item type)
 var SV_SHELF_X = [250, 650, 1050, 1450, 1850, 2250];
 
+// ── Render time (RAF timestamp, used for animations) ─────────────────────
+var svRenderTime = 0;
+
+// ── Seeded decorations (deterministic so they're identical every session) ─
+var SV_BUSHES = (function() {
+  var out = [], seed = 12345;
+  function rng() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; }
+  for (var i = 0; i < 90; i++) {
+    out.push({ x: 150 + rng() * 4200, z: 25 + rng() * 2850, r: 22 + rng() * 52, phase: rng() * 6.28, speed: 0.5 + rng() * 0.8 });
+  }
+  return out.sort(function(a, b) { return b.z - a.z; }); // far → near draw order
+})();
+
+var SV_FIREFLIES = (function() {
+  var out = [], seed = 99887;
+  function rng() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; }
+  for (var i = 0; i < 45; i++) {
+    out.push({ x: 200 + rng() * 4100, z: 60 + rng() * 1800, phase: rng() * 6.28, speed: 0.35 + rng() * 0.9 });
+  }
+  return out;
+})();
+
 // ── Perspective helpers ───────────────────────────────────────────────────
-function svDepthT(z) { return Math.max(0, Math.min(1, (z || 0) / (slimeverseWorld.maxZ || 600))); }
+// sqrt curve: objects compress quickly toward horizon, spreading near the camera —
+// this matches true perspective far better than a linear map, especially with a
+// deep world (maxZ 3000).  At t=1 the player is SV_FAR_SCALE × normal size.
+function svDepthT(z) {
+  var maxZ = slimeverseWorld.maxZ || 3000;
+  return Math.sqrt(Math.max(0, Math.min(1, (z || 0) / maxZ)));
+}
 function svGroundY(z) { return viewHeight * (SV_FLOOR_FRAC + (SV_HORIZ_FRAC - SV_FLOOR_FRAC) * svDepthT(z)); }
 function svScaleAt(z) { return 1.0 - (1.0 - SV_FAR_SCALE) * svDepthT(z); }
 function svSX(worldX, z) {
   var t = svDepthT(z), vp = viewWidth / 2;
-  return vp + (worldX - slimeverseCamera.x - vp) * (1 - t * 0.55);
+  return vp + (worldX - slimeverseCamera.x - vp) * (1 - t * 0.88);
 }
 function svSY(worldY, z) {
   var jumpH = Math.max(0, (slimeverseWorld.floorY || 1980) - (worldY || slimeverseWorld.floorY));
@@ -182,6 +210,7 @@ function renderSlimeverse(ts) {
 
   // ── Slimeverse exterior ───────────────────────────────────────────────
   slimeverseFrame++;
+  svRenderTime = ts; // drives bush sway, firefly flicker, grass animation
 
   // ── Fixed-timestep physics accumulator ───────────────────────────────
   // Runs physics at exactly 16 ms per step regardless of monitor refresh rate.
@@ -239,68 +268,185 @@ function renderSlimeverse(ts) {
 // ── World drawing ─────────────────────────────────────────────────────────
 function drawSlimeverseWorld() {
   var cx = ctx, w = viewWidth, h = viewHeight;
-  var hY = viewHeight * SV_HORIZ_FRAC;
-  var floorFY = viewHeight * SV_FLOOR_FRAC;
+  var hY     = h * SV_HORIZ_FRAC;
+  var floorFY = h * SV_FLOOR_FRAC;
   var vp = w / 2, camX = slimeverseCamera.x;
+  var t = svRenderTime;
 
-  // Sky
-  var skyG = cx.createLinearGradient(0, 0, 0, hY + 30);
-  skyG.addColorStop(0, '#00162b'); skyG.addColorStop(0.65, '#01284a'); skyG.addColorStop(1, '#042038');
-  cx.fillStyle = skyG; cx.fillRect(0, 0, w, hY + 30);
+  // ── Deep night sky ───────────────────────────────────────────────────
+  var skyG = cx.createLinearGradient(0, 0, 0, hY + 55);
+  skyG.addColorStop(0,    '#000d1a');
+  skyG.addColorStop(0.25, '#001226');
+  skyG.addColorStop(0.62, '#011b38');
+  skyG.addColorStop(0.88, '#012640');
+  skyG.addColorStop(1,    '#021c2c');
+  cx.fillStyle = skyG; cx.fillRect(0, 0, w, hY + 55);
 
-  // Stars
-  for (var s = 0; s < 55; s++) {
-    var sx = (((s * 313 - camX * 0.04) % (w * 1.8)) + w * 1.8) % (w * 1.8) - w * 0.4;
-    var sy2 = (s * 197) % (hY * 0.92);
-    cx.strokeStyle = 'rgba(190,245,255,' + (0.07 + (s % 4) * 0.025) + ')';
-    cx.beginPath(); cx.arc(sx, sy2, 0.8 + (s % 3) * 0.45, 0, TWO_PI); cx.stroke();
+  // ── Moon (parallax-scrolls slowly) ───────────────────────────────────
+  var moonX = w * 0.74 - camX * 0.007;
+  var moonY = hY * 0.30;
+  var moonR = 28;
+  var mg = cx.createRadialGradient(moonX, moonY, 0, moonX, moonY, moonR * 5);
+  mg.addColorStop(0, 'rgba(210,240,165,.20)'); mg.addColorStop(1, 'rgba(210,240,165,0)');
+  cx.fillStyle = mg; cx.fillRect(moonX - moonR * 5, moonY - moonR * 5, moonR * 10, moonR * 10);
+  cx.fillStyle = '#cce89e';
+  cx.beginPath(); cx.arc(moonX, moonY, moonR, 0, TWO_PI); cx.fill();
+  cx.fillStyle = '#011b38'; // crescent bite
+  cx.beginPath(); cx.arc(moonX + 9, moonY - 4, moonR * 0.82, 0, TWO_PI); cx.fill();
+
+  // ── Stars (twinkling, parallax) ───────────────────────────────────────
+  for (var s = 0; s < 120; s++) {
+    var sx = (((s * 317 - camX * 0.018) % (w * 2.4)) + w * 2.4) % (w * 2.4) - w * 0.7;
+    var sy2 = (s * 193) % (hY * 0.88);
+    var twinkle = 0.42 + 0.58 * Math.sin(t * 0.00185 * (0.4 + (s % 7) * 0.25) + s * 1.9);
+    cx.fillStyle = 'rgba(210,240,255,' + ((0.04 + (s % 6) * 0.016) * twinkle).toFixed(3) + ')';
+    cx.beginPath(); cx.arc(sx, sy2, 0.45 + (s % 4) * 0.38, 0, TWO_PI); cx.fill();
   }
 
-  // Horizon glow
-  var hgG = cx.createLinearGradient(0, hY - 18, 0, hY + 28);
-  hgG.addColorStop(0, 'rgba(0,200,160,0)');
-  hgG.addColorStop(0.5, 'rgba(0,255,200,.07)');
-  hgG.addColorStop(1, 'rgba(0,255,200,0)');
-  cx.fillStyle = hgG; cx.fillRect(0, hY - 18, w, 46);
+  // ── Atmospheric horizon glow ──────────────────────────────────────────
+  var hazeG = cx.createLinearGradient(0, hY - 80, 0, hY + 120);
+  hazeG.addColorStop(0,    'rgba(0,50,28,0)');
+  hazeG.addColorStop(0.35, 'rgba(0,90,48,.09)');
+  hazeG.addColorStop(0.60, 'rgba(0,140,72,.22)');
+  hazeG.addColorStop(0.80, 'rgba(0,110,58,.14)');
+  hazeG.addColorStop(1,    'rgba(0,50,28,0)');
+  cx.fillStyle = hazeG; cx.fillRect(0, hY - 80, w, 200);
 
-  // Below-floor fill
-  cx.fillStyle = '#0a1a14'; cx.fillRect(0, floorFY, w, h - floorFY);
-
-  // Perspective floor trapezoid
-  var floorG = cx.createLinearGradient(0, floorFY, 0, hY);
-  floorG.addColorStop(0, '#18402e'); floorG.addColorStop(1, '#0a1a14');
-  cx.fillStyle = floorG;
+  // ── Grass ground trapezoid ────────────────────────────────────────────
+  var gndG = cx.createLinearGradient(0, floorFY, 0, hY);
+  gndG.addColorStop(0,    '#236630');
+  gndG.addColorStop(0.20, '#1d5828');
+  gndG.addColorStop(0.52, '#144022');
+  gndG.addColorStop(0.80, '#0c2c18');
+  gndG.addColorStop(1,    '#071c10');
+  cx.fillStyle = gndG;
   cx.beginPath();
   cx.moveTo(0, floorFY); cx.lineTo(w, floorFY);
-  cx.lineTo(vp + w * 0.65, hY); cx.lineTo(vp - w * 0.65, hY);
+  cx.lineTo(vp + w * 0.72, hY); cx.lineTo(vp - w * 0.72, hY);
   cx.closePath(); cx.fill();
 
-  // Depth grid — horizontal lines
+  // Near-ground continuation below the frame
+  cx.fillStyle = '#236630'; cx.fillRect(0, floorFY, w, h - floorFY);
+
+  // ── Horizon fog band ──────────────────────────────────────────────────
+  var fogG = cx.createLinearGradient(0, hY - 6, 0, hY + 95);
+  fogG.addColorStop(0, 'rgba(18,68,34,.72)');
+  fogG.addColorStop(0.45, 'rgba(18,68,34,.40)');
+  fogG.addColorStop(1, 'rgba(18,68,34,0)');
+  cx.fillStyle = fogG; cx.fillRect(0, hY - 6, w, 101);
+
+  // ── Depth grid — subtle dark-green horizontal lines ───────────────────
   cx.lineWidth = 1;
-  for (var d = 0; d <= 14; d++) {
-    var frac = d / 14;
+  for (var d = 0; d <= 22; d++) {
+    var frac = d / 22;
     var ly = floorFY + (hY - floorFY) * frac;
-    cx.strokeStyle = 'rgba(0,255,200,' + (0.04 + (1 - frac) * 0.04) + ')';
+    cx.strokeStyle = 'rgba(0,100,40,' + (0.03 + (1 - frac) * 0.07) + ')';
     cx.beginPath();
     cx.moveTo(vp + (0 - vp) * frac, ly);
     cx.lineTo(vp + (w - vp) * frac, ly);
     cx.stroke();
   }
-  // Convergence lines — world-tiled so they scroll with camX like the stars do
-  var floorTile = 220;
-  var floorOff  = camX % floorTile;
-  cx.strokeStyle = 'rgba(0,255,200,.04)';
+
+  // ── Convergence lines (world-tiled, scroll with camera) ──────────────
+  var floorTile = 200, floorOff = camX % floorTile;
+  cx.strokeStyle = 'rgba(0,80,30,.05)';
   for (var vl = -1; vl <= Math.ceil(w / floorTile) + 1; vl++) {
-    var bx = vl * floorTile - floorOff;
-    cx.beginPath(); cx.moveTo(bx, floorFY); cx.lineTo(vp, hY); cx.stroke();
+    var clineX = vl * floorTile - floorOff;
+    cx.beginPath(); cx.moveTo(clineX, floorFY); cx.lineTo(vp, hY); cx.stroke();
   }
-  // Front edge
-  cx.strokeStyle = 'rgba(0,255,200,.28)'; cx.lineWidth = 2;
+
+  // ── Animated grass blades along near edge ────────────────────────────
+  var bladeTile = 13, bladeOff = (camX * 0.994) % bladeTile;
+  for (var gi = -2; gi <= Math.ceil(w / bladeTile) + 2; gi++) {
+    var gx = gi * bladeTile - bladeOff;
+    var bh2 = 7 + ((gi * 7 + 3) % 5) * 2.4;
+    var lean = Math.sin(t * 0.0016 + gi * 0.85) * 3.8;
+    cx.strokeStyle = gi % 3 === 0 ? 'rgba(55,210,85,.30)' : 'rgba(40,165,62,.22)';
+    cx.lineWidth = gi % 4 === 0 ? 1.5 : 1;
+    cx.beginPath();
+    cx.moveTo(gx, floorFY);
+    cx.quadraticCurveTo(gx + lean * 0.55, floorFY - bh2 * 0.6, gx + lean, floorFY - bh2);
+    cx.stroke();
+  }
+  cx.lineWidth = 1;
+
+  // ── Near-edge highlight ───────────────────────────────────────────────
+  cx.strokeStyle = 'rgba(72,235,112,.42)'; cx.lineWidth = 2;
   cx.beginPath(); cx.moveTo(0, floorFY); cx.lineTo(w, floorFY); cx.stroke();
   cx.lineWidth = 1;
 
-  // Store building
+  // ── Depth-sorted bushes (far → near for correct occlusion) ───────────
+  SV_BUSHES.forEach(function(b) {
+    var bsc = svScaleAt(b.z);
+    if (bsc < 0.055) return;
+    var bsx = svSX(b.x, b.z);
+    var bsy = svGroundY(b.z);
+    if (bsx < -280 || bsx > w + 280) return;
+    drawSVBush(cx, b, bsx, bsy, bsc, t);
+  });
+
+  // ── Fireflies ─────────────────────────────────────────────────────────
+  drawSVFireflies(cx, t, w, hY);
+
+  // ── Store building ─────────────────────────────────────────────────────
   drawSlimeverseStoreBuilding(svSX(SV_STORE_X, SV_STORE_Z), svGroundY(SV_STORE_Z), svScaleAt(SV_STORE_Z));
+}
+
+// ── Bush decorator ─────────────────────────────────────────────────────────
+function drawSVBush(cx, b, sx, groundY, sc, t) {
+  var r = b.r * sc;
+  if (r < 1.5) return;
+  var sway = Math.sin(t * 0.0009 * b.speed + b.phase) * r * 0.07;
+  var hue  = 112 + ((b.phase * 18) | 0) % 20;
+  var lBase = Math.round(14 + sc * 11);
+
+  cx.save();
+  // Ground shadow
+  cx.fillStyle = 'rgba(0,0,0,.17)';
+  cx.beginPath(); cx.ellipse(sx + sway * 0.3, groundY + sc * 1.5, r * 0.88, r * 0.19, 0, 0, TWO_PI); cx.fill();
+  // Dark base sphere
+  cx.fillStyle = 'hsl(' + hue + ',54%,' + lBase + '%)';
+  cx.beginPath(); cx.arc(sx + sway, groundY - r * 0.48, r, 0, TWO_PI); cx.fill();
+  // Right lobe (lighter)
+  cx.fillStyle = 'hsl(' + hue + ',62%,' + (lBase + 8) + '%)';
+  cx.beginPath(); cx.arc(sx + sway + r * 0.30, groundY - r * 0.59, r * 0.70, 0, TWO_PI); cx.fill();
+  // Left lobe
+  cx.fillStyle = 'hsl(' + hue + ',57%,' + (lBase + 5) + '%)';
+  cx.beginPath(); cx.arc(sx + sway - r * 0.28, groundY - r * 0.55, r * 0.60, 0, TWO_PI); cx.fill();
+  // Top specular highlight
+  cx.fillStyle = 'hsl(' + (hue + 5) + ',68%,' + (lBase + 15) + '%)';
+  cx.beginPath(); cx.arc(sx + sway + r * 0.07, groundY - r * 0.73, r * 0.38, 0, TWO_PI); cx.fill();
+  cx.restore();
+}
+
+// ── Firefly particles ──────────────────────────────────────────────────────
+function drawSVFireflies(cx, t, w, hY) {
+  SV_FIREFLIES.forEach(function(f) {
+    var fsc = svScaleAt(f.z);
+    if (fsc < 0.10) return;
+    // Organic Lissajous drift
+    var wx  = f.x + Math.sin(t * 0.00048 * f.speed + f.phase) * 95
+                  + Math.sin(t * 0.00079 * f.speed + f.phase * 2.1) * 38;
+    var fsx = svSX(wx, f.z);
+    if (fsx < -40 || fsx > w + 40) return;
+    var gndY = svGroundY(f.z);
+    var fsy  = gndY - (26 + Math.sin(t * 0.00062 * f.speed + f.phase * 3.1) * 15) * fsc;
+    if (fsy < hY) return;
+    // Pulsing brightness
+    var pulse  = 0.5 + 0.5 * Math.sin(t * 0.00275 * f.speed + f.phase);
+    var alpha  = Math.max(0.05, pulse);
+    var dotR   = (1.6 + fsc * 1.8) * (0.55 + pulse * 0.45);
+    var glowR  = dotR * 7;
+    // Outer glow (radial gradient)
+    var grd = cx.createRadialGradient(fsx, fsy, 0, fsx, fsy, glowR);
+    grd.addColorStop(0,   'rgba(155,255,75,'  + (alpha * 0.62).toFixed(3) + ')');
+    grd.addColorStop(0.38,'rgba(90,255,45,'   + (alpha * 0.24).toFixed(3) + ')');
+    grd.addColorStop(1,   'rgba(30,200,20,0)');
+    cx.fillStyle = grd; cx.fillRect(fsx - glowR, fsy - glowR, glowR * 2, glowR * 2);
+    // Bright core
+    cx.fillStyle = 'rgba(215,255,140,' + Math.min(1, alpha * 1.5).toFixed(3) + ')';
+    cx.beginPath(); cx.arc(fsx, fsy, dotR, 0, TWO_PI); cx.fill();
+  });
 }
 
 // ── Store building (exterior) ─────────────────────────────────────────────
@@ -367,6 +513,7 @@ function drawSlimeverseStoreBuilding(bx, by, sc) {
 // ── Player (exterior) ─────────────────────────────────────────────────────
 function drawSlimeversePlayer(p) {
   var z = p.z || 0, sc = svScaleAt(z);
+  if (sc < 0.04) return; // sub-pixel at extreme depth — skip
   var sx = svSX(p.x || 0, z), sy = svSY(p.y || slimeverseWorld.floorY, z);
   if (sx < -100 || sx > viewWidth + 100 || sy < -150 || sy > viewHeight + 100) return;
 

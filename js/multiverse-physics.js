@@ -3,7 +3,7 @@
 // feels identical: no lerp build-up, direct velocity, same gravity curve.
 
 var MV_MOVE_VX  = 7;     // horizontal speed  (volleyball uses 8; slightly lower for open world)
-var MV_MOVE_VZ  = 5;     // depth speed
+var MV_MOVE_VZ  = 8;     // depth speed (world is 3000 deep; 8 px/tick reaches far end in ~6 s)
 var MV_JUMP_VY  = -22;   // initial jump velocity  (upward = negative; gravity adds each tick)
 var MV_GRAVITY  = 1.35;  // gravity per tick  (matches server tickSlimeverse)
 
@@ -44,11 +44,12 @@ function mvStep(s, world) {
 // genuine server teleport (spawn / respawn), never during normal movement.
 function mvReconcile(local, server, alpha) {
   var movingX = !!(keysDown[KEY_A] || keysDown[KEY_LEFT] || keysDown[KEY_D] || keysDown[KEY_RIGHT]);
+  var movingZ = !!(keysDown[KEY_UP] || keysDown[KEY_DOWN]);
   if (!movingX) local.x += (server.x - local.x) * alpha;
+  if (!movingZ) local.z += (server.z - local.z) * alpha;
   if (Math.abs(local.x - server.x) > 800) local.x = server.x;
+  if (Math.abs(local.z - server.z) > 250) local.z = server.z;
   local.y += (server.y - local.y) * alpha;
-  local.z += (server.z - local.z) * alpha;
-  if (Math.abs(local.z - server.z) > 70) local.z = server.z;
 }
 
 // Hard-sync from a server player snapshot (used on join and respawn).
