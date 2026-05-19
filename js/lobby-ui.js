@@ -81,7 +81,7 @@ function showLobbySelect() {
 var LOBBY_CATS = [
   { label: 'STANDARD',           ids: [0,1,2,3,4],     restricted: false },
   { label: 'PREMIUM',            ids: [5,7,8,9,10],    restricted: false },
-  { label: 'CLASSIFIED COURTS',  ids: [11,12,13,14],   restricted: true  },
+  { label: 'CLASSIFIED COURTS',  ids: [11,12,13,14],   restricted: false },
 ];
 var _playerListCache = [];
 
