@@ -298,6 +298,8 @@ function enterSlimeverse(ws, info) {
     jump: false,
     fwd: false,
     back: false,
+    inStore: false,
+    storeX: 1050,
   });
   info.room = null;
   info.role = 'wanderer';
@@ -324,6 +326,8 @@ function slimeverseSnapshot() {
       vx: Math.round(sv.vx * 10) / 10,
       vy: Math.round(sv.vy * 10) / 10,
       vz: Math.round(sv.vz * 10) / 10,
+      inStore: !!sv.inStore,
+      storeX: sv.storeX || 1050,
     });
   });
   return players;
@@ -333,6 +337,7 @@ function tickSlimeverse() {
   if (slimeverseClients.size === 0) return;
   const maxZ = SLIMEVERSE_WORLD.maxZ;
   slimeverseClients.forEach((sv) => {
+    if (sv.inStore) return;
     sv.vx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
     sv.vz = sv.fwd  && !sv.back ? -5 : sv.back  && !sv.fwd  ? 5 : 0;
     if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -22;
@@ -443,6 +448,15 @@ async function handleMsg(ws, info, msg) {
       sv.back = !!msg.back;
       if (msg.jump) sv.jump = true;
     }
+  } else if (msg.type === 'slimeverse_enter_store') {
+    const sv = slimeverseClients.get(ws);
+    if (sv) { sv.inStore = true; sv.storeX = 1050; }
+  } else if (msg.type === 'slimeverse_exit_store') {
+    const sv = slimeverseClients.get(ws);
+    if (sv) sv.inStore = false;
+  } else if (msg.type === 'slimeverse_store_move') {
+    const sv = slimeverseClients.get(ws);
+    if (sv && sv.inStore) sv.storeX = Math.max(80, Math.min(2620, Number(msg.storeX) || 1050));
   } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
     leaveSlimeverse(ws, info);
     leaveRoom(ws, info, false);

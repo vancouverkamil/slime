@@ -39,13 +39,15 @@ function mvStep(s, world) {
 }
 
 // Gentle correction toward the authoritative server position.
-// alpha ~0.06 is barely perceptible — just enough to drift back into sync.
-// Hard-snap threshold prevents rubber-banding after teleports / disconnects.
+// X: suppressed while the player is actively pressing left/right so client
+// prediction dominates during movement (avoids mid-run snap). Hard-snap only
+// for genuine teleports (400+ units = spawn / respawn, never normal drift).
 function mvReconcile(local, server, alpha) {
-  local.x += (server.x - local.x) * alpha;
+  var movingX = !!(keysDown[KEY_A] || keysDown[KEY_LEFT] || keysDown[KEY_D] || keysDown[KEY_RIGHT]);
+  if (!movingX) local.x += (server.x - local.x) * alpha;
+  if (Math.abs(local.x - server.x) > 400) local.x = server.x;
   local.y += (server.y - local.y) * alpha;
   local.z += (server.z - local.z) * alpha;
-  if (Math.abs(local.x - server.x) > 90) local.x = server.x;
   if (Math.abs(local.z - server.z) > 70) local.z = server.z;
 }
 

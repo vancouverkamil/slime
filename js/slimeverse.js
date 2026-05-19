@@ -117,7 +117,10 @@ function startSlimeverseInput() {
   if (slimeverseInputInterval) clearInterval(slimeverseInputInterval);
   slimeverseInputInterval = setInterval(function() {
     if (!slimeverseActive || !lobbySocket || lobbySocket.readyState !== 1) return;
-    if (svStoreInside) return;
+    if (svStoreInside) {
+      lobbySocket.send(JSON.stringify({ type: 'slimeverse_store_move', storeX: svStorePlayerX }));
+      return;
+    }
     var inp = mvGetInput();
     lobbySocket.send(JSON.stringify({
       type: 'slimeverse_input',
@@ -311,7 +314,7 @@ function drawSlimeverseStoreBuilding(bx, by, sc) {
   cx.strokeRect(bx - sgW / 2, by - bh + 8 * sc, sgW, sgH);
   cx.fillStyle = '#ffcc00'; cx.textAlign = 'center';
   cx.font = 'bold ' + Math.max(6, Math.round(9 * sc)) + 'px Courier New';
-  cx.fillText('GENERAL STORE', bx, by - bh + 8 * sc + sgH * 0.7);
+  cx.fillText('GOY SLOP HAT SHOP', bx, by - bh + 8 * sc + sgH * 0.7);
 
   // Door
   var dw = 30 * sc, dh = 46 * sc;
@@ -377,7 +380,7 @@ function drawSlimeversePlayer(p) {
 // ── Store enter prompt ────────────────────────────────────────────────────
 function drawStoreEnterPrompt() {
   var cx = ctx, px = viewWidth / 2, py = viewHeight * SV_FLOOR_FRAC - 24;
-  var msg = 'PRESS  E  TO ENTER STORE';
+  var msg = 'PRESS  E  TO  ENTER  SHOP';
   cx.save(); cx.font = 'bold 9px Courier New';
   var tw = cx.measureText(msg).width + 22;
   cx.fillStyle = 'rgba(0,0,20,.72)'; cx.strokeStyle = 'rgba(180,100,255,.65)'; cx.lineWidth = 1;
@@ -389,15 +392,18 @@ function drawStoreEnterPrompt() {
 // ── Store enter / exit ────────────────────────────────────────────────────
 function enterStoreInterior() {
   svStoreInside     = true;
-  svStorePlayerX    = 1050;   // start near Halo shelf (middle of store)
+  svStorePlayerX    = 1050;
   svStorePlayerVx   = 0;
   svStoreCamera.x   = Math.max(0, Math.min(SV_STORE_WORLD_W - viewWidth, svStorePlayerX - viewWidth / 2));
-  svStoreTransition = 1.0;    // black → clear fade
+  svStoreTransition = 1.0;
+  if (lobbySocket && lobbySocket.readyState === 1)
+    lobbySocket.send(JSON.stringify({ type: 'slimeverse_enter_store' }));
 }
 
 function exitStoreInterior() {
   svStoreInside = false;
-  // Snap local physics back to store entrance so the player reappears there
+  if (lobbySocket && lobbySocket.readyState === 1)
+    lobbySocket.send(JSON.stringify({ type: 'slimeverse_exit_store' }));
   var me = slimeversePlayers[slimeverseSelfId];
   if (me) { mvLocal.x = me.x || SV_STORE_X; mvLocal.z = me.z || SV_STORE_Z; }
 }
@@ -498,9 +504,28 @@ function drawStoreInteriorScene() {
   cx.fillRect(w * 0.22, ceilY + 13, w * 0.56, 24);
   cx.strokeRect(w * 0.22, ceilY + 13, w * 0.56, 24);
   cx.fillStyle = '#00ffcc'; cx.font = 'bold 10px Courier New'; cx.textAlign = 'center';
-  cx.fillText('// HAT & COSMETICS EMPORIUM //', w / 2, ceilY + 30); cx.textAlign = 'left';
+  cx.fillText('// GOY SLOP HAT SHOP //', w / 2, ceilY + 30); cx.textAlign = 'left';
 
-  // ── Player slime ────────────────────────────────────────────────────
+  // ── Players ──────────────────────────────────────────────────────────
+  // Sort: draw players farther from local player first (crude depth)
+  var storePlayers = [];
+  Object.keys(slimeversePlayers).forEach(function(id) {
+    if (id === slimeverseSelfId) return;
+    var p = slimeversePlayers[id];
+    if (p && p.inStore) storePlayers.push(p);
+  });
+  storePlayers.sort(function(a, b) {
+    return Math.abs((b.storeX || 1050) - svStorePlayerX) - Math.abs((a.storeX || 1050) - svStorePlayerX);
+  });
+  storePlayers.forEach(function(p) {
+    var psx = (p.storeX || 1050) - camX;
+    if (psx < -120 || psx > w + 120) return;
+    drawStoreInteriorPlayer(cx, psx, floorY, {
+      color: p.color, hat: p.hat, hatAnim: p.hatAnim, hatDrawing: p.hatDrawing,
+      name: p.name || 'Player', alpha: 0.88,
+    });
+  });
+  // Local player drawn last (always on top)
   drawStoreInteriorPlayer(cx, svStorePlayerX - camX, floorY);
 
   // ── HUD ─────────────────────────────────────────────────────────────
@@ -568,27 +593,42 @@ function drawWarehouseShelf(cx, sx, floorY, ceilY, itemIdx, isNear) {
   cx.textAlign = 'left';
 }
 
-// ── Interior player ───────────────────────────────────────────────────────
-function drawStoreInteriorPlayer(cx, sx, floorY) {
-  var r = 28;
+// ── Interior player ─────────────────────────────────────────────────────────
+// opts: { color, hat, hatAnim, hatDrawing, name, alpha } for remote players.
+// Omit opts (or pass null) for the local player.
+function drawStoreInteriorPlayer(cx, sx, floorY, opts) {
+  var r     = 28;
+  var color = (opts && opts.color)      || playerBodyColor   || '#00ff00';
+  var hat   = (opts && opts.hat)        || playerHat         || 'none';
+  var hatAn = (opts && opts.hatAnim)    || playerHatAnim     || 'none';
+  var hatDr = (opts && opts.hatDrawing) || playerHatDrawing  || [];
   cx.save();
+  if (opts && opts.alpha != null) cx.globalAlpha = opts.alpha;
   if (greenSlimeImage && greenSlimeImage.complete) {
-    var tc = getTintedCanvas(greenSlimeImage, playerBodyColor);
+    var tc = getTintedCanvas(greenSlimeImage, color);
     var imgSc = (r * 2) / tc.width;
     cx.drawImage(tc, sx - r, floorY - tc.height * imgSc, tc.width * imgSc, tc.height * imgSc);
   } else {
-    cx.fillStyle = playerBodyColor || '#00ff00';
+    cx.fillStyle = color;
     cx.beginPath(); cx.arc(sx, floorY, r, Math.PI, TWO_PI); cx.fill();
   }
   cx.fillStyle = '#fff';
   cx.beginPath(); cx.arc(sx + r * 0.25, floorY - r * 0.6, r * 0.18, 0, TWO_PI); cx.fill();
   cx.fillStyle = '#000';
   cx.beginPath(); cx.arc(sx + r * 0.30, floorY - r * 0.6, r * 0.08, 0, TWO_PI); cx.fill();
-  drawHatAt(cx, sx, floorY - r + 1, r,
-    { hat: playerHat || 'none', anim: playerHatAnim || 'none', drawing: playerHatDrawing || [] });
-  // Floor shadow
+  drawHatAt(cx, sx, floorY - r + 1, r, { hat: hat, anim: hatAn, drawing: hatDr });
+  cx.globalAlpha = 1;
   cx.fillStyle = 'rgba(0,0,0,.28)';
   cx.beginPath(); cx.ellipse(sx, floorY + 5, r * 0.75, 5, 0, 0, TWO_PI); cx.fill();
+  if (opts && opts.name) {
+    cx.font = 'bold 9px Courier New'; cx.textAlign = 'center';
+    var tw = cx.measureText(opts.name).width + 10;
+    cx.fillStyle = 'rgba(0,0,14,.52)';
+    cx.fillRect(sx - tw / 2, floorY - r * 1.85 - 9, tw, 13);
+    cx.fillStyle = '#00ffcc';
+    cx.fillText(opts.name, sx, floorY - r * 1.85);
+    cx.textAlign = 'left';
+  }
   cx.restore();
 }
 
@@ -598,7 +638,7 @@ function drawStoreInteriorHud(cx, w, h, floorY) {
   cx.fillStyle = 'rgba(0,0,16,.72)'; cx.strokeStyle = 'rgba(180,100,255,.28)'; cx.lineWidth = 1;
   cx.fillRect(10, 10, 290, 36); cx.strokeRect(10, 10, 290, 36);
   cx.fillStyle = '#cc88ff'; cx.font = 'bold 9px Courier New';
-  cx.fillText('// GENERAL STORE // WAREHOUSE', 20, 24);
+  cx.fillText('// GOY SLOP HAT SHOP //', 20, 24);
   cx.fillStyle = '#444'; cx.font = '8px Courier New';
   cx.fillText('A/D move  ·  E equip item  ·  ESC exit', 20, 38);
 
