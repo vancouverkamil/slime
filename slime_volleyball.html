@@ -11,6 +11,9 @@
 <script type="text/javascript" src="js/render-game.js"></script>
 <script type="text/javascript" src="js/local-game.js"></script>
 <script type="text/javascript" src="js/online-state.js"></script>
+<script type="text/javascript" src="js/feature-cards.js"></script>
+<script type="text/javascript" src="js/calling-cards.js"></script>
+<script type="text/javascript" src="js/tournament-mode.js"></script>
 <script type="text/javascript" src="js/online-effects.js"></script>
 <script type="text/javascript" src="js/lobby-ui.js"></script>
 <script type="text/javascript" src="js/online-game.js"></script>
@@ -240,12 +243,16 @@
   </div>
 
   <div id="BottomBar">
-    <span class="verseBtn" onclick="startSlimeverse()" title="Slimeverse Home">&#8962;</span>
-    <span class="bigBtn" onclick="showLobbySelect()">&#9654; QUICK PLAY</span>
-    <span class="bigBtn magenta" onclick="start(false)">&#128101; 2 PLAYER</span>
-    <span class="bigBtn gold" onclick="start(true)">&#129302; VS CPU</span>
-    <span class="bigBtn fire" onclick="startFinal4()">&#128293; THE FINAL 4</span>
-    <span class="bigBtn" style="border-color:rgba(150,50,255,.4);color:#aa44ff;" onmouseover="this.style.background='rgba(150,50,255,.1)';this.style.borderColor='#aa44ff';this.style.boxShadow='0 0 18px rgba(150,50,255,.25)';" onmouseout="this.style.background='';this.style.borderColor='rgba(150,50,255,.4)';this.style.boxShadow='';" onclick="showOptions()">&#9881; OPTIONS</span>
+    <span class="verseBtn homeBtn" onclick="startSlimeverse()" title="Slimeverse Home" data-sigil="HOME"></span>
+    <span class="bigBtn playBtn" onclick="showLobbySelect()" data-sigil="I">QUICK PLAY</span>
+    <span class="bigBtn duoBtn" onclick="start(false)" data-sigil="II">2 PLAYER</span>
+    <span class="bigBtn cpuBtn" onclick="start(true)" data-sigil="CPU">VS CPU</span>
+    <span class="verseBtn infernoBtn" onclick="startFinal4()" title="The Final 4" data-sigil="IV"></span>
+    <span class="barDivider" aria-hidden="true"></span>
+    <span class="bigBtn bracketBtn" onclick="startTournament()" data-sigil="BR">TOURNAMENT</span>
+    <span class="bigBtn cardsBtn" onclick="showProgressionHub()" data-sigil="ID">CARDS</span>
+    <span class="barDivider" aria-hidden="true"></span>
+    <span class="verseBtn settingsBtn" onclick="showOptions()" title="Options" data-sigil="SET"></span>
   </div>
 
 </div>

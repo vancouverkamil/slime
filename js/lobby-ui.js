@@ -55,7 +55,6 @@ function showLobbySelect() {
 var LOBBY_CATS = [
   { label: 'STANDARD',           ids: [0,1,2,3,4],     restricted: false },
   { label: 'PREMIUM',            ids: [5,7,8,9,10],    restricted: false },
-  { label: 'CLASSIFIED COURTS',  ids: [11,12,13,14],   restricted: false },
 ];
 var _playerListCache = [];
 
@@ -189,20 +188,20 @@ function renderLobbySelect(lobbies) {
   lobbies.forEach(function(r) { byId[r.id] = r; });
 
   var html =
-    '<div style="padding:8px;background:#06001a;height:100%;box-sizing:border-box;overflow:hidden;">' +
-    '<div style="display:flex;align-items:center;margin-bottom:8px;">' +
-      '<div style="color:#fff;font-size:11px;font-weight:bold;letter-spacing:3px;flex:1;' +
+    '<div style="padding:clamp(18px,2.2vw,34px);background:#06001a;height:100%;box-sizing:border-box;overflow:auto;">' +
+    '<div style="display:flex;align-items:center;margin-bottom:clamp(18px,2vh,30px);gap:18px;">' +
+      '<div style="color:#fff;font-size:clamp(34px,4vh,58px);font-weight:bold;letter-spacing:5px;flex:1;' +
         'text-shadow:0 0 10px rgba(255,255,255,.3);">SELECT A COURT</div>' +
-      '<div style="font-size:7px;letter-spacing:1.5px;color:' + rankCol + ';white-space:nowrap;">' +
+      '<div style="font-size:clamp(16px,1.4vw,24px);letter-spacing:1.5px;color:' + rankCol + ';white-space:nowrap;">' +
         rank + ' &nbsp;·&nbsp; ' + totalWins + ' WIN' + (totalWins !== 1 ? 'S' : '') + '</div>' +
     '</div>';
 
   LOBBY_CATS.forEach(function(cat, ci) {
     var catLabelCol = cat.restricted ? 'rgba(255,180,0,.45)' : 'rgba(0,255,200,.28)';
-    html += '<div style="margin-bottom:' + (ci < LOBBY_CATS.length - 1 ? '9' : '0') + 'px;">' +
-      '<div style="font-size:7px;letter-spacing:2px;color:' + catLabelCol + ';margin-bottom:4px;padding:0 1px;">' +
+    html += '<div style="margin-bottom:' + (ci < LOBBY_CATS.length - 1 ? '24' : '0') + 'px;">' +
+      '<div style="font-size:clamp(16px,1.25vw,22px);letter-spacing:3px;color:' + catLabelCol + ';margin-bottom:10px;padding:0 1px;">' +
         cat.label + '</div>' +
-      '<div style="display:flex;gap:4px;">';
+      '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(10px,1vw,18px);">';
 
     cat.ids.forEach(function(id) {
       var r = byId[id];
@@ -227,15 +226,15 @@ function renderLobbySelect(lobbies) {
           'onclick="' + clickFn + '" ' +
           'onmouseover="this.style.borderColor=\'' + borderHov + '\'" ' +
           'onmouseout="this.style.borderColor=\'' + borderBase + '\'">' +
-          '<div style="height:38px;background:' + prev + ';background-size:cover;background-position:center;position:relative;">' +
+          '<div style="height:clamp(118px,17vh,190px);background:' + prev + ';background-size:cover;background-position:center;position:relative;">' +
             '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 25%,rgba(0,0,20,.65))' +
               (isLocked ? ',rgba(0,0,0,.35)' : '') + ';"></div>' +
-            '<div style="position:absolute;top:2px;left:3px;font-size:11px;">' + MAP_ICONS[id] + '</div>' +
-            (badge ? '<div style="position:absolute;bottom:2px;right:3px;font-size:7px;font-weight:bold;color:' + badgeCol + ';">' + badge + spec + '</div>' : '') +
+            '<div style="position:absolute;top:8px;left:10px;font-size:clamp(24px,2.2vw,36px);">' + MAP_ICONS[id] + '</div>' +
+            (badge ? '<div style="position:absolute;bottom:8px;right:10px;font-size:clamp(16px,1.2vw,22px);font-weight:bold;color:' + badgeCol + ';">' + badge + spec + '</div>' : '') +
           '</div>' +
-          '<div style="padding:2px 4px 3px;background:rgba(0,0,18,.6);">' +
-            '<div style="font-size:7px;font-weight:bold;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + (isLocked ? 'rgba(255,180,0,.5)' : txtCol) + ';">' + r.name + '</div>' +
-            '<div style="font-size:6px;color:#404040;letter-spacing:.2px;">' + (isLocked ? totalWins + '/10W' : dots + ' ' + r.playerCount + '/2') + '</div>' +
+          '<div style="padding:clamp(10px,1vw,15px) clamp(12px,1vw,18px);background:rgba(0,0,18,.6);">' +
+            '<div style="font-size:clamp(16px,1.25vw,24px);font-weight:bold;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + (isLocked ? 'rgba(255,180,0,.5)' : txtCol) + ';">' + r.name + '</div>' +
+            '<div style="font-size:clamp(12px,1vw,18px);color:#505050;letter-spacing:.4px;margin-top:4px;">' + (isLocked ? totalWins + '/10W' : dots + ' ' + r.playerCount + '/2') + '</div>' +
           '</div>' +
         '</div>';
     });

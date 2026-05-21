@@ -95,6 +95,14 @@
     return 80 + scoreFor * 12 + (won ? 140 : 35) + closeBonus;
   }
 
+  function getCoinReward(match) {
+    match = match || {};
+    const scoreFor = Math.floor(clampNumber(match.scoreFor, 0, 99));
+    const scoreAgainst = Math.floor(clampNumber(match.scoreAgainst, 0, 99));
+    if (!match.won) return 0;
+    return Math.max(1, scoreFor - scoreAgainst);
+  }
+
   return {
     MAX_LEVEL,
     PRESTIGE_LEVEL,
@@ -105,5 +113,6 @@
     rankForLevel,
     getProgression,
     getMatchXp,
+    getCoinReward,
   };
 });

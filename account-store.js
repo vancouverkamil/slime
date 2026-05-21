@@ -217,12 +217,14 @@ class AccountStore {
       const won = winnerSide === side;
       user.stats = normalizeStats(user.stats);
       const xpGained = progression.getMatchXp({ won, scoreFor, scoreAgainst });
+      const coinsGained = progression.getCoinReward({ won, scoreFor, scoreAgainst });
       user.stats.matches++;
       if (won) user.stats.wins++;
       else user.stats.losses++;
       user.stats.pointsFor += scoreFor;
       user.stats.pointsAgainst += scoreAgainst;
       user.stats.xp += xpGained;
+      user.coins = (Number(user.coins) || 0) + coinsGained;
       user.recentMatches.unshift({
         id: matchId,
         playedAt,
@@ -230,6 +232,7 @@ class AccountStore {
         scoreFor,
         scoreAgainst,
         xpGained,
+        coinsGained,
         opponent: opponent ? opponent.username : 'guest',
       });
       user.recentMatches = user.recentMatches.slice(0, 10);
@@ -497,6 +500,7 @@ class PostgresAccountStore {
       if (!user) return;
       const won = winnerSide === side;
       const xpGained = progression.getMatchXp({ won, scoreFor, scoreAgainst });
+      const coinsGained = progression.getCoinReward({ won, scoreFor, scoreAgainst });
       const stats = {
         matches: (user.stats.matches || 0) + 1,
         wins: (user.stats.wins || 0) + (won ? 1 : 0),
@@ -512,12 +516,14 @@ class PostgresAccountStore {
         scoreFor,
         scoreAgainst,
         xpGained,
+        coinsGained,
         opponent: opponent ? opponent.username : 'guest',
       }].concat(user.recentMatches || []).slice(0, 10);
       await this.sql`
         UPDATE users
         SET stats = ${JSON.stringify(stats)}::jsonb,
             recent_matches = ${JSON.stringify(recentMatches)}::jsonb,
+            coins = coins + ${coinsGained},
             updated_at = now()
         WHERE id = ${user.id}
       `;

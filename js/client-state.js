@@ -12,7 +12,10 @@ function newLegacyBall(radius, color) {
       if (ballImage && !legacyGraphics) {
         this.rotation = (this.rotation + this.velocityX / 100) % TWO_PI;
         ctx.translate(xPix, yPix); ctx.rotate(this.rotation);
-        ctx.drawImage(ballImage, -rPix, -rPix);
+        var ballArtScale = Math.max(1, Math.min(2.75, (viewHeight || 375) / 375));
+        var bw = ballImage.width * ballArtScale;
+        var bh = ballImage.height * ballArtScale;
+        ctx.drawImage(ballImage, -bw / 2, -bh / 2, bw, bh);
         ctx.setTransform(1,0,0,1,0,0);
       } else {
         ctx.fillStyle = legacyBallColor;
@@ -31,7 +34,10 @@ function newLegacySlime(onLeft, radius, color) {
       var rPix = this.radius * pixelsPerUnitY;
       if (this.img && !legacyGraphics) {
         var drawSrc = this.tintColor ? getTintedCanvas(this.img, this.tintColor) : this.img;
-        ctx.drawImage(drawSrc, xPix - rPix, yPix - 38);
+        var artScale = (rPix * 2) / drawSrc.width;
+        var dw = drawSrc.width * artScale;
+        var dh = drawSrc.height * artScale;
+        ctx.drawImage(drawSrc, xPix - dw / 2, yPix - dh, dw, dh);
       } else {
         ctx.fillStyle = this.tintColor || this.color;
         ctx.beginPath(); ctx.arc(xPix, yPix, rPix, Math.PI, TWO_PI); ctx.fill();

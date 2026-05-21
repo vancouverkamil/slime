@@ -53,6 +53,7 @@ test('recordMatch updates both linked accounts', () => {
   store.recordMatch(left.id, right.id, 'left', 7, 4);
   const leftXp = progression.getMatchXp({ won: true, scoreFor: 7, scoreAgainst: 4 });
   const rightXp = progression.getMatchXp({ won: false, scoreFor: 4, scoreAgainst: 7 });
+  const leftCoins = progression.getCoinReward({ won: true, scoreFor: 7, scoreAgainst: 4 });
 
   const leftProfile = store.publicProfile(store.findByUsername('lefty'));
   const rightProfile = store.publicProfile(store.findByUsername('righty'));
@@ -75,7 +76,10 @@ test('recordMatch updates both linked accounts', () => {
   });
   assert.strictEqual(leftProfile.recentMatches[0].opponent, 'righty');
   assert.strictEqual(leftProfile.recentMatches[0].xpGained, leftXp);
+  assert.strictEqual(leftProfile.recentMatches[0].coinsGained, leftCoins);
+  assert.strictEqual(leftProfile.coins, 1 + leftCoins);
   assert.strictEqual(rightProfile.recentMatches[0].result, 'loss');
+  assert.strictEqual(rightProfile.coins, 1);
 });
 
 test('leaderboard sorts accounts by total xp', () => {

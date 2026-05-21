@@ -18,6 +18,49 @@ function endMatch() {
   playSfx(leftWon ? 'win' : 'score');
   var msg;
 
+  if (tournamentMode && tournamentState) {
+    var match = tournamentState.currentSeries;
+    var opponent = match ? getMatchOpponent(match) : null;
+    finishTournamentSet(!!leftWon);
+    if (leftWon) {
+      sessionWins++;
+      recordWin();
+    } else {
+      sessionLosses++;
+    }
+    var seriesDone = match && match.status === 'final';
+    var playerAdvanced = seriesDone && match.winner && match.winner.player;
+    var champion = tournamentState.champion;
+    if (champion) {
+      if (champion.player) setActiveCallingCard('bracket-wound');
+      msg = '<div class="match-result-card">' +
+        '<div class="result-kicker">TOURNAMENT COMPLETE</div>' +
+        '<div class="result-title">' + (champion.player ? 'CUP SECURED' : 'ELIMINATED') + '</div>' +
+        '<div class="result-copy">' + escHtml(champion.name) + ' claims the Slime Cup.</div>' +
+        '<div class="result-copy dim">Press space to return to the bracket.</div>' +
+      '</div>';
+    } else if (seriesDone) {
+      msg = '<div class="match-result-card">' +
+        '<div class="result-kicker">' + escHtml(tournamentRoundName(match.round)).toUpperCase() + '</div>' +
+        '<div class="result-title">' + (playerAdvanced ? 'ADVANCED' : 'ELIMINATED') + '</div>' +
+        '<div class="result-copy">Series final: ' + match.winsA + '-' + match.winsB + ' vs ' + escHtml(opponent ? opponent.name : 'Opponent') + '.</div>' +
+        '<div class="result-copy dim">Press space to view the updated bracket.</div>' +
+      '</div>';
+    } else {
+      msg = '<div class="match-result-card">' +
+        '<div class="result-kicker">BEST OF 3</div>' +
+        '<div class="result-title">' + (leftWon ? 'SET WON' : 'SET LOST') + '</div>' +
+        '<div class="result-copy">Series: ' + match.winsA + '-' + match.winsB + ' vs ' + escHtml(opponent ? opponent.name : 'Opponent') + '.</div>' +
+        '<div class="result-copy dim">Press space to continue the series.</div>' +
+      '</div>';
+    }
+    menuDiv.innerHTML = '<div class="result-screen">' + msg + '</div>';
+    menuDiv.style.display = 'block';
+    canvas.style.display = 'none';
+    showBottomBar();
+    return;
+  }
+
   if (final4Mode) {
     if (leftWon) {
       sessionWins++;
@@ -75,8 +118,16 @@ function updateWindowSize(w, h) {
 }
 
 // ── bottom bar & leave helpers ────────────────────────────
-function showBottomBar() { var b = document.getElementById('BottomBar'); if(b) b.style.display='flex'; }
-function hideBottomBar() { var b = document.getElementById('BottomBar'); if(b) b.style.display='none'; }
+function showBottomBar() {
+  var b = document.getElementById('BottomBar');
+  if (b) b.style.display = 'flex';
+  if (typeof applyGameScale === 'function') setTimeout(applyGameScale, 0);
+}
+function hideBottomBar() {
+  var b = document.getElementById('BottomBar');
+  if (b) b.style.display = 'none';
+  if (typeof applyGameScale === 'function') setTimeout(applyGameScale, 0);
+}
 function showLeaveBtn(v) { var b = document.getElementById('LeaveRoomBtn'); if(b) b.style.display = v ? 'block' : 'none'; }
 
 // ── emote sender ─────────────────────────────────────────

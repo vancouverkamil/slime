@@ -65,9 +65,9 @@ function drawOnlineHUD() {
     var rt = 'RALLY ' + rallyCount;
     var rw = ctx.measureText(rt).width + 16;
     ctx.fillStyle = 'rgba(0,0,0,.45)';
-    ctx.fillRect(viewWidth/2 - rw/2, courtYPix - 36, rw, 16);
+    ctx.fillRect(viewWidth/2 - rw/2, 10, rw, 16);
     ctx.fillStyle = rallyCount >= 15 ? '#ff0066' : rallyCount >= 10 ? '#ff6600' : '#ffcc00';
-    ctx.fillText(rt, viewWidth/2, courtYPix - 24);
+    ctx.fillText(rt, viewWidth/2, 22);
   }
 
   ctx.textAlign = 'left';

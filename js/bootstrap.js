@@ -1,8 +1,11 @@
 function bodyload() {
   var contentDiv = document.getElementById('GameContentDiv');
+  var frameDiv = document.getElementById('ContentDiv') || contentDiv;
+  var initialW = Math.max(720, Math.round((frameDiv && frameDiv.clientWidth) || 1000));
+  var initialH = Math.max(420, Math.round((frameDiv && frameDiv.clientHeight) || 560));
 
   canvas = document.createElement('canvas');
-  canvas.width = 750; canvas.height = 375;
+  canvas.width = initialW; canvas.height = initialH;
   canvas.style.position = 'absolute'; canvas.style.left = '0'; canvas.style.top = '0';
   canvas.style.display = 'none';
   ctx = canvas.getContext('2d'); ctx.font = '20px Georgia';
@@ -13,7 +16,7 @@ function bodyload() {
 
   menuDiv = document.createElement('div');
   menuDiv.style.position = 'absolute'; menuDiv.style.left = '0'; menuDiv.style.top = '0';
-  menuDiv.style.width = '750px'; menuDiv.style.height = '375px';
+  menuDiv.style.width = initialW + 'px'; menuDiv.style.height = initialH + 'px';
   menuDiv.style.background = '#05000f';
   contentDiv.appendChild(menuDiv);
 
@@ -79,8 +82,7 @@ function bodyload() {
   window.addEventListener('resize', _onWindowResize);
   applyGameScale();
   // Sync scale buttons to saved preference
-  var fb = document.getElementById('ScaleFull'), cb = document.getElementById('ScaleCompact');
-  if (fb && cb) { fb.classList.toggle('active', gameScale === 'full'); cb.classList.toggle('active', gameScale === 'compact'); }
+  if (typeof syncScaleButtons === 'function') syncScaleButtons();
   var sfx = document.getElementById('GameSfx'), fx = document.getElementById('ScreenFx');
   if (sfx) sfx.checked = gameSfxEnabled;
   if (fx) fx.checked = screenFxEnabled;

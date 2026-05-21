@@ -48,3 +48,9 @@ test('level 70 unlocks prestige and gold crown', () => {
   assert.strictEqual(prestige.prestige, true);
   assert.strictEqual(prestige.unlocks.goldCrown, true);
 });
+
+test('coin rewards match the winning score gap', () => {
+  assert.strictEqual(progression.getCoinReward({ won: true, scoreFor: 7, scoreAgainst: 4 }), 3);
+  assert.strictEqual(progression.getCoinReward({ won: true, scoreFor: 7, scoreAgainst: 6 }), 1);
+  assert.strictEqual(progression.getCoinReward({ won: false, scoreFor: 6, scoreAgainst: 7 }), 0);
+});

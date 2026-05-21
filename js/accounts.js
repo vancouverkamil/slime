@@ -183,7 +183,8 @@ function renderProfile(user) {
     return '<div class="profile-match ' + (m.result === 'win' ? 'win' : 'loss') + '">' +
       '<span>' + escHtml(m.result.toUpperCase()) + '</span>' +
       '<span>' + escHtml(m.scoreFor + '-' + m.scoreAgainst) + '</span>' +
-      '<span>@' + escHtml(m.opponent || 'guest') + '</span>' +
+      '<span>@' + escHtml(m.opponent || 'guest') + ' / +' + escHtml(m.xpGained || 0) + 'XP' +
+        (m.coinsGained ? ' / +' + escHtml(m.coinsGained) + 'SC' : '') + '</span>' +
       '</div>';
   }).join('') || '<div class="profile-empty">No online matches yet.</div>';
   return '<div class="profile-head">' +
