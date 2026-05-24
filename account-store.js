@@ -605,8 +605,13 @@ class PostgresAccountStore {
   }
 }
 
-function createAccountStore() {
-  return process.env.DATABASE_URL ? new PostgresAccountStore(process.env.DATABASE_URL) : new AccountStore();
+function resolveDatabaseUrl(env = process.env) {
+  return env.DATABASE_URL || env.SUPABASE_DATABASE_URL || env.POSTGRES_URL || '';
 }
 
-module.exports = { AccountStore, PostgresAccountStore, createAccountStore, normalizeUsername };
+function createAccountStore() {
+  const databaseUrl = resolveDatabaseUrl();
+  return databaseUrl ? new PostgresAccountStore(databaseUrl) : new AccountStore();
+}
+
+module.exports = { AccountStore, PostgresAccountStore, createAccountStore, normalizeUsername, resolveDatabaseUrl };

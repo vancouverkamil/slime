@@ -5,11 +5,15 @@
   "scripts": {
     "start": "node server.js",
     "test": "node tests/physics.test.js && node tests/progression.test.js && node tests/account-store.test.js",
-    "check": "node --check server.js && node --check account-store.js && node --check progression.js && node --check local-env.js && node --check scripts/init-db.js && node --check physics.js && node --check ws-config.js && node --check Input.js && node --check SlimeAI.js && node --check MentalSlimeAI.js && node --check js/client-state.js && node --check js/accounts.js && node --check js/render-maps.js && node --check js/render-game.js && node --check js/local-game.js && node --check js/online-state.js && node --check js/feature-cards.js && node --check js/calling-cards.js && node --check js/tournament-mode.js && node --check js/online-effects.js && node --check js/lobby-ui.js && node --check js/online-game.js && node --check js/slimeverse.js && node --check js/menus.js && node --check js/replay.js && node --check js/customization-hats.js && node --check js/hat-studio.js && node --check js/options-ui.js && node --check js/audio.js && node --check js/bootstrap.js",
-    "db:init": "node scripts/init-db.js"
+    "check": "node --check server.js && node --check account-store.js && node --check progression.js && node --check local-env.js && node --check scripts/init-db.js && node --check scripts/migrate-postgres-data.js && node --check physics.js && node --check ws-config.js && node --check Input.js && node --check SlimeAI.js && node --check MentalSlimeAI.js && node --check js/client-state.js && node --check js/accounts.js && node --check js/render-maps.js && node --check js/render-game.js && node --check js/local-game.js && node --check js/online-state.js && node --check js/feature-cards.js && node --check js/calling-cards.js && node --check js/tournament-mode.js && node --check js/online-effects.js && node --check js/lobby-ui.js && node --check js/online-game.js && node --check js/slimeverse.js && node --check js/menus.js && node --check js/replay.js && node --check js/customization-hats.js && node --check js/hat-studio.js && node --check js/options-ui.js && node --check js/audio.js && node --check js/bootstrap.js",
+    "db:init": "node scripts/init-db.js",
+    "db:migrate-data": "node scripts/migrate-postgres-data.js",
+    "supabase:bundle": "node scripts/build-supabase-function.js",
+    "supabase:deploy": "npm run supabase:bundle && supabase functions deploy slime --no-verify-jwt"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "compression": "^1.8.1",
     "express": "^4.18.2",
     "ws": "^8.14.2"
   }

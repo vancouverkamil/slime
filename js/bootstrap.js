@@ -26,15 +26,15 @@ function bodyload() {
   slimeRight = newLegacySlime(false, 100, '#f00');
 
   ['sky2.jpg','cave.jpg','sunset.jpg'].forEach(function(src) {
-    var img = new Image(); img.src = src;
+    var img = new Image(); img.src = window.slimeAssetUrl ? window.slimeAssetUrl(src) : src;
     img.onload = function() {
       backImages[src.replace('.jpg','')] = this;
       if (src === 'sky2.jpg') backImages['sky'] = this;
     };
   });
-  var bi = new Image(); bi.src = 'vball.png'; bi.onload = function() { ballImage = this; };
-  greenSlimeImage = new Image(); greenSlimeImage.src = 'slime175green.png';
-  redSlimeImage   = new Image(); redSlimeImage.src   = 'slime175red.png';
+  var bi = new Image(); bi.src = window.slimeAssetUrl ? window.slimeAssetUrl('vball.png') : 'vball.png'; bi.onload = function() { ballImage = this; };
+  greenSlimeImage = new Image(); greenSlimeImage.src = window.slimeAssetUrl ? window.slimeAssetUrl('slime175green.png') : 'slime175green.png';
+  redSlimeImage   = new Image(); redSlimeImage.src   = window.slimeAssetUrl ? window.slimeAssetUrl('slime175red.png') : 'slime175red.png';
 
   // Load persisted guest name
   var savedName = localStorage.getItem('slimeName');

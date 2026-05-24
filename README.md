@@ -23,6 +23,10 @@ Open `slime_volleyball.html` in a browser, or visit the hosted version via GitHu
 - **One Player** — face three AI opponents (Pathetic White Slime, Angry Red Slime, Slime Master)
 - **Two Player** — local multiplayer on the same keyboard
 
+## Deployment
+
+The recommended production setup is Vercel for the static frontend, Supabase `slimetime` Postgres for durable account/game data, and a persistent Node WebSocket host for online matches. See `DEPLOYMENT.md`.
+
 ## Files
 
 | File | Purpose |

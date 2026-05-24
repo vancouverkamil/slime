@@ -5,3 +5,19 @@ data/
 
 .env*.local
 server-local*.log
+
+# tunnel logs
+tunnel*.log
+tunnel*.err
+tunnel*.out
+tunnel*.txt
+localtunnel*.log
+
+# editor
+.vscode/
+
+# supabase (unused — migrated to Neon/Railway)
+supabase/
+
+# misc
+DEPLOYMENT.md

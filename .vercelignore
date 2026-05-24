@@ -1,0 +1,9 @@
+.env*
+.git/
+.vscode/
+node_modules/
+data/
+server-local*.log
+server-local*.err.log
+supabase/functions/slime/public/
+supabase/functions/slime/assets.ts

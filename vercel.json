@@ -2,5 +2,37 @@
   "buildCommand": "",
   "outputDirectory": ".",
   "framework": null,
-  "installCommand": "echo skip"
+  "installCommand": "echo skip",
+  "headers": [
+    {
+      "source": "/js/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=60" }]
+    },
+    {
+      "source": "/(.*\\.css)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=60" }]
+    },
+    {
+      "source": "/(.*\\.png)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=3600" }]
+    },
+    {
+      "source": "/(.*\\.mp3)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=3600" }]
+    },
+    {
+      "source": "/slime-config.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://slime-volleyball-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/",
+      "destination": "/slime_volleyball.html"
+    }
+  ]
 }

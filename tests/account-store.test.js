@@ -2,7 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { AccountStore } = require('../account-store');
+const { AccountStore, resolveDatabaseUrl } = require('../account-store');
 const progression = require('../progression');
 
 function test(name, fn) {
@@ -19,6 +19,13 @@ function tempStore() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slime-accounts-'));
   return new AccountStore(path.join(dir, 'accounts.json'));
 }
+
+test('resolveDatabaseUrl supports Supabase and Vercel Postgres env names', () => {
+  assert.strictEqual(resolveDatabaseUrl({ DATABASE_URL: 'postgres://primary' }), 'postgres://primary');
+  assert.strictEqual(resolveDatabaseUrl({ SUPABASE_DATABASE_URL: 'postgres://supabase' }), 'postgres://supabase');
+  assert.strictEqual(resolveDatabaseUrl({ POSTGRES_URL: 'postgres://vercel' }), 'postgres://vercel');
+  assert.strictEqual(resolveDatabaseUrl({}), '');
+});
 
 test('register stores a public profile without password fields', () => {
   const store = tempStore();

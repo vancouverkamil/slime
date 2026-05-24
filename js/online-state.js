@@ -84,6 +84,10 @@ function getTintedCanvas(img, color) {
 
 function connectLobby() {
   if (lobbySocket) return;
+  if (window.SLIME_BACKEND_DISABLED) {
+    updatePlayerCount(0);
+    return;
+  }
   var wsUrl = window.SLIME_WS_URL ||
     ((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host);
   if (accountSessionToken) {

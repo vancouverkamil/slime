@@ -16,15 +16,33 @@ function accountPayload() {
 }
 
 function accountRequest(url, options) {
+  if (window.SLIME_BACKEND_DISABLED) return Promise.reject(new Error('Online backend is not connected.'));
   options = options || {};
-  options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
-  if (accountSessionToken) options.headers.Authorization = 'Bearer ' + accountSessionToken;
+  options.headers = Object.assign({}, options.headers || {});
+  if (accountSessionToken) {
+    if ((options.method || 'GET').toUpperCase() === 'GET') {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 'session=' + encodeURIComponent(accountSessionToken);
+    } else if (typeof options.body === 'string') {
+      try {
+        var body = JSON.parse(options.body || '{}');
+        body._session = accountSessionToken;
+        options.body = JSON.stringify(body);
+      } catch(e) {}
+    }
+  }
+  if (typeof options.body === 'string') options.headers['Content-Type'] = 'text/plain';
   options.credentials = 'include';
   return fetch(accountUrl(url), options).then(function(res) {
     return res.json().then(function(body) {
       if (!res.ok) throw new Error(body.error || 'Request failed.');
       return body;
+    }).catch(function(err) {
+      if (err instanceof SyntaxError) throw new Error('Server unavailable. Please try again.');
+      throw err;
     });
+  }).catch(function(err) {
+    if (err.name === 'TypeError') throw new Error('Server unavailable. Please try again.');
+    throw err;
   });
 }
 
@@ -137,8 +155,10 @@ function renderLeaderboard(players) {
 
 function reconnectLobby() {
   if (lobbySocket) {
-    try { lobbySocket.close(); } catch(e) {}
+    var stale = lobbySocket;
     lobbySocket = null;
+    stale.onclose = null;
+    try { stale.close(); } catch(e) {}
   }
   setTimeout(connectLobby, 150);
 }

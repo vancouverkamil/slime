@@ -1,7 +1,8 @@
-const express  = require('express');
-const http     = require('http');
+const express     = require('express');
+const http        = require('http');
 const { WebSocketServer } = require('ws');
-const path     = require('path');
+const path        = require('path');
+const compression = require('compression');
 const { loadLocalEnv } = require('./local-env');
 const { newBall, newSlime, initRound, tick } = require('./physics');
 const { createAccountStore, normalizeUsername } = require('./account-store');
@@ -23,6 +24,7 @@ const ROOM_NAMES = [
 
 const app = express();
 const accounts = createAccountStore();
+app.use(compression());
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (isAllowedOrigin(origin)) {
@@ -39,8 +41,32 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: '256kb' }));
+app.use(express.text({ type: 'text/plain', limit: '256kb' }));
+app.use((req, _res, next) => {
+  if (typeof req.body === 'string' && req.body.trim()) {
+    try {
+      req.body = JSON.parse(req.body);
+    } catch (_) {
+      req.body = {};
+    }
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'slime_volleyball.html')));
+app.get('/healthz', async (_req, res) => {
+  try {
+    if (accounts.ready) await accounts.ready;
+    res.json({
+      ok: true,
+      database: accounts.constructor && accounts.constructor.name === 'PostgresAccountStore' ? 'postgres' : 'file',
+      websocketClients: allClients.size,
+      rooms: rooms.length,
+    });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err.message || 'health check failed' });
+  }
+});
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
@@ -122,6 +148,8 @@ async function getReqUser(req) {
 function getReqToken(req) {
   const auth = String(req.headers.authorization || '');
   if (auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
+  if (req.query && req.query.session) return String(req.query.session);
+  if (req.body && req.body._session) return String(req.body._session);
   return parseCookies(req.headers.cookie).slime_session;
 }
 
@@ -145,14 +173,18 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const user = await accounts.login(req.body.username, req.body.password);
-  if (!user) {
-    res.status(401).json({ error: 'Invalid username or password.' });
-    return;
+  try {
+    const user = await accounts.login(req.body.username, req.body.password);
+    if (!user) {
+      res.status(401).json({ error: 'Invalid username or password.' });
+      return;
+    }
+    const token = await accounts.createSession(user.id);
+    res.setHeader('Set-Cookie', sessionCookie(token, req));
+    res.json({ user: accounts.publicProfile(user), token });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Login failed.' });
   }
-  const token = await accounts.createSession(user.id);
-  res.setHeader('Set-Cookie', sessionCookie(token, req));
-  res.json({ user: accounts.publicProfile(user), token });
 });
 
 app.post('/api/auth/logout', async (req, res) => {
@@ -284,14 +316,20 @@ function getPublicPlayer(info) {
     hatDrawing: info.hatDrawing || [],
   };
 }
+let _lobbyFlushTimer = null;
 function pushLobbyState() {
-  const msg = JSON.stringify({
-    type:         'lobby_list',
-    lobbies:      getLobbySnapshot(),
-    totalPlayers: allClients.size,
-    playerList:   getPlayerList(),
-  });
-  allClients.forEach((_, ws) => { if (ws.readyState === 1) ws.send(msg); });
+  if (_lobbyFlushTimer) return;
+  _lobbyFlushTimer = setTimeout(() => {
+    _lobbyFlushTimer = null;
+    if (allClients.size === 0) return;
+    const msg = JSON.stringify({
+      type:         'lobby_list',
+      lobbies:      getLobbySnapshot(),
+      totalPlayers: allClients.size,
+      playerList:   getPlayerList(),
+    });
+    allClients.forEach((_, ws) => { if (ws.readyState === 1) ws.send(msg); });
+  }, 50);
 }
 function randomName() {
   return 'Player' + (Math.floor(Math.random() * 9000) + 1000);
@@ -432,6 +470,7 @@ wss.on('connection', async (ws, req) => {
     hatAnim: profile && profile.slime ? profile.slime.hatAnim : 'none',
     bodyColor: profile && profile.slime ? profile.slime.color : '#00ff00',
     hatDrawing: profile && profile.slime ? profile.slime.hatDrawing : [],
+    tournamentBracket: null,
   };
   allClients.set(ws, info);
 
@@ -461,6 +500,7 @@ wss.on('connection', async (ws, req) => {
   });
 
   ws.on('close', () => {
+    handleTournamentLeave(ws, info);
     leaveSlimeverse(ws, info);
     leaveRoom(ws, info, true);
     allClients.delete(ws);
@@ -512,6 +552,12 @@ async function handleMsg(ws, info, msg) {
     leaveRoom(ws, info, false);
     info.state = 'lobby';
     pushLobbyState();
+  } else if (msg.type === 'tournament_join') {
+    handleTournamentJoin(ws, info, msg);
+  } else if (msg.type === 'tournament_ready') {
+    handleTournamentReady(ws, info);
+  } else if (msg.type === 'tournament_leave') {
+    handleTournamentLeave(ws, info);
   }
 }
 
@@ -758,6 +804,166 @@ function createState() {
   };
   initRound(s, true);
   return s;
+}
+
+// ── online tournament lobbies ─────────────────────────────
+const TOURN_BRACKETS = [
+  { id: 'rookie',     name: 'Rookie Cup',     minLevel: 1,  maxLevel: 15  },
+  { id: 'challenger', name: 'Challenger Cup', minLevel: 16, maxLevel: 35  },
+  { id: 'elite',      name: 'Elite Cup',      minLevel: 36, maxLevel: 60  },
+  { id: 'master',     name: 'Master Cup',     minLevel: 61, maxLevel: 100 },
+];
+const TOURN_SIZE = 8;
+const TOURN_BOT_ROSTER = [
+  { name: 'Rust Belly',   color: '#a95522', xp: 150   },
+  { name: 'Static Slime', color: '#55ccff', xp: 800   },
+  { name: 'Mire Unit',    color: '#5b7f2a', xp: 1800  },
+  { name: 'Tar Pit',      color: '#363036', xp: 3500  },
+  { name: 'Ghost Gel',    color: '#eeeeff', xp: 5500  },
+  { name: 'Scarlet Vex',  color: '#ff335f', xp: 9000  },
+  { name: 'Hazard King',  color: '#ffb000', xp: 15000 },
+  { name: 'Iron Maw',     color: '#8899bb', xp: 400   },
+];
+
+const tournamentLobbies = new Map();
+
+function xpToBotLevel(xp) {
+  if (xp < 1000)  return 1;
+  if (xp < 5000)  return 2;
+  if (xp < 15000) return 3;
+  return 4;
+}
+
+function getTournLobby(bracketId) {
+  if (!tournamentLobbies.has(bracketId)) {
+    const def = TOURN_BRACKETS.find(b => b.id === bracketId);
+    if (!def) return null;
+    tournamentLobbies.set(bracketId, {
+      bracketId, name: def.name,
+      minLevel: def.minLevel, maxLevel: def.maxLevel,
+      players: [], status: 'waiting',
+    });
+  }
+  return tournamentLobbies.get(bracketId);
+}
+
+function broadcastTournLobby(lobby) {
+  const msg = JSON.stringify({
+    type: 'tournament_lobby',
+    bracketId: lobby.bracketId,
+    bracketName: lobby.name,
+    minLevel: lobby.minLevel,
+    maxLevel: lobby.maxLevel,
+    players: lobby.players.map(p => ({
+      username: p.info.username,
+      name: p.info.name,
+      level: p.info.progression ? p.info.progression.level : 1,
+      xp: p.xp,
+      ready: p.ready,
+      color: p.info.bodyColor || '#00ff00',
+    })),
+    totalSlots: TOURN_SIZE,
+    readyCount: lobby.players.filter(p => p.ready).length,
+    status: lobby.status,
+  });
+  allClients.forEach((_, ws) => { if (ws.readyState === 1) ws.send(msg); });
+}
+
+function buildTournBracket(lobby) {
+  const sorted = [...lobby.players].sort((a, b) => b.xp - a.xp);
+  sorted.forEach((p, i) => { p.seed = i + 1; });
+
+  const bots = [];
+  const needed = TOURN_SIZE - sorted.length;
+  for (let i = 0; i < needed; i++) {
+    const t = TOURN_BOT_ROSTER[i % TOURN_BOT_ROSTER.length];
+    const seed = sorted.length + i + 1;
+    bots.push({ id: 'bot_' + seed, name: t.name, color: t.color, xp: t.xp, botLevel: xpToBotLevel(t.xp), seed, bot: true });
+  }
+
+  // Standard 8-seed bracket placement: 1v8, 4v5, 2v7, 3v6
+  const seedOrder = [1, 8, 4, 5, 2, 7, 3, 6];
+  const entrantBySeed = (seed) => {
+    if (seed <= sorted.length) {
+      const p = sorted[seed - 1];
+      const prog = p.info.progression;
+      return {
+        id: p.info.username, name: p.info.name,
+        color: p.info.bodyColor || '#00ff00',
+        hat: p.info.hat || 'none', hatAnim: p.info.hatAnim || 'none', hatDrawing: p.info.hatDrawing || [],
+        level: prog ? prog.level : 1, xp: p.xp, botLevel: xpToBotLevel(p.xp),
+        seed, bot: false, username: p.info.username,
+      };
+    }
+    return bots[seed - sorted.length - 1];
+  };
+
+  const ordered = seedOrder.map(entrantBySeed);
+  const m = (a, b, round, slot) => ({ round, slot, a, b, winsA: 0, winsB: 0, winner: null, status: 'upcoming' });
+  return [
+    [m(ordered[0], ordered[1], 0, 0), m(ordered[2], ordered[3], 0, 1), m(ordered[4], ordered[5], 0, 2), m(ordered[6], ordered[7], 0, 3)],
+    [{ round:1, slot:0, a:null, b:null, winsA:0, winsB:0, winner:null, status:'waiting' }, { round:1, slot:1, a:null, b:null, winsA:0, winsB:0, winner:null, status:'waiting' }],
+    [{ round:2, slot:0, a:null, b:null, winsA:0, winsB:0, winner:null, status:'waiting' }],
+  ];
+}
+
+function tryStartTournament(lobby) {
+  if (lobby.players.length < 2 || !lobby.players.every(p => p.ready)) return;
+  lobby.status = 'starting';
+  const rounds = buildTournBracket(lobby);
+  const msg = JSON.stringify({
+    type: 'tournament_start',
+    bracketId: lobby.bracketId,
+    bracketName: lobby.name,
+    rounds,
+    participants: lobby.players.map(p => ({ username: p.info.username, seed: p.seed })),
+  });
+  lobby.players.forEach(({ ws }) => { if (ws.readyState === 1) ws.send(msg); });
+  setTimeout(() => { tournamentLobbies.delete(lobby.bracketId); }, 10000);
+}
+
+function handleTournamentJoin(ws, info, msg) {
+  if (!info.userId) { send(ws, { type: 'tournament_error', error: 'Sign in to join tournaments.' }); return; }
+  const bracketId = String(msg.bracketId || '').slice(0, 20);
+  const lobby = getTournLobby(bracketId);
+  if (!lobby) { send(ws, { type: 'tournament_error', error: 'Invalid bracket.' }); return; }
+  if (lobby.status !== 'waiting') { send(ws, { type: 'tournament_error', error: 'This bracket already started.' }); return; }
+  const level = info.progression ? info.progression.level : 1;
+  if (level < lobby.minLevel || level > lobby.maxLevel) {
+    send(ws, { type: 'tournament_error', error: 'Your level (' + level + ') doesn\'t qualify for this bracket (L' + lobby.minLevel + '-' + lobby.maxLevel + ').' });
+    return;
+  }
+  if (lobby.players.find(p => p.info.userId === info.userId)) { broadcastTournLobby(lobby); return; }
+  if (lobby.players.length >= TOURN_SIZE) { send(ws, { type: 'tournament_error', error: 'This bracket is full.' }); return; }
+  handleTournamentLeave(ws, info);
+  const xp = info.progression ? (info.progression.xp || 0) : 0;
+  lobby.players.push({ ws, info, xp, level, ready: false, seed: null });
+  info.tournamentBracket = bracketId;
+  broadcastTournLobby(lobby);
+}
+
+function handleTournamentReady(ws, info) {
+  const bracketId = info.tournamentBracket;
+  if (!bracketId) return;
+  const lobby = tournamentLobbies.get(bracketId);
+  if (!lobby || lobby.status !== 'waiting') return;
+  const p = lobby.players.find(x => x.ws === ws);
+  if (!p) return;
+  p.ready = !p.ready;
+  broadcastTournLobby(lobby);
+  tryStartTournament(lobby);
+}
+
+function handleTournamentLeave(ws, info) {
+  const bracketId = info.tournamentBracket;
+  if (!bracketId) return;
+  const lobby = tournamentLobbies.get(bracketId);
+  if (lobby) {
+    lobby.players = lobby.players.filter(x => x.ws !== ws);
+    if (lobby.players.length === 0) tournamentLobbies.delete(bracketId);
+    else broadcastTournLobby(lobby);
+  }
+  info.tournamentBracket = null;
 }
 
 const PORT = process.env.PORT || 3000;

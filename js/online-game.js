@@ -124,6 +124,20 @@ function handleServerMessage(msg) {
     hideSpecBadge(); canvas.style.display = 'none';
     menuDiv.style.display = 'none'; showBottomBar(); toInitialMenu();
     addChatMessage(null, 'Opponent disconnected.');
+
+  } else if (msg.type === 'tournament_lobby') {
+    if (typeof onlineTournamentBracketId !== 'undefined' && onlineTournamentBracketId === msg.bracketId) {
+      if (typeof showOnlineTournamentLobby === 'function') showOnlineTournamentLobby(msg);
+    }
+
+  } else if (msg.type === 'tournament_start') {
+    if (typeof loadOnlineTournament === 'function') loadOnlineTournament(msg);
+
+  } else if (msg.type === 'tournament_error') {
+    addChatMessage(null, 'Tournament: ' + (msg.error || 'Unknown error'));
+    if (typeof onlineTournamentBracketId !== 'undefined' && onlineTournamentBracketId) {
+      if (typeof showOnlineBrackets === 'function') showOnlineBrackets();
+    }
   }
 }
 

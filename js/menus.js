@@ -75,6 +75,15 @@ function toInitialMenu() {
   showBottomBar();
 }
 
+function enterSlimeverseEye(btn) {
+  if (btn && btn.classList) {
+    btn.classList.remove('eyeActivated');
+    void btn.offsetWidth;
+    btn.classList.add('eyeActivated');
+  }
+  setTimeout(startSlimeverse, 620);
+}
+
 function loadOptions() {
   legacyGraphics = document.getElementById('LegacyGraphics').checked;
   slowMotion     = document.getElementById('SlowMotion').checked;

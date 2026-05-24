@@ -1,6 +1,7 @@
 var tournamentMode = false;
 var tournamentState = null;
 var tournamentWinPending = false;
+var onlineTournamentBracketId = null;
 
 var TOURNAMENT_FIELD = [
   { id: 'player', name: 'YOU', color: '#00ff00', level: 1, seed: 1, player: true },
@@ -59,6 +60,33 @@ function buildTournamentState() {
 }
 
 function startTournament() {
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  showBottomBar();
+  var canOnline = !!(currentAccount && lobbySocket && lobbySocket.readyState === 1);
+  menuDiv.innerHTML =
+    '<div class="feature-screen tournament-screen">' +
+      '<div class="feature-header">' +
+        '<div><span>Tournament</span><b>Choose Mode</b></div>' +
+        '<button class="feature-back" onclick="toInitialMenu()">BACK</button>' +
+      '</div>' +
+      '<div class="tourn-mode-select">' +
+        '<div class="tourn-mode-card' + (canOnline ? '' : ' tourn-mode-locked') + '" onclick="' + (canOnline ? 'showOnlineBrackets()' : '') + '">' +
+          '<div class="tourn-mode-icon">&#127760;</div>' +
+          '<div class="tourn-mode-title">ONLINE TOURNAMENT</div>' +
+          '<div class="tourn-mode-desc">Join a live bracket with real players. Up to 8 entrants — empty slots fill with CPU bots. Seeded by XP.</div>' +
+          (!currentAccount ? '<div class="tourn-mode-warn">Sign in required</div>' : !canOnline ? '<div class="tourn-mode-warn">Not connected</div>' : '') +
+        '</div>' +
+        '<div class="tourn-mode-card" onclick="startSoloTournament()">' +
+          '<div class="tourn-mode-icon">&#9876;&#65039;</div>' +
+          '<div class="tourn-mode-title">SOLO BRACKET</div>' +
+          '<div class="tourn-mode-desc">Private 8-player bracket vs CPU opponents. No account needed.</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function startSoloTournament() {
   tournamentMode = true;
   tournamentWinPending = false;
   tournamentState = buildTournamentState();
@@ -260,7 +288,7 @@ function tournamentMatchHtml(match) {
 
 function showTournamentHub() {
   if (!tournamentState) {
-    startTournament();
+    startSoloTournament();
     return;
   }
   canvas.style.display = 'none';
@@ -272,7 +300,7 @@ function showTournamentHub() {
   menuDiv.innerHTML =
     '<div class="feature-screen tournament-screen">' +
       '<div class="feature-header">' +
-        '<div><span>Tournament</span><b>Slime Cup Bracket</b></div>' +
+        '<div><span>Tournament</span><b>' + escHtml(tournamentState.bracketName || 'Slime Cup Bracket') + '</b></div>' +
         '<button class="feature-back" onclick="toInitialMenu()">BACK</button>' +
       '</div>' +
       '<div class="bracket-board">' +
@@ -287,8 +315,168 @@ function showTournamentHub() {
         (champion
           ? '<div class="champion-line">' + escHtml(champion.name) + ' CLAIMS THE CUP</div>'
           : '<div><b>Next target:</b> ' + escHtml(opponent ? opponent.name : 'TBD') + '</div>') +
-        (champion ? '<button class="feature-primary" onclick="startTournament()">NEW BRACKET</button>'
+        (champion ? '<button class="feature-primary" onclick="startTournament()">NEW TOURNAMENT</button>'
           : '<button class="feature-primary" onclick="startTournamentMatch()">START SERIES</button>') +
       '</div>' +
     '</div>';
+}
+
+// ── online tournament lobby ───────────────────────────────
+
+var ONLINE_BRACKETS = [
+  { id: 'rookie',     name: 'Rookie Cup',     minLevel: 1,  maxLevel: 15  },
+  { id: 'challenger', name: 'Challenger Cup', minLevel: 16, maxLevel: 35  },
+  { id: 'elite',      name: 'Elite Cup',      minLevel: 36, maxLevel: 60  },
+  { id: 'master',     name: 'Master Cup',     minLevel: 61, maxLevel: 100 },
+];
+
+function showOnlineBrackets() {
+  var myLevel = currentAccount && currentAccount.progression ? currentAccount.progression.level : 1;
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  showBottomBar();
+  menuDiv.innerHTML =
+    '<div class="feature-screen tournament-screen">' +
+      '<div class="feature-header">' +
+        '<div><span>Tournament</span><b>Select Bracket</b></div>' +
+        '<button class="feature-back" onclick="startTournament()">BACK</button>' +
+      '</div>' +
+      '<div class="tourn-bracket-list">' +
+        ONLINE_BRACKETS.map(function(b) {
+          var eligible = myLevel >= b.minLevel && myLevel <= b.maxLevel;
+          var maxStr = b.maxLevel === 100 ? '100+' : String(b.maxLevel);
+          return '<div class="tourn-bracket-row' + (eligible ? ' eligible' : '') + '"' +
+            (eligible ? ' onclick="joinTournamentLobby(\'' + b.id + '\')"' : '') + '>' +
+            '<div class="tourn-bracket-left">' +
+              '<div class="tourn-bracket-name">' + escHtml(b.name) + '</div>' +
+              '<div class="tourn-bracket-range">Level ' + b.minLevel + ' – ' + maxStr + '</div>' +
+            '</div>' +
+            '<div class="tourn-bracket-right">' +
+              (eligible
+                ? '<span class="tourn-bracket-join">JOIN ›</span>'
+                : '<span class="tourn-bracket-lock">L' + b.minLevel + ' required</span>') +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+}
+
+function joinTournamentLobby(bracketId) {
+  if (!lobbySocket || lobbySocket.readyState !== 1) { addChatMessage(null, 'Not connected.'); return; }
+  onlineTournamentBracketId = bracketId;
+  lobbySocket.send(JSON.stringify({ type: 'tournament_join', bracketId: bracketId }));
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  showBottomBar();
+  menuDiv.innerHTML =
+    '<div class="feature-screen tournament-screen">' +
+      '<div class="feature-header">' +
+        '<div><span>Tournament</span><b>Joining...</b></div>' +
+        '<button class="feature-back" onclick="leaveTournamentLobby()">LEAVE</button>' +
+      '</div>' +
+      '<div style="text-align:center;padding-top:60px;color:#555;font-size:10px;letter-spacing:3px;">CONNECTING TO LOBBY...</div>' +
+    '</div>';
+}
+
+function showOnlineTournamentLobby(data) {
+  if (onlineTournamentBracketId !== data.bracketId) return;
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  showBottomBar();
+  renderTournamentLobby(data);
+}
+
+function renderTournamentLobby(data) {
+  var players = data.players || [];
+  var totalSlots = data.totalSlots || 8;
+  var myUsername = currentAccount ? currentAccount.username : null;
+  var myReady = false;
+  players.forEach(function(p) { if (p.username === myUsername) myReady = p.ready; });
+  var emptySlots = Math.max(0, totalSlots - players.length);
+
+  menuDiv.innerHTML =
+    '<div class="feature-screen tournament-screen">' +
+      '<div class="feature-header">' +
+        '<div><span>Tournament</span><b>' + escHtml(data.bracketName || 'Waiting Room') + '</b></div>' +
+        '<button class="feature-back" onclick="leaveTournamentLobby()">LEAVE</button>' +
+      '</div>' +
+      '<div class="tourn-lobby">' +
+        '<div class="tourn-lobby-header">' +
+          '<span>' + players.length + ' / ' + totalSlots + ' SIGNED UP</span>' +
+          '<span class="tourn-ready-count">' + (data.readyCount || 0) + ' READY</span>' +
+        '</div>' +
+        '<div class="tourn-lobby-players">' +
+          players.map(function(p) {
+            var isMe = p.username === myUsername;
+            return '<div class="tourn-lobby-player' + (isMe ? ' me' : '') + (p.ready ? ' ready' : '') + '">' +
+              '<span class="tourn-dot" style="background:' + escHtml(p.color) + ';box-shadow:0 0 7px ' + escHtml(p.color) + ';"></span>' +
+              '<span class="tourn-pname">' + escHtml(p.name) + (isMe ? ' <span class="tourn-you">(you)</span>' : '') + '</span>' +
+              '<span class="tourn-plevel">L' + escHtml(String(p.level)) + '</span>' +
+              '<span class="tourn-pxp">' + escHtml(String(p.xp)) + ' XP</span>' +
+              '<span class="tourn-pready' + (p.ready ? ' yes' : '') + '">' + (p.ready ? 'READY' : 'WAITING') + '</span>' +
+            '</div>';
+          }).join('') +
+          Array.from({length: emptySlots}, function() {
+            return '<div class="tourn-lobby-player bot">' +
+              '<span class="tourn-dot"></span>' +
+              '<span class="tourn-pname">CPU Bot</span>' +
+              '<span class="tourn-plevel"></span>' +
+              '<span class="tourn-pxp"></span>' +
+              '<span class="tourn-pready">-</span>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        '<div class="tourn-lobby-info">Seeded by XP — highest XP gets seed 1. Empty slots fill with CPU bots. Min 2 players to start.</div>' +
+        '<button class="feature-primary' + (myReady ? ' tourn-ready-on' : '') + '" onclick="toggleTournamentReady()">' +
+          (myReady ? 'READY ✓' : 'READY UP') +
+        '</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function toggleTournamentReady() {
+  if (!lobbySocket || lobbySocket.readyState !== 1) return;
+  lobbySocket.send(JSON.stringify({ type: 'tournament_ready' }));
+}
+
+function leaveTournamentLobby() {
+  if (lobbySocket && lobbySocket.readyState === 1) {
+    lobbySocket.send(JSON.stringify({ type: 'tournament_leave' }));
+  }
+  onlineTournamentBracketId = null;
+  startTournament();
+}
+
+function loadOnlineTournament(data) {
+  var myUsername = currentAccount ? currentAccount.username : null;
+  var rounds = data.rounds.map(function(round, ri) {
+    return round.map(function(match) {
+      function conv(e) {
+        if (!e) return null;
+        var isMe = !e.bot && e.username === myUsername;
+        var aiLevel = e.botLevel || (e.bot ? 2 : Math.min(4, Math.max(1, Math.round((e.level || 1) / 25) + 1)));
+        return {
+          id: e.bot ? e.id : (e.username || e.id),
+          name: e.name, color: e.color || '#00ff00',
+          hat: e.hat || 'none', hatAnim: e.hatAnim || 'none', hatDrawing: e.hatDrawing || [],
+          level: aiLevel, seed: e.seed,
+          player: isMe, bot: !!e.bot, username: e.username || null,
+        };
+      }
+      return {
+        id: 'r' + ri + 'm' + match.slot, round: ri, slot: match.slot,
+        a: conv(match.a), b: conv(match.b),
+        winsA: 0, winsB: 0, winner: null,
+        status: match.a && match.b ? 'upcoming' : 'bye',
+      };
+    });
+  });
+
+  onlineTournamentBracketId = null;
+  tournamentMode = true;
+  tournamentWinPending = false;
+  tournamentState = { rounds: rounds, currentRound: 0, currentSeries: null, champion: null, bracketName: data.bracketName };
+  autoResolveTournamentRound(0);
+  showTournamentHub();
 }
