@@ -1,6 +1,7 @@
 // ── State ─────────────────────────────────────────────────────────────────
 var slimeverseActive    = false;
 var slimeversePlayers   = {};
+var slimeverseVisualPlayers = {};
 var slimeverseSelfId    = null;
 var slimeverseWorld     = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
 var slimeverseInputInterval = null;
@@ -140,6 +141,7 @@ function leaveSlimeverse() {
   svStoreTransition = 0;
   if (slimeverseInputInterval) { clearInterval(slimeverseInputInterval); slimeverseInputInterval = null; }
   slimeversePlayers = {};
+  slimeverseVisualPlayers = {};
   if (lobbySocket && lobbySocket.readyState === 1)
     lobbySocket.send(JSON.stringify({ type: 'leave_slimeverse' }));
   showLeaveBtn(false);
@@ -167,7 +169,11 @@ function handleSlimeverseMessage(msg) {
     });
     return true;
   }
-  if (msg.type === 'slimeverse_leave') { delete slimeversePlayers[msg.id]; return true; }
+  if (msg.type === 'slimeverse_leave') {
+    delete slimeversePlayers[msg.id];
+    delete slimeverseVisualPlayers[msg.id];
+    return true;
+  }
   if (msg.type === 'slimeverse_customized' && msg.player) {
     slimeversePlayers[msg.player.id] = Object.assign(slimeversePlayers[msg.player.id] || {}, msg.player);
     return true;
@@ -292,10 +298,11 @@ function renderSlimeverse(ts) {
     mvStep(mvLocal, slimeverseWorld);
     mvAccum -= 16;
   }
+  var mvRender = mvRenderState(mvLocal, mvAccum, slimeverseWorld);
 
   // Camera tracks local predicted position (instant, no wait for server round-trip)
   var svVisibleWorldW = viewWidth / SV_WORLD_ZOOM;
-  slimeverseCamera.x += (mvLocal.x - svVisibleWorldW / 2 - slimeverseCamera.x) * 0.15;
+  slimeverseCamera.x += (mvRender.x - svVisibleWorldW / 2 - slimeverseCamera.x) * 0.22;
   slimeverseCamera.x = Math.max(0, Math.min(slimeverseWorld.width - svVisibleWorldW, slimeverseCamera.x));
 
   drawSlimeverseWorld();
@@ -306,9 +313,9 @@ function renderSlimeverse(ts) {
     .sort(function(a, b) { return (b.z || 0) - (a.z || 0); })
     .forEach(function(p) {
       if (p.id === slimeverseSelfId) {
-        drawSlimeversePlayer(Object.assign({}, p, { x: mvLocal.x, y: mvLocal.y, z: mvLocal.z }));
+        drawSlimeversePlayer(Object.assign({}, p, { x: mvRender.x, y: mvRender.y, z: mvRender.z }));
       } else {
-        drawSlimeversePlayer(p);
+        drawSlimeversePlayer(smoothSlimeverseRemotePlayer(p));
       }
     });
 
@@ -342,6 +349,23 @@ function renderSlimeverse(ts) {
 }
 
 // ── World drawing ─────────────────────────────────────────────────────────
+function smoothSlimeverseRemotePlayer(player) {
+  var visual = slimeverseVisualPlayers[player.id];
+  if (!visual) {
+    visual = slimeverseVisualPlayers[player.id] = Object.assign({}, player);
+    return visual;
+  }
+  var x = Number(visual.x) || 0;
+  var y = Number(visual.y);
+  var z = Number(visual.z) || 0;
+  if (!Number.isFinite(y)) y = slimeverseWorld.floorY;
+  Object.assign(visual, player);
+  visual.x = x + ((Number(player.x) || 0) - x) * 0.28;
+  visual.y = y + ((Number(player.y) || slimeverseWorld.floorY) - y) * 0.34;
+  visual.z = z + ((Number(player.z) || 0) - z) * 0.28;
+  return visual;
+}
+
 function drawSlimeverseWorld() {
   var cx = ctx, w = viewWidth, h = viewHeight;
   var hY     = h * SV_HORIZ_FRAC;

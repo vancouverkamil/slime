@@ -31,6 +31,11 @@ test('slimeverse uses a closer readable character-scale camera', () => {
   assert.match(source, /var SV_WORLD_ZOOM\s*=\s*1\.34/);
 });
 
+test('slimeverse smooths remote player snapshots before rendering', () => {
+  assert.match(source, /function smoothSlimeverseRemotePlayer\(/);
+  assert.match(source, /drawSlimeversePlayer\(smoothSlimeverseRemotePlayer\(p\)\)/);
+});
+
 test('inventory desktop sizing is intentionally larger while phones stay compact', () => {
   assert.match(css, /width:min\(1120px,96vw\)/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*#InventoryCard \{ width:94vw;/);

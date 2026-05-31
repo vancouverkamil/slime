@@ -38,18 +38,35 @@ function mvStep(s, world) {
   }
 }
 
-// Gentle correction toward the authoritative server position.
-// With a fixed 16ms client tick the max honest drift is RTT/2 × 7 px ≈ 87 px at
-// 200 ms latency — nowhere near 800.  The hard-snap therefore only fires on a
-// genuine server teleport (spawn / respawn), never during normal movement.
+// Pay down authoritative drift without dragging latency-delayed snapshots
+// directly into the rendered pose. Only spawn-scale errors hard-sync.
+function mvBoundedCorrection(error, alpha, maxStep) {
+  return Math.max(-maxStep, Math.min(maxStep, error * alpha));
+}
+
 function mvReconcile(local, server, alpha) {
   var movingX = !!(keysDown[KEY_A] || keysDown[KEY_LEFT] || keysDown[KEY_D] || keysDown[KEY_RIGHT]);
   var movingZ = !!(keysDown[KEY_UP] || keysDown[KEY_DOWN]);
-  if (!movingX) local.x += (server.x - local.x) * alpha;
-  if (!movingZ) local.z += (server.z - local.z) * alpha;
-  if (Math.abs(local.x - server.x) > 800) local.x = server.x;
-  if (Math.abs(local.z - server.z) > 250) local.z = server.z;
-  local.y += (server.y - local.y) * alpha;
+  var dx = server.x - local.x;
+  var dz = server.z - local.z;
+  var dy = server.y - local.y;
+  if (!movingX || Math.abs(dx) > 260) local.x += mvBoundedCorrection(dx, movingX ? 0.035 : alpha, movingX ? 4 : 16);
+  if (!movingZ || Math.abs(dz) > 300) local.z += mvBoundedCorrection(dz, movingZ ? 0.035 : alpha, movingZ ? 4 : 18);
+  local.y += mvBoundedCorrection(dy, alpha, 12);
+  if (Math.abs(dx) > 1400 || Math.abs(dz) > 1000 || Math.abs(dy) > 900) {
+    local.x = server.x;
+    local.y = server.y;
+    local.z = server.z;
+  }
+}
+
+function mvRenderState(local, remainderMs, world) {
+  var portion = Math.max(0, Math.min(1, Number(remainderMs || 0) / 16));
+  return {
+    x: Math.max(70, Math.min((world.width || 4500) - 70, local.x + local.vx * portion)),
+    y: Math.min(world.floorY || 1980, local.y + local.vy * portion),
+    z: Math.max(0, Math.min(world.maxZ || 600, local.z + local.vz * portion)),
+  };
 }
 
 // Hard-sync from a server player snapshot (used on join and respawn).
