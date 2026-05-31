@@ -138,6 +138,30 @@ function endMatchEarly() {
 // ── esc pause menu ────────────────────────────────────────
 var escMenuOpen = false;
 
+function hideTopOverlay() {
+  var inventory = document.getElementById('InventoryOverlay');
+  if (inventory && inventory.style.display !== 'none' && inventory.style.display !== '') {
+    hideInventory();
+    return true;
+  }
+  var profile = document.getElementById('ProfileOverlay');
+  if (profile && profile.style.display !== 'none' && profile.style.display !== '') {
+    hideProfile();
+    return true;
+  }
+  var fullscreen = document.getElementById('HatFullscreenOverlay');
+  if (fullscreen && fullscreen.classList.contains('fs-open')) {
+    closeHatFullscreen();
+    return true;
+  }
+  var options = document.getElementById('OptionsDiv');
+  if (options && options.style.display !== 'none') {
+    hideOptions();
+    return true;
+  }
+  return false;
+}
+
 function showEscMenu() {
   if (replayInterval) return;
   escMenuOpen = true;

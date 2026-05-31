@@ -129,3 +129,23 @@ test('saved hat drawings are capped at five and can be deleted', () => {
   store.deleteHatPreset(user.id, profile.savedHatDrawings[0].id);
   assert.strictEqual(store.publicProfile(store.findByUsername('artist')).savedHatDrawings.length, 4);
 });
+
+test('zero coin balances remain zero and cannot buy items', () => {
+  const store = tempStore();
+  const user = store.register('spender', 'password123');
+  user.coins = 0;
+  store.save();
+
+  assert.strictEqual(store.publicProfile(user).coins, 0);
+  assert.throws(() => store.purchaseItem(user.id, 'devil', 1), /Not enough SC/);
+  assert.deepStrictEqual(user.inventory, []);
+});
+
+test('legacy accounts without a coin field retain the original starting balance', () => {
+  const store = tempStore();
+  const user = store.register('legacy', 'password123');
+  delete user.coins;
+  store.save();
+
+  assert.strictEqual(store.publicProfile(user).coins, 1);
+});

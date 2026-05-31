@@ -1,4 +1,8 @@
-<html><head>
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slime Volleyball</title>
 <script src="slime-config.js"></script>
 <script src="ws-config.js"></script>
 <script src="progression.js"></script>
@@ -8,6 +12,7 @@
 <script type="text/javascript" src="MentalSlimeAI.js"></script>
 <script type="text/javascript" src="js/client-state.js"></script>
 <script type="text/javascript" src="js/accounts.js"></script>
+<script type="text/javascript" src="js/inventory-ui.js"></script>
 <script type="text/javascript" src="js/render-maps.js"></script>
 <script type="text/javascript" src="js/render-game.js"></script>
 <script type="text/javascript" src="js/local-game.js"></script>
@@ -259,14 +264,14 @@
 </div>
 
 <div id="PlayerTooltip"></div>
-<div id="ProfileOverlay">
+<div id="ProfileOverlay" role="dialog" aria-modal="true" aria-label="Player profile" onclick="if(event.target===this)hideProfile()">
   <div id="ProfileCard">
     <button id="ProfileClose" onclick="hideProfile()">&#10005;</button>
     <div id="ProfileContent"></div>
   </div>
 </div>
 
-<div id="InventoryOverlay">
+<div id="InventoryOverlay" role="dialog" aria-modal="true" aria-labelledby="InventoryTitle" onclick="if(event.target===this)hideInventory()">
   <div id="InventoryCard">
     <div id="InventoryHeader">
       <span id="InventoryTitle">// INVENTORY //</span>

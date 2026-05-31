@@ -2,6 +2,7 @@ var tournamentMode = false;
 var tournamentState = null;
 var tournamentWinPending = false;
 var onlineTournamentBracketId = null;
+var TOURNAMENT_STORAGE_KEY = 'slime_soloTournament';
 
 var TOURNAMENT_FIELD = [
   { id: 'player', name: 'YOU', color: '#00ff00', level: 1, seed: 1, player: true },
@@ -56,7 +57,77 @@ function buildTournamentState() {
     currentRound: 0,
     currentSeries: null,
     champion: null,
+    phase: 'bracket',
+    kind: 'solo',
   };
+}
+
+function tournamentMatchById(id) {
+  if (!tournamentState || !id) return null;
+  for (var r = 0; r < tournamentState.rounds.length; r++) {
+    for (var m = 0; m < tournamentState.rounds[r].length; m++) {
+      if (tournamentState.rounds[r][m].id === id) return tournamentState.rounds[r][m];
+    }
+  }
+  return null;
+}
+
+function saveSoloTournament() {
+  if (!tournamentState || tournamentState.kind !== 'solo') return;
+  try {
+    localStorage.setItem(TOURNAMENT_STORAGE_KEY, JSON.stringify({
+      rounds: tournamentState.rounds,
+      currentRound: tournamentState.currentRound,
+      currentSeriesId: tournamentState.currentSeries && tournamentState.currentSeries.id,
+      champion: tournamentState.champion,
+      phase: tournamentState.phase,
+      kind: 'solo',
+    }));
+  } catch (e) {}
+}
+
+function clearSoloTournament() {
+  try { localStorage.removeItem(TOURNAMENT_STORAGE_KEY); } catch (e) {}
+}
+
+function discardSoloTournament() {
+  if (typeof window !== 'undefined' && window.confirm && !window.confirm('Discard the saved solo tournament run?')) return;
+  clearSoloTournament();
+  startTournament();
+}
+
+function hasSavedSoloTournament() {
+  try { return !!localStorage.getItem(TOURNAMENT_STORAGE_KEY); } catch (e) { return false; }
+}
+
+function resumeSoloTournament() {
+  var saved;
+  try { saved = JSON.parse(localStorage.getItem(TOURNAMENT_STORAGE_KEY) || 'null'); } catch (e) {}
+  if (!saved || !Array.isArray(saved.rounds) || saved.rounds.length !== 3) {
+    clearSoloTournament();
+    startSoloTournament();
+    return;
+  }
+  tournamentMode = true;
+  tournamentWinPending = !!(saved.champion && saved.champion.player);
+  tournamentState = saved;
+  tournamentState.kind = 'solo';
+  tournamentState.phase = saved.phase || 'bracket';
+  tournamentState.currentSeries = tournamentMatchById(saved.currentSeriesId);
+  if (tournamentState.currentSeries && tournamentState.currentSeries.status === 'live') {
+    tournamentState.currentSeries.status = 'upcoming';
+    tournamentState.currentSeries = null;
+    tournamentState.phase = 'bracket';
+  }
+  showTournamentHub();
+}
+
+function exitTournamentToMenu() {
+  pendingMatchIntro = null;
+  tournamentMode = false;
+  tournamentState = null;
+  tournamentWinPending = false;
+  toInitialMenu();
 }
 
 function startTournament() {
@@ -83,14 +154,23 @@ function startTournament() {
           '<div class="tourn-mode-desc">Private 8-player bracket vs CPU opponents. No account needed.</div>' +
         '</div>' +
       '</div>' +
+      (hasSavedSoloTournament()
+        ? '<div class="tourn-resume"><b>SOLO RUN IN PROGRESS</b><span>Your bracket is saved locally.</span><button class="feature-primary" onclick="resumeSoloTournament()">RESUME BRACKET</button><button class="feature-back" onclick="discardSoloTournament()">DISCARD</button></div>'
+        : '') +
     '</div>';
 }
 
-function startSoloTournament() {
+function startSoloTournament(forceNew) {
+  if (!forceNew && hasSavedSoloTournament()) {
+    resumeSoloTournament();
+    return;
+  }
+  clearSoloTournament();
   tournamentMode = true;
   tournamentWinPending = false;
   tournamentState = buildTournamentState();
   autoResolveTournamentRound(0);
+  saveSoloTournament();
   showTournamentHub();
 }
 
@@ -111,8 +191,12 @@ function getMatchOpponent(match) {
 }
 
 function autoWinner(match) {
-  var aScore = (match.a.level || 1) * 2 + Math.random();
-  var bScore = (match.b.level || 1) * 2 + Math.random();
+  var salt = String(match.id) + ':' + String(match.a.id) + ':' + String(match.b.id);
+  var hash = 0;
+  for (var i = 0; i < salt.length; i++) hash = ((hash << 5) - hash + salt.charCodeAt(i)) | 0;
+  var roll = (Math.abs(hash) % 1000) / 1000;
+  var aScore = (match.a.level || 1) * 2 + roll;
+  var bScore = (match.b.level || 1) * 2 + (1 - roll);
   return aScore >= bScore ? match.a : match.b;
 }
 
@@ -124,10 +208,11 @@ function autoResolveTournamentRound(roundIdx) {
     if (match.a.player || match.b.player) return;
     match.winner = autoWinner(match);
     match.status = 'final';
-    match.winsA = match.winner === match.a ? 2 : Math.floor(Math.random() * 2);
-    match.winsB = match.winner === match.b ? 2 : Math.floor(Math.random() * 2);
+    match.winsA = match.winner === match.a ? 2 : Math.abs(match.id.charCodeAt(0) + match.slot) % 2;
+    match.winsB = match.winner === match.b ? 2 : Math.abs(match.id.charCodeAt(1) + match.slot) % 2;
     advanceTournamentWinner(match);
   });
+  saveSoloTournament();
 }
 
 function advanceTournamentWinner(match) {
@@ -135,6 +220,8 @@ function advanceTournamentWinner(match) {
   if (!nextRound) {
     tournamentState.champion = match.winner;
     tournamentWinPending = !!(match.winner && match.winner.player);
+    tournamentState.phase = match.winner && match.winner.player ? 'champion' : 'eliminated';
+    saveSoloTournament();
     return;
   }
   var next = nextRound[Math.floor(match.slot / 2)];
@@ -142,9 +229,11 @@ function advanceTournamentWinner(match) {
   else next.b = match.winner;
   next.status = next.a && next.b ? 'upcoming' : 'waiting';
   autoResolveTournamentRound(match.round + 1);
+  saveSoloTournament();
 }
 
 function startTournamentMatch() {
+  if (pendingMatchIntro) return;
   var match = activePlayerMatch();
   if (!match) {
     showTournamentHub();
@@ -152,6 +241,8 @@ function startTournamentMatch() {
   }
   match.status = 'live';
   tournamentState.currentSeries = match;
+  tournamentState.phase = 'active_match';
+  saveSoloTournament();
   launchTournamentSet(match);
 }
 
@@ -227,13 +318,28 @@ function confirmMatchIntro() {
   if (fn) fn();
 }
 
+function cancelMatchIntro() {
+  if (!pendingMatchIntro) return false;
+  pendingMatchIntro = null;
+  if (tournamentState && tournamentState.currentSeries) {
+    tournamentState.currentSeries.status = 'upcoming';
+    tournamentState.currentSeries = null;
+    tournamentState.phase = 'bracket';
+    saveSoloTournament();
+    showTournamentHub();
+  } else {
+    toInitialMenu();
+  }
+  return true;
+}
+
 function tournamentRoundName(round) {
   return round === 0 ? 'Quarterfinal' : round === 1 ? 'Semifinal' : 'Final';
 }
 
 function finishTournamentSet(playerWon) {
   var match = tournamentState && tournamentState.currentSeries;
-  if (!match) return false;
+  if (!match || match.status === 'final') return false;
   if (match.a.player) {
     if (playerWon) match.winsA++;
     else match.winsB++;
@@ -249,18 +355,15 @@ function finishTournamentSet(playerWon) {
   } else {
     match.status = 'upcoming';
   }
+  tournamentState.phase = tournamentState.champion ? tournamentState.phase : 'result_pending';
+  saveSoloTournament();
   return true;
 }
 
 function tournamentContinueAfterMatch() {
   if (!tournamentState) { toInitialMenu(); return; }
-  var active = activePlayerMatch();
-  if (active) {
-    if (active === tournamentState.currentSeries || active.status !== 'final') {
-      showTournamentHub();
-      return;
-    }
-  }
+  tournamentState.phase = tournamentState.champion ? tournamentState.phase : 'bracket';
+  saveSoloTournament();
   showTournamentHub();
 }
 
@@ -297,12 +400,14 @@ function showTournamentHub() {
   var match = activePlayerMatch();
   var opponent = getMatchOpponent(match);
   var champion = tournamentState.champion;
+  var roundLabel = match ? tournamentRoundName(match.round) : (champion ? 'Complete' : 'Awaiting bracket');
   menuDiv.innerHTML =
     '<div class="feature-screen tournament-screen">' +
       '<div class="feature-header">' +
         '<div><span>Tournament</span><b>' + escHtml(tournamentState.bracketName || 'Slime Cup Bracket') + '</b></div>' +
-        '<button class="feature-back" onclick="toInitialMenu()">BACK</button>' +
+        '<button class="feature-back" onclick="exitTournamentToMenu()">SAVE &amp; EXIT</button>' +
       '</div>' +
+      '<div class="tourn-progress" role="status" aria-live="polite"><b>' + escHtml(roundLabel) + '</b><span>' + (champion ? escHtml(champion.name) + ' claims the cup' : 'Best of 3 / first to 2 wins') + '</span></div>' +
       '<div class="bracket-board">' +
         tournamentState.rounds.map(function(round, i) {
           return '<div class="bracket-round">' +
@@ -315,8 +420,9 @@ function showTournamentHub() {
         (champion
           ? '<div class="champion-line">' + escHtml(champion.name) + ' CLAIMS THE CUP</div>'
           : '<div><b>Next target:</b> ' + escHtml(opponent ? opponent.name : 'TBD') + '</div>') +
-        (champion ? '<button class="feature-primary" onclick="startTournament()">NEW TOURNAMENT</button>'
-          : '<button class="feature-primary" onclick="startTournamentMatch()">START SERIES</button>') +
+        (champion ? '<button class="feature-primary" onclick="clearSoloTournament();startTournament()">NEW TOURNAMENT</button>'
+          : match ? '<button class="feature-primary" onclick="startTournamentMatch()">START SERIES</button>'
+          : '<button class="feature-primary" disabled>BRACKET UPDATING</button>') +
       '</div>' +
     '</div>';
 }
@@ -476,7 +582,7 @@ function loadOnlineTournament(data) {
   onlineTournamentBracketId = null;
   tournamentMode = true;
   tournamentWinPending = false;
-  tournamentState = { rounds: rounds, currentRound: 0, currentSeries: null, champion: null, bracketName: data.bracketName };
+  tournamentState = { rounds: rounds, currentRound: 0, currentSeries: null, champion: null, bracketName: data.bracketName, phase: 'bracket', kind: 'online' };
   autoResolveTournamentRound(0);
   showTournamentHub();
 }

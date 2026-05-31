@@ -231,10 +231,13 @@ function renderProfile(user) {
     '<div class="profile-empty">Achievement slots are ready. Unlock rules come next.</div>';
 }
 
+var profileReturnFocus = null;
+
 function showProfile(username) {
   var overlay = document.getElementById('ProfileOverlay');
   var content = document.getElementById('ProfileContent');
   if (!overlay || !content) return;
+  profileReturnFocus = document.activeElement;
   overlay.style.display = 'flex';
   content.innerHTML = '<div class="profile-empty">Loading profile...</div>';
   accountRequest('/api/profiles/' + encodeURIComponent(username), { method: 'GET', headers: {} })
@@ -249,86 +252,6 @@ function showMyProfile() {
 function hideProfile() {
   var overlay = document.getElementById('ProfileOverlay');
   if (overlay) overlay.style.display = 'none';
-}
-
-var INV_HAT_LABELS = {
-  devil:      'Devil Horns',
-  prismatic:  'Prismatic Crown',
-  dragonfire: 'Dragon Horns',
-  cosmic:     'Cosmic Crown',
-  angelic:    'Triple Halo',
-  overlord:   'Overlord Crown',
-  crown:      'Royal Crown',
-  goldcrown:  'Gold Crown',
-  tophat:     'Top Hat',
-  cowboy:     'Cowboy Hat',
-  halo:       'Halo',
-  party:      'Party Hat',
-  custom:     'Custom Hat',
-};
-
-function openInventory() {
-  if (!currentAccount) return;
-  var overlay = document.getElementById('InventoryOverlay');
-  if (!overlay) return;
-  overlay.style.display = 'flex';
-  renderInventory(currentAccount);
-}
-
-function hideInventory() {
-  var overlay = document.getElementById('InventoryOverlay');
-  if (overlay) overlay.style.display = 'none';
-}
-
-function renderInventory(user) {
-  var grid = document.getElementById('InventoryGrid');
-  var coinsEl = document.getElementById('InventoryCoins');
-  if (!grid) return;
-  var coins = user.coins || 1;
-  var inv = user.inventory || [];
-  if (coinsEl) coinsEl.textContent = 'SC: ' + coins;
-
-  var COLS = 8, ROWS = 4, TOTAL = COLS * ROWS;
-  var slots = [];
-  // Slot 0: always coin
-  slots.push({ type: 'coin', count: coins });
-  // Remaining slots: owned hats
-  inv.forEach(function(hatId) { slots.push({ type: 'hat', hat: hatId }); });
-  // Pad to 32
-  while (slots.length < TOTAL) slots.push(null);
-  slots = slots.slice(0, TOTAL);
-
-  grid.innerHTML = slots.map(function(s, i) {
-    if (!s) return '<div class="inv-slot inv-empty"></div>';
-    if (s.type === 'coin') {
-      return '<div class="inv-slot inv-coin" title="Slime Coins">' +
-        '<div class="inv-icon">&#9679;</div>' +
-        '<div class="inv-label">SC: ' + s.count + '</div>' +
-        '</div>';
-    }
-    var label = INV_HAT_LABELS[s.hat] || s.hat;
-    return '<div class="inv-slot inv-hat" onclick="equipHatFromInv(\'' + escHtml(s.hat) + '\')" title="' + escHtml(label) + '">' +
-      '<div class="inv-icon inv-hat-icon" data-hat="' + escHtml(s.hat) + '"></div>' +
-      '<div class="inv-label">' + escHtml(label) + '</div>' +
-      '</div>';
-  }).join('');
-
-  // Draw hat previews on canvases
-  grid.querySelectorAll('.inv-hat-icon').forEach(function(el) {
-    var hatId = el.getAttribute('data-hat');
-    var c = document.createElement('canvas');
-    c.width = 36; c.height = 36;
-    var cx2 = c.getContext('2d');
-    cx2.fillStyle = '#0a0018'; cx2.fillRect(0, 0, 36, 36);
-    drawHatAt(cx2, 18, 30, 13, { hat: hatId, anim: 'none', drawing: [] });
-    el.appendChild(c);
-  });
-}
-
-function equipHatFromInv(hatId) {
-  playerHat = hatId;
-  try { localStorage.setItem('slimeHat', hatId); } catch(e) {}
-  sendCustomization();
-  if (typeof syncCustomizationUI === 'function') syncCustomizationUI();
-  hideInventory();
+  if (profileReturnFocus && typeof profileReturnFocus.focus === 'function') profileReturnFocus.focus();
+  profileReturnFocus = null;
 }

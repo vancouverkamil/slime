@@ -52,25 +52,18 @@ function toInitialMenu() {
   hideSpecBadge(); showLeaveBtn(false); particles = [];
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
-    '<div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;' +
-    'align-items:center;justify-content:center;background:#05000f;overflow:hidden;">' +
-    // grid lines
-    '<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,200,.03) 1px,transparent 1px),' +
-    'linear-gradient(90deg,rgba(0,255,200,.03) 1px,transparent 1px);background-size:30px 30px;"></div>' +
-    // title
-    '<div style="position:relative;font-size:clamp(120px,20vh,230px);font-weight:bold;color:#00ffcc;letter-spacing:8px;' +
-    'text-shadow:0 0 40px rgba(0,255,200,.8),0 0 80px rgba(0,255,200,.3);margin-bottom:clamp(2px,.8vh,12px);">SLIME</div>' +
-    '<div style="position:relative;font-size:clamp(30px,5vh,58px);color:#ff00cc;letter-spacing:14px;text-transform:uppercase;' +
-    'text-shadow:0 0 18px rgba(255,0,204,.6);margin-bottom:clamp(34px,6vh,70px);">VOLLEYBALL</div>' +
-    // session stats
+    '<div class="home-screen">' +
+    '<div class="home-grid"></div>' +
+    '<div class="home-title">SLIME</div>' +
+    '<div class="home-subtitle">VOLLEYBALL</div>' +
     (sessionWins + sessionLosses > 0
-      ? '<div style="position:relative;font-size:clamp(24px,3vh,34px);color:#444;letter-spacing:2px;margin-bottom:14px;">' +
+      ? '<div class="home-session">' +
         'SESSION: <span style="color:#66ffcc;">' + sessionWins + 'W</span> / ' +
         '<span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>'
       : '') +
-    '<div style="position:relative;font-size:clamp(24px,3vh,34px);color:rgba(0,255,200,.25);letter-spacing:4px;text-transform:uppercase;">' +
+    '<div class="home-emotes">' +
     'Use keys 1-4 during game for emotes</div>' +
-    '<div style="position:absolute;bottom:clamp(22px,3vh,46px);font-size:clamp(22px,2.6vh,30px);color:#222;letter-spacing:3px;text-transform:uppercase;">Quick Play to start</div>' +
+    '<div class="home-hint">Quick Play to start</div>' +
     '</div>';
   showBottomBar();
 }
@@ -123,6 +116,17 @@ function syncScaleButtons() {
   if (fb) fb.classList.toggle('active', gameScale === 'full');
   if (cb) cb.classList.toggle('active', gameScale === 'compact');
 }
+function calculateOverlayBounds(width, height) {
+  var margin = Math.max(14, Math.min(28, Math.floor(Math.min(width, height) * 0.04)));
+  var overlayWidth = Math.max(0, Math.min(1280, width - margin * 2));
+  var overlayHeight = Math.max(0, Math.min(900, height - margin * 2));
+  return {
+    width: overlayWidth,
+    height: overlayHeight,
+    left: Math.max(0, Math.round((width - overlayWidth) / 2)),
+    top: Math.max(0, Math.round((height - overlayHeight) / 2)),
+  };
+}
 function applyGameScale() {
   var wrapper = document.getElementById('LobbyWrapper');
   var mr      = document.getElementById('MiddleRow');
@@ -131,7 +135,8 @@ function applyGameScale() {
   if (!wrapper || !mr || !cd) return;
 
   wrapper.style.width = '100vw';
-  wrapper.style.height = '100vh';
+  wrapper.style.height = window.innerWidth <= 960 ? 'auto' : '100vh';
+  wrapper.style.minHeight = '100vh';
   wrapper.style.maxWidth = 'none';
   mr.style.height = '';
   cd.style.width = '';
@@ -140,8 +145,8 @@ function applyGameScale() {
   var sidebar = document.getElementById('Sidebar');
   if (sidebar) sidebar.style.display = gameScale === 'full' ? 'none' : '';
 
-  var nw = Math.max(MIN_VIEW_W, Math.round(cd.clientWidth || cd.offsetWidth || MIN_VIEW_W));
-  var nh = Math.max(MIN_VIEW_H, Math.round(cd.clientHeight || cd.offsetHeight || MIN_VIEW_H));
+  var nw = Math.max(1, Math.round(cd.clientWidth || cd.offsetWidth || MIN_VIEW_W));
+  var nh = Math.max(1, Math.round(cd.clientHeight || cd.offsetHeight || MIN_VIEW_H));
 
   if (canvas && (canvas.width !== nw || canvas.height !== nh)) {
     canvas.width = nw;
@@ -149,16 +154,15 @@ function applyGameScale() {
   }
   updateWindowSize(nw, nh);
   if (menuDiv) {
-    menuDiv.style.width = nw + 'px';
-    menuDiv.style.height = nh + 'px';
+    menuDiv.style.width = '100%';
+    menuDiv.style.height = '100%';
   }
   if (optDiv) {
-    var ow = Math.max(760, Math.min(1280, nw - 56));
-    var oh = Math.max(560, Math.min(nh - 56, 900));
-    optDiv.style.width = ow + 'px';
-    optDiv.style.height = oh + 'px';
-    optDiv.style.left = Math.max(14, Math.round((nw - ow) / 2)) + 'px';
-    optDiv.style.top = Math.max(14, Math.round((nh - oh) / 2)) + 'px';
+    var bounds = calculateOverlayBounds(nw, nh);
+    optDiv.style.width = bounds.width + 'px';
+    optDiv.style.height = bounds.height + 'px';
+    optDiv.style.left = bounds.left + 'px';
+    optDiv.style.top = bounds.top + 'px';
   }
 }
 function _onWindowResize() { applyGameScale(); }

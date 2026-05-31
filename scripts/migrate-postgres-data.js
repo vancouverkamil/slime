@@ -40,7 +40,7 @@ async function main() {
         ${user.id}, ${user.username}, ${user.display_name}, ${user.password_salt}, ${user.password_hash},
         ${user.created_at}, ${user.updated_at}, ${JSON.stringify(user.stats)}::jsonb,
         ${JSON.stringify(user.slime)}::jsonb, ${JSON.stringify(user.achievements)}::jsonb,
-        ${JSON.stringify(user.recent_matches)}::jsonb, ${Number(user.coins) || 1},
+        ${JSON.stringify(user.recent_matches)}::jsonb, ${Number.isFinite(Number(user.coins)) ? Number(user.coins) : 1},
         ${JSON.stringify(user.inventory || [])}::jsonb,
         ${JSON.stringify(user.saved_hat_drawings || [])}::jsonb
       )

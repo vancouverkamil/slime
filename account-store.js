@@ -58,6 +58,11 @@ function normalizeStats(stats) {
   };
 }
 
+function normalizeCoins(coins) {
+  const value = Number(coins);
+  return Number.isFinite(value) ? value : 1;
+}
+
 function defaultUser(username, password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const createdAt = nowIso();
@@ -224,7 +229,7 @@ class AccountStore {
       user.stats.pointsFor += scoreFor;
       user.stats.pointsAgainst += scoreAgainst;
       user.stats.xp += xpGained;
-      user.coins = (Number(user.coins) || 0) + coinsGained;
+      user.coins = normalizeCoins(user.coins) + coinsGained;
       user.recentMatches.unshift({
         id: matchId,
         playedAt,
@@ -247,7 +252,7 @@ class AccountStore {
   purchaseItem(userId, hatId, price) {
     const user = this.findById(userId);
     if (!user) return null;
-    const coins = user.coins || 1;
+    const coins = normalizeCoins(user.coins);
     if (coins < price) throw new Error('Not enough SC.');
     const inv = user.inventory || [];
     if (inv.includes(hatId)) throw new Error('Already owned.');
@@ -301,7 +306,7 @@ class AccountStore {
       slime: user.slime,
       achievements: user.achievements || [],
       recentMatches: user.recentMatches || [],
-      coins: user.coins || 1,
+      coins: normalizeCoins(user.coins),
       inventory: user.inventory || [],
       savedHatDrawings: safeSavedHatDrawings(user.savedHatDrawings),
     };
@@ -537,7 +542,7 @@ class PostgresAccountStore {
     await this.ready;
     const user = await this.findById(userId);
     if (!user) return null;
-    if ((user.coins || 1) < price) throw new Error('Not enough SC.');
+    if (normalizeCoins(user.coins) < price) throw new Error('Not enough SC.');
     if ((user.inventory || []).includes(hatId)) throw new Error('Already owned.');
     const rows = await this.sql`
       UPDATE users
@@ -545,8 +550,10 @@ class PostgresAccountStore {
           inventory = inventory || ${JSON.stringify([hatId])}::jsonb,
           updated_at = now()
       WHERE id = ${userId}
+        AND coins >= ${price}
       RETURNING *
     `;
+    if (!rows[0]) throw new Error('Not enough SC.');
     return this.rowToUser(rows[0]);
   }
 

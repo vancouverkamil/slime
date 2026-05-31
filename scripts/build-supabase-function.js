@@ -23,6 +23,7 @@ const files = [
   'css/slime.css',
   'js/client-state.js',
   'js/accounts.js',
+  'js/inventory-ui.js',
   'js/render-maps.js',
   'js/render-game.js',
   'js/local-game.js',

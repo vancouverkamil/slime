@@ -68,7 +68,10 @@ function bodyload() {
   // ESC key handler
   document.addEventListener('keydown', function(e) {
     if (e.keyCode === 27) {
+      if (e.defaultPrevented) return;
       if (replayInterval) return;
+      if (hideTopOverlay()) { e.preventDefault(); return; }
+      if (typeof cancelMatchIntro === 'function' && cancelMatchIntro()) { e.preventDefault(); return; }
       if (escMenuOpen) { hideEscMenu(); return; }
       if (onlineMode || isSpectator) { showEscMenu(); return; }
       if (gameState === GAME_STATE_RUNNING || gameState === GAME_STATE_POINT_PAUSE) { showEscMenu(); return; }

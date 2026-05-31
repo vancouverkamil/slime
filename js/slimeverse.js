@@ -17,11 +17,15 @@ var SV_STORE_X          = 1800;
 var SV_STORE_Z          = 60;
 var SV_FINAL4_X         = 3200;
 var SV_FINAL4_Z         = 95;
+var SV_COLISEUM_X       = 620;
+var SV_COLISEUM_Z       = 115;
 var svStoreKeyDebounce  = 0;
 var svStoreMsg          = '';
 var svStoreMsgTimer     = 0;
 var svFinal4Msg         = '';
 var svFinal4MsgTimer    = 0;
+var svLeaderboard       = [];
+var svLeaderboardLoaded = 0;
 
 // Store interior
 var svStoreInside       = false;
@@ -32,9 +36,11 @@ var svStoreTransition   = 0;   // 1→0 fade-in on enter
 var SV_STORE_WORLD_W    = 2700;
 
 // Perspective display
-var SV_FLOOR_FRAC  = 0.82;
-var SV_HORIZ_FRAC  = 0.36;
-var SV_FAR_SCALE   = 0.05;   // at maxZ the player is ~5% size (1-2 px radius)
+var SV_FLOOR_FRAC  = 0.88;
+var SV_HORIZ_FRAC  = 0.39;
+var SV_FAR_SCALE   = 0.10;   // keep distant players readable while the local avatar feels closer
+var SV_PLAYER_SCALE = 1.42;
+var SV_WORLD_ZOOM   = 1.34;   // narrow the exterior viewport so the commons feels character-scale
 
 var SV_STORE_ITEMS = [
   { hat: 'devil',      name: 'Devil Horns',     price: 400  },
@@ -70,6 +76,12 @@ var SV_FIREFLIES = (function() {
   return out;
 })();
 
+var SV_LANTERNS = [
+  { x: 230, z: 150 }, { x: 410, z: 120 }, { x: 830, z: 120 }, { x: 1010, z: 150 },
+  { x: 1450, z: 95 }, { x: 1620, z: 80 }, { x: 1980, z: 80 }, { x: 2150, z: 95 },
+  { x: 2860, z: 125 }, { x: 3020, z: 105 }, { x: 3380, z: 105 }, { x: 3540, z: 125 },
+];
+
 // ── Perspective helpers ───────────────────────────────────────────────────
 // sqrt curve: objects compress quickly toward horizon, spreading near the camera —
 // this matches true perspective far better than a linear map, especially with a
@@ -82,11 +94,20 @@ function svGroundY(z) { return viewHeight * (SV_FLOOR_FRAC + (SV_HORIZ_FRAC - SV
 function svScaleAt(z) { return 1.0 - (1.0 - SV_FAR_SCALE) * svDepthT(z); }
 function svSX(worldX, z) {
   var t = svDepthT(z), vp = viewWidth / 2;
-  return vp + (worldX - slimeverseCamera.x - vp) * (1 - t * 0.88);
+  var worldVp = viewWidth / SV_WORLD_ZOOM / 2;
+  return vp + (worldX - slimeverseCamera.x - worldVp) * (1 - t * 0.88) * SV_WORLD_ZOOM;
 }
 function svSY(worldY, z) {
   var jumpH = Math.max(0, (slimeverseWorld.floorY || 1980) - (worldY || slimeverseWorld.floorY));
   return svGroundY(z) - jumpH * svScaleAt(z) * 0.45;
+}
+
+function refreshSlimeverseLeaderboard() {
+  if (Date.now() - svLeaderboardLoaded < 30000) return;
+  svLeaderboardLoaded = Date.now();
+  accountRequest('/api/leaderboard', { method: 'GET', headers: {} })
+    .then(function(body) { svLeaderboard = (body.players || []).slice(0, 10); })
+    .catch(function() {});
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -107,6 +128,7 @@ function startSlimeverse() {
   menuDiv.style.display = 'none';
   lobbySocket.send(JSON.stringify({ type: 'enter_slimeverse' }));
   sendCustomization();
+  refreshSlimeverseLeaderboard();
   startSlimeverseInput();
   requestAnimationFrame(renderSlimeverse);
 }
@@ -210,7 +232,7 @@ function renderSlimeverse(ts) {
             svStoreMsg = 'LOG IN TO BUY ITEMS';
             svStoreMsgTimer = Date.now();
           } else {
-            var _coins = currentAccount.coins || 1;
+            var _coins = Number(currentAccount.coins) || 0;
             if (_coins < it.price) {
               svStoreMsg = 'NOT ENOUGH SC  (NEED ' + it.price + ')';
               svStoreMsgTimer = Date.now();
@@ -272,8 +294,9 @@ function renderSlimeverse(ts) {
   }
 
   // Camera tracks local predicted position (instant, no wait for server round-trip)
-  slimeverseCamera.x += (mvLocal.x - viewWidth / 2 - slimeverseCamera.x) * 0.15;
-  slimeverseCamera.x = Math.max(0, Math.min(slimeverseWorld.width - viewWidth, slimeverseCamera.x));
+  var svVisibleWorldW = viewWidth / SV_WORLD_ZOOM;
+  slimeverseCamera.x += (mvLocal.x - svVisibleWorldW / 2 - slimeverseCamera.x) * 0.15;
+  slimeverseCamera.x = Math.max(0, Math.min(slimeverseWorld.width - svVisibleWorldW, slimeverseCamera.x));
 
   drawSlimeverseWorld();
 
@@ -440,6 +463,8 @@ function drawSlimeverseWorld() {
 
   // ── Fireflies ─────────────────────────────────────────────────────────
   drawSVFireflies(cx, t, w, hY);
+  drawSVLanterns(cx, t, w);
+  drawSVColiseum(cx, svSX(SV_COLISEUM_X, SV_COLISEUM_Z), svGroundY(SV_COLISEUM_Z), svScaleAt(SV_COLISEUM_Z), t);
 
   // ── Final 4 grounds and tower ─────────────────────────────────────────
   drawFinal4MysticGround(cx, w, h, hY, floorFY, vp, camX, t);
@@ -507,6 +532,216 @@ function drawSVFireflies(cx, t, w, hY) {
 }
 
 // ── Store building (exterior) ─────────────────────────────────────────────
+function drawSVLanterns(cx, t, w) {
+  SV_LANTERNS.forEach(function(lantern, i) {
+    var sc = svScaleAt(lantern.z);
+    var sx = svSX(lantern.x, lantern.z);
+    var sy = svGroundY(lantern.z);
+    if (sx < -60 || sx > w + 60 || sc < 0.08) return;
+    var pulse = 0.72 + Math.sin(t * 0.002 + i) * 0.16;
+    var glow = cx.createRadialGradient(sx, sy - 28 * sc, 0, sx, sy - 28 * sc, 48 * sc);
+    glow.addColorStop(0, 'rgba(190,255,95,' + (0.34 * pulse).toFixed(3) + ')');
+    glow.addColorStop(1, 'rgba(90,255,45,0)');
+    cx.fillStyle = glow;
+    cx.fillRect(sx - 48 * sc, sy - 76 * sc, 96 * sc, 96 * sc);
+    cx.strokeStyle = 'rgba(20,28,24,.82)';
+    cx.lineWidth = Math.max(1, 3 * sc);
+    cx.beginPath(); cx.moveTo(sx, sy); cx.lineTo(sx, sy - 30 * sc); cx.stroke();
+    cx.fillStyle = 'rgba(214,255,128,' + pulse.toFixed(3) + ')';
+    cx.beginPath(); cx.arc(sx, sy - 31 * sc, Math.max(1.4, 3.6 * sc), 0, TWO_PI); cx.fill();
+  });
+}
+
+function drawSVColiseum(cx, bx, by, sc, t) {
+  if (bx < -620 || bx > viewWidth + 620 || sc < 0.08) return;
+  var bw = 570 * sc, bh = 270 * sc;
+  var screenW = 350 * sc, screenH = 160 * sc;
+  cx.save();
+
+  var plazaGlow = cx.createRadialGradient(bx, by, 12 * sc, bx, by, bw * 0.74);
+  plazaGlow.addColorStop(0, 'rgba(0,255,200,.18)');
+  plazaGlow.addColorStop(0.58, 'rgba(0,80,68,.12)');
+  plazaGlow.addColorStop(1, 'rgba(0,40,24,0)');
+  cx.fillStyle = plazaGlow;
+  cx.beginPath(); cx.ellipse(bx, by + 3 * sc, bw * 0.76, 48 * sc, 0, 0, TWO_PI); cx.fill();
+
+  cx.fillStyle = '#e7e2d6'; cx.strokeStyle = 'rgba(188,255,242,.84)'; cx.lineWidth = Math.max(1, 2 * sc);
+  cx.beginPath();
+  cx.moveTo(bx - bw * 0.58, by);
+  cx.lineTo(bx - bw * 0.48, by - bh * 0.74);
+  cx.lineTo(bx - bw * 0.28, by - bh);
+  cx.lineTo(bx + bw * 0.28, by - bh);
+  cx.lineTo(bx + bw * 0.48, by - bh * 0.74);
+  cx.lineTo(bx + bw * 0.58, by);
+  cx.closePath(); cx.fill(); cx.stroke();
+
+  // Neo-Roman colonnade: pale stone columns with cyan-lit bases.
+  for (var col = -5; col <= 5; col++) {
+    var colX = bx + col * 47 * sc;
+    var colY = by - 102 * sc;
+    var colW = 18 * sc, colH = 112 * sc;
+    cx.fillStyle = col % 2 ? '#f7f4ea' : '#ded9cb';
+    cx.fillRect(colX - colW / 2, colY, colW, colH);
+    cx.strokeStyle = 'rgba(255,255,255,.88)';
+    cx.strokeRect(colX - colW / 2, colY, colW, colH);
+    cx.fillStyle = '#c9c4b8';
+    cx.fillRect(colX - colW * 0.72, colY - 7 * sc, colW * 1.44, 8 * sc);
+    cx.fillRect(colX - colW * 0.84, by - 5 * sc, colW * 1.68, 7 * sc);
+    cx.fillStyle = 'rgba(0,255,220,.28)';
+    cx.fillRect(colX - colW * 0.84, by + 2 * sc, colW * 1.68, 3 * sc);
+  }
+
+  // Dark arch portals break up the white facade.
+  for (var arch = -4; arch <= 4; arch++) {
+    var archX = bx + arch * 52 * sc;
+    cx.fillStyle = '#10222c';
+    cx.beginPath();
+    cx.arc(archX, by - 56 * sc, 14 * sc, Math.PI, TWO_PI);
+    cx.lineTo(archX + 14 * sc, by - 8 * sc);
+    cx.lineTo(archX - 14 * sc, by - 8 * sc);
+    cx.closePath(); cx.fill();
+  }
+
+  for (var tier = 0; tier < 3; tier++) {
+    var ty = by - (46 + tier * 34) * sc;
+    var tw = (548 - tier * 66) * sc;
+    cx.fillStyle = tier % 2 ? 'rgba(242,239,228,.96)' : 'rgba(207,204,194,.96)';
+    cx.fillRect(bx - tw / 2, ty, tw, 20 * sc);
+    cx.strokeStyle = 'rgba(100,255,230,' + (0.28 + tier * 0.08) + ')';
+    cx.strokeRect(bx - tw / 2, ty, tw, 20 * sc);
+  }
+
+  // Flanking ticker screens make the arena visible from across the commons.
+  [-1, 1].forEach(function(side) {
+    var tickerW = 82 * sc, tickerH = 76 * sc;
+    var tickerX = bx + side * 232 * sc - tickerW / 2;
+    var tickerY = by - 177 * sc;
+    cx.fillStyle = '#03131d'; cx.strokeStyle = 'rgba(122,255,220,.5)';
+    cx.fillRect(tickerX, tickerY, tickerW, tickerH); cx.strokeRect(tickerX, tickerY, tickerW, tickerH);
+    cx.fillStyle = 'rgba(0,255,200,.09)';
+    cx.fillRect(tickerX + 5 * sc, tickerY + 5 * sc, tickerW - 10 * sc, tickerH - 10 * sc);
+    cx.fillStyle = '#7affdf'; cx.textAlign = 'center';
+    cx.font = 'bold ' + Math.max(6, Math.round(8 * sc)) + 'px Courier New';
+    cx.fillText(side < 0 ? 'TOP 10' : 'LIVE XP', tickerX + tickerW / 2, tickerY + 18 * sc);
+    cx.fillStyle = side < 0 ? '#ffdc72' : '#a8ffe6';
+    cx.font = 'bold ' + Math.max(7, Math.round(11 * sc)) + 'px Courier New';
+    cx.fillText(side < 0 ? '#1' : 'ONLINE', tickerX + tickerW / 2, tickerY + 42 * sc);
+    cx.fillStyle = 'rgba(122,255,223,.52)';
+    cx.font = Math.max(6, Math.round(7 * sc)) + 'px Courier New';
+    cx.fillText('SCROLLING', tickerX + tickerW / 2, tickerY + 61 * sc);
+  });
+
+  drawSVRadioTower(cx, bx - bw * 0.72, by, sc, t, -1);
+  drawSVRadioTower(cx, bx + bw * 0.72, by, sc, t, 1);
+
+  var screenX = bx - screenW / 2, screenY = by - bh * 0.90;
+  cx.fillStyle = '#020e18'; cx.strokeStyle = 'rgba(96,255,224,.68)';
+  cx.fillRect(screenX, screenY, screenW, screenH); cx.strokeRect(screenX, screenY, screenW, screenH);
+  drawSVChaseLights(cx, screenX, screenY, screenW, screenH, sc, t);
+  cx.fillStyle = 'rgba(0,255,200,.06)';
+  for (var scan = 0; scan < screenH; scan += Math.max(2, 5 * sc)) cx.fillRect(screenX, screenY + scan, screenW, Math.max(1, sc));
+  cx.fillStyle = '#7affdf'; cx.textAlign = 'center';
+  cx.font = 'bold ' + Math.max(7, Math.round(14 * sc)) + 'px Courier New';
+  cx.fillText('SLIMEVERSE TOP 10', bx, screenY + 18 * sc);
+
+  var rows = svLeaderboard.length ? svLeaderboard : [{ username: 'waiting-for-scores', stats: { xp: 0 } }];
+  var shift = Math.floor(t / 1750) % rows.length;
+  cx.textAlign = 'left';
+  cx.font = 'bold ' + Math.max(6, Math.round(10 * sc)) + 'px Courier New';
+  for (var r = 0; r < Math.min(10, rows.length); r++) {
+    var player = rows[(r + shift) % rows.length];
+    var rank = ((r + shift) % rows.length) + 1;
+    var stats = player.stats || {};
+    var ry = screenY + (34 + r * 9) * sc;
+    cx.fillStyle = r === 0 ? '#ffdc72' : 'rgba(168,255,230,.82)';
+    cx.fillText(rank + '. @' + String(player.username || 'guest').slice(0, 16), screenX + 12 * sc, ry);
+    cx.textAlign = 'right';
+    cx.fillText((stats.xp || 0) + ' XP', screenX + screenW - 10 * sc, ry);
+    cx.textAlign = 'left';
+  }
+  cx.fillStyle = 'rgba(0,255,200,.64)'; cx.textAlign = 'center';
+  cx.font = 'bold ' + Math.max(6, Math.round(9 * sc)) + 'px Courier New';
+  cx.fillText('// MOONLIGHT COLISEUM //', bx, by - 8 * sc);
+  cx.restore();
+}
+
+function drawSVChaseLights(cx, x, y, w, h, sc, t) {
+  var step = Math.max(7, 12 * sc);
+  var dots = [];
+  for (var px = x; px <= x + w; px += step) dots.push({ x: px, y: y });
+  for (var py = y + step; py <= y + h; py += step) dots.push({ x: x + w, y: py });
+  for (var px2 = x + w - step; px2 >= x; px2 -= step) dots.push({ x: px2, y: y + h });
+  for (var py2 = y + h - step; py2 > y; py2 -= step) dots.push({ x: x, y: py2 });
+  var chase = Math.floor(t / 75) % Math.max(1, dots.length);
+  dots.forEach(function(dot, i) {
+    var distance = (i - chase + dots.length) % dots.length;
+    var hot = distance < 5;
+    cx.fillStyle = hot ? '#f9ffb8' : 'rgba(70,255,225,.42)';
+    cx.shadowColor = hot ? 'rgba(255,255,170,.9)' : 'rgba(0,255,220,.36)';
+    cx.shadowBlur = hot ? 10 * sc : 4 * sc;
+    cx.beginPath(); cx.arc(dot.x, dot.y, Math.max(1, (hot ? 2.4 : 1.5) * sc), 0, TWO_PI); cx.fill();
+  });
+  cx.shadowBlur = 0;
+}
+
+function drawSVRadioTower(cx, x, groundY, sc, t, side) {
+  var towerH = 255 * sc;
+  var baseW = 68 * sc;
+  var topY = groundY - towerH;
+  cx.save();
+
+  // Concrete plinth and cyan service strip.
+  cx.fillStyle = '#d9d4c8'; cx.strokeStyle = 'rgba(220,255,248,.76)';
+  cx.fillRect(x - baseW * 0.62, groundY - 14 * sc, baseW * 1.24, 16 * sc);
+  cx.strokeRect(x - baseW * 0.62, groundY - 14 * sc, baseW * 1.24, 16 * sc);
+  cx.fillStyle = 'rgba(0,255,220,.54)';
+  cx.fillRect(x - baseW * 0.62, groundY - 4 * sc, baseW * 1.24, 4 * sc);
+
+  // Tapered lattice radio mast.
+  cx.strokeStyle = 'rgba(196,245,238,.88)';
+  cx.lineWidth = Math.max(1, 3 * sc);
+  cx.beginPath();
+  cx.moveTo(x - baseW * 0.42, groundY - 14 * sc);
+  cx.lineTo(x - 10 * sc, topY);
+  cx.moveTo(x + baseW * 0.42, groundY - 14 * sc);
+  cx.lineTo(x + 10 * sc, topY);
+  cx.stroke();
+  cx.lineWidth = Math.max(1, 1.5 * sc);
+  for (var rung = 0; rung < 8; rung++) {
+    var p = rung / 7;
+    var y = groundY - 22 * sc - p * (towerH - 34 * sc);
+    var half = (baseW * 0.38) * (1 - p) + 10 * sc * p;
+    cx.beginPath(); cx.moveTo(x - half, y); cx.lineTo(x + half, y); cx.stroke();
+    if (rung < 7) {
+      var nextY = groundY - 22 * sc - (rung + 1) / 7 * (towerH - 34 * sc);
+      cx.beginPath();
+      cx.moveTo(x - half, y); cx.lineTo(x + half * 0.84, nextY);
+      cx.moveTo(x + half, y); cx.lineTo(x - half * 0.84, nextY);
+      cx.stroke();
+    }
+  }
+
+  // Antenna dishes and pulsing aviation beacon.
+  var dishY = topY + 72 * sc;
+  cx.strokeStyle = 'rgba(122,255,225,.72)';
+  cx.beginPath(); cx.arc(x + side * 16 * sc, dishY, 18 * sc, side < 0 ? -1.1 : 2.05, side < 0 ? 1.1 : 4.2); cx.stroke();
+  cx.beginPath(); cx.moveTo(x, dishY); cx.lineTo(x + side * 26 * sc, dishY); cx.stroke();
+  var blink = 0.48 + 0.52 * Math.sin(t * 0.006 + (side < 0 ? 0 : Math.PI));
+  cx.shadowColor = 'rgba(255,92,92,.9)'; cx.shadowBlur = 15 * sc;
+  cx.fillStyle = 'rgba(255,100,100,' + Math.max(0.22, blink).toFixed(3) + ')';
+  cx.beginPath(); cx.arc(x, topY - 4 * sc, Math.max(2, 4.5 * sc), 0, TWO_PI); cx.fill();
+  cx.shadowBlur = 0;
+
+  // Vertical data lights give the towers a futuristic edge.
+  for (var light = 0; light < 5; light++) {
+    var ly = topY + (38 + light * 30) * sc;
+    var hot = (Math.floor(t / 180) + light + (side < 0 ? 0 : 2)) % 5 === 0;
+    cx.fillStyle = hot ? '#d9ff9b' : 'rgba(0,255,220,.48)';
+    cx.beginPath(); cx.arc(x, ly, Math.max(1, (hot ? 3 : 2) * sc), 0, TWO_PI); cx.fill();
+  }
+  cx.restore();
+}
+
 function drawSlimeverseStoreBuilding(bx, by, sc) {
   var cx = ctx;
   var bw = 145 * sc, bh = 115 * sc, roofH = 38 * sc;
@@ -1134,7 +1369,7 @@ function drawSlimeversePlayer(p) {
   var sx = svSX(p.x || 0, z), sy = svSY(p.y || slimeverseWorld.floorY, z);
   if (sx < -100 || sx > viewWidth + 100 || sy < -150 || sy > viewHeight + 100) return;
 
-  var r = 24 * sc, color = p.color || '#00ff00';
+  var r = 24 * sc * SV_PLAYER_SCALE, color = p.color || '#00ff00';
   ctx.save();
   ctx.globalAlpha = p.id === slimeverseSelfId ? 1 : 0.88;
 
@@ -1153,7 +1388,7 @@ function drawSlimeversePlayer(p) {
   drawHatAt(ctx, sx, sy - r + 1, r, { hat: p.hat || 'none', anim: p.hatAnim || 'none', drawing: p.hatDrawing || [] });
 
   var label = (p.name || 'Player') + '  L' + (p.level || 1);
-  var fSz = Math.max(8, Math.round(11 * sc));
+  var fSz = Math.max(9, Math.round(12 * sc * SV_PLAYER_SCALE));
   ctx.font = 'bold ' + fSz + 'px Courier New';
   var tw = ctx.measureText(label).width + 10;
   ctx.fillStyle = 'rgba(0,0,14,.52)';
@@ -1494,7 +1729,7 @@ function drawStoreInteriorHud(cx, w, h, floorY) {
   cx.fillText('A/D move  -  E buy/equip  -  ESC exit', 20 * s, 48 * s);
 
   // Coins
-  var _sc = currentAccount ? (currentAccount.coins || 1) : (totalWins || 0);
+  var _sc = currentAccount ? (Number(currentAccount.coins) || 0) : (totalWins || 0);
   cx.fillStyle = 'rgba(0,0,16,.72)';
   cx.fillRect(w - 180 * s, 10 * s, 170 * s, 30 * s);
   cx.fillStyle = '#ffcc00'; cx.font = 'bold ' + Math.round(14 * s) + 'px Courier New'; cx.textAlign = 'right';
@@ -1539,14 +1774,21 @@ function drawStoreInteriorHud(cx, w, h, floorY) {
 // ── Exterior HUD ──────────────────────────────────────────────────────────
 function drawSlimeverseHud() {
   var s = typeof uiScale === 'function' ? uiScale() : 1;
+  refreshSlimeverseLeaderboard();
   ctx.save();
-  ctx.font = 'bold ' + Math.round(14 * s) + 'px Courier New';
-  ctx.fillStyle = 'rgba(0,0,16,.62)'; ctx.strokeStyle = 'rgba(0,255,200,.2)';
+  var panelW = Math.min(570 * s, viewWidth - 20 * s);
+  var panelH = 78 * s;
+  var activePlayers = Object.keys(slimeversePlayers).length;
+  ctx.fillStyle = 'rgba(0,10,20,.76)'; ctx.strokeStyle = 'rgba(0,255,200,.28)';
   ctx.lineWidth = Math.max(1, s);
-  ctx.fillRect(10 * s, 10 * s, 520 * s, 48 * s); ctx.strokeRect(10 * s, 10 * s, 520 * s, 48 * s);
-  ctx.fillStyle = '#00ffcc'; ctx.fillText('SLIMEVERSE // GLASS DOME', 20 * s, 31 * s);
-  ctx.fillStyle = '#555'; ctx.font = Math.round(11 * s) + 'px Courier New';
-  ctx.fillText('A/D move  -  W/SPC jump  -  UP/DN depth  -  E interact  -  ESC exit', 20 * s, 50 * s);
+  ctx.fillRect(10 * s, 10 * s, panelW, panelH); ctx.strokeRect(10 * s, 10 * s, panelW, panelH);
+  ctx.fillStyle = 'rgba(90,255,190,.08)'; ctx.fillRect(10 * s, 10 * s, 7 * s, panelH);
+  ctx.fillStyle = '#00ffcc'; ctx.font = 'bold ' + Math.round(15 * s) + 'px Courier New';
+  ctx.fillText('SLIMEVERSE // MOONLIT COMMONS', 26 * s, 33 * s);
+  ctx.fillStyle = '#9bea80'; ctx.font = 'bold ' + Math.round(10 * s) + 'px Courier New';
+  ctx.fillText('LIVE ' + activePlayers + '  //  COLISEUM BOARD ONLINE  //  FIREFLY HOUR', 26 * s, 51 * s);
+  ctx.fillStyle = '#668078'; ctx.font = Math.round(10 * s) + 'px Courier New';
+  ctx.fillText('A/D move  -  W/SPC jump  -  UP/DN depth  -  E interact  -  ESC exit', 26 * s, 71 * s);
   ctx.restore();
 }
 
