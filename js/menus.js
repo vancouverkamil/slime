@@ -65,7 +65,7 @@ function toInitialMenu() {
     '<div class="home-subtitle">VOLLEYBALL</div>' +
     '<div id="HomeRankRow" class="home-rank-row"></div>' +
     (sessionWins + sessionLosses > 0
-      ? '<div class="home-session">SESSION: <span style="color:#007a67;">' + sessionWins + 'W</span> / <span style="color:#c0004a;">' + sessionLosses + 'L</span></div>'
+      ? '<div class="home-session">SESSION: <span style="color:#66ffcc;">' + sessionWins + 'W</span> / <span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>'
       : '') +
     '<div class="home-hint">Quick Play to start</div>' +
     '</div>';
@@ -74,11 +74,11 @@ function toInitialMenu() {
 }
 
 function _homeCompRank(wins) {
-  if (wins >= 400) return { title: 'DIAMOND',  color: '#1778a0' };
-  if (wins >= 150) return { title: 'PLATINUM', color: '#4a6898' };
-  if (wins >= 50)  return { title: 'GOLD',     color: '#9a6a00' };
-  if (wins >= 10)  return { title: 'SILVER',   color: '#5a7080' };
-  return               { title: 'BRONZE',   color: '#8b5520' };
+  if (wins >= 400) return { title: 'DIAMOND',  color: '#88eeff' };
+  if (wins >= 150) return { title: 'PLATINUM', color: '#c8d8ff' };
+  if (wins >= 50)  return { title: 'GOLD',     color: '#ffd700' };
+  if (wins >= 10)  return { title: 'SILVER',   color: '#cccccc' };
+  return               { title: 'BRONZE',   color: '#cd7f32' };
 }
 
 function _buildHomeRanksHtml() {
@@ -89,7 +89,7 @@ function _buildHomeRanksHtml() {
     prog = window.SlimeProgression.getProgression(xp);
     cr   = _homeCompRank(wins);
   }
-  var pColor = prog ? (prog.prestige ? '#9a6a00' : '#006d5c') : '#7a9ab0';
+  var pColor = prog ? (prog.prestige ? '#ffd700' : '#00ffcc') : '#333';
   var pTitle = prog ? prog.rankTitle : 'UNRANKED';
   var pArrows = prog ? '^'.repeat(prog.badgeArrows) : '--';
   var pLevel  = prog ? 'LVL ' + prog.level : '';
