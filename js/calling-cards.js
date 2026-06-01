@@ -1,6 +1,7 @@
 function getActiveCallingCard() {
   var id = 'rookie-grit';
   try { id = localStorage.getItem('slime_calling_card') || id; } catch(e) {}
+  if (!SlimeFeatureCards.isCardUnlocked(currentAccount, id)) id = 'rookie-grit';
   return SlimeFeatureCards.cardById(id);
 }
 
@@ -47,14 +48,19 @@ function renderCallingCardPicker() {
     '<div class="calling-card-picker">' +
     cards.map(function(card) {
       var cls = card.id === active ? ' active' : '';
-      return '<button class="calling-card-option' + cls + '" onclick="chooseCallingCard(\'' + escHtml(card.id) + '\')" style="--card-accent:' + escHtml(card.accent) + ';">' +
-        '<b>' + escHtml(card.name) + '</b><span>' + escHtml(card.unlock) + '</span>' +
+      var locked = !SlimeFeatureCards.isCardUnlocked(currentAccount, card.id);
+      return '<button class="calling-card-option' + cls + (locked ? ' locked' : '') + '" onclick="chooseCallingCard(\'' + escHtml(card.id) + '\')" style="--card-accent:' + escHtml(card.accent) + ';">' +
+        '<b>' + escHtml(card.name) + '</b><span>' + escHtml(locked ? 'LOCKED / ' + card.unlock : card.unlock) + '</span>' +
       '</button>';
     }).join('') +
     '</div>';
 }
 
 function chooseCallingCard(id) {
+  if (!SlimeFeatureCards.isCardUnlocked(currentAccount, id)) {
+    accountMessage('Unlock this calling card through achievements first.', true);
+    return;
+  }
   setActiveCallingCard(id);
   if (typeof showProgressionHub === 'function') showProgressionHub();
 }
@@ -63,10 +69,11 @@ function renderUnlockRoadmap() {
   return '<div class="feature-panel-title">Unlock Roadmap</div>' +
     '<div class="unlock-list">' +
     SlimeFeatureCards.achievements.map(function(a) {
-      return '<div class="unlock-row">' +
+      var unlocked = SlimeFeatureCards.isAchievementUnlocked(currentAccount, a.id);
+      return '<div class="unlock-row' + (unlocked ? ' unlocked' : '') + '">' +
         '<b>' + escHtml(a.name) + '</b>' +
         '<span>' + escHtml(a.criteria) + '</span>' +
-        '<i>' + escHtml(a.reward) + '</i>' +
+        '<i>' + escHtml((unlocked ? 'UNLOCKED / ' : '') + a.reward) + '</i>' +
       '</div>';
     }).join('') +
     '</div>';

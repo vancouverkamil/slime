@@ -63,6 +63,28 @@ function normalizeCoins(coins) {
   return Number.isFinite(value) ? value : 1;
 }
 
+function safeAchievements(achievements) {
+  if (!Array.isArray(achievements)) return [];
+  const seen = new Set();
+  return achievements.map((achievement) => {
+    const id = String(typeof achievement === 'string' ? achievement : achievement && achievement.id || '').trim().slice(0, 40);
+    if (!id || seen.has(id)) return null;
+    seen.add(id);
+    return {
+      id,
+      unlockedAt: String(achievement && achievement.unlockedAt || '').slice(0, 40),
+    };
+  }).filter(Boolean);
+}
+
+function awardMatchAchievements(achievements, match) {
+  const next = safeAchievements(achievements);
+  if (match.won && match.scoreFor - match.scoreAgainst >= 3 && !next.some((achievement) => achievement.id === 'clean-win')) {
+    next.push({ id: 'clean-win', unlockedAt: match.playedAt || nowIso() });
+  }
+  return next;
+}
+
 function defaultUser(username, password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const createdAt = nowIso();
@@ -87,6 +109,7 @@ function defaultUser(username, password) {
       hat: 'none',
       hatAnim: 'none',
       hatDrawing: [],
+      trail: 'none',
     },
     achievements: [],
     recentMatches: [],
@@ -205,6 +228,7 @@ class AccountStore {
       hat,
       hatAnim: String(slime.hatAnim || user.slime.hatAnim || 'none').slice(0, 20),
       hatDrawing: safeHatDrawing(slime.hatDrawing),
+      trail: String(slime.trail || user.slime.trail || 'none').slice(0, 20),
     };
     user.updatedAt = nowIso();
     this.save();
@@ -246,6 +270,7 @@ class AccountStore {
       user.stats.xp += xpGained;
       user.coins = normalizeCoins(user.coins) + coinsGained;
       if (newElo) user.ranked = newElo;
+      user.achievements = awardMatchAchievements(user.achievements, { won, scoreFor, scoreAgainst, playedAt });
       user.recentMatches.unshift({
         id: matchId, playedAt, result: won ? 'win' : 'loss',
         scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked,
@@ -324,7 +349,7 @@ class AccountStore {
       stats: normalizeStats(user.stats),
       progression: progression.getProgression((user.stats || {}).xp),
       slime: user.slime,
-      achievements: user.achievements || [],
+      achievements: safeAchievements(user.achievements),
       recentMatches: user.recentMatches || [],
       coins: normalizeCoins(user.coins),
       inventory: user.inventory || [],
@@ -373,7 +398,7 @@ class PostgresAccountStore {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         stats JSONB NOT NULL DEFAULT '{"matches":0,"wins":0,"losses":0,"pointsFor":0,"pointsAgainst":0,"xp":0}'::jsonb,
-        slime JSONB NOT NULL DEFAULT '{"color":"#00ff00","hat":"none","hatAnim":"none","hatDrawing":[]}'::jsonb,
+        slime JSONB NOT NULL DEFAULT '{"color":"#00ff00","hat":"none","hatAnim":"none","hatDrawing":[],"trail":"none"}'::jsonb,
         achievements JSONB NOT NULL DEFAULT '[]'::jsonb,
         recent_matches JSONB NOT NULL DEFAULT '[]'::jsonb
       )
@@ -403,7 +428,7 @@ class PostgresAccountStore {
       updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
       stats: normalizeStats(row.stats),
       slime: row.slime,
-      achievements: row.achievements,
+      achievements: safeAchievements(row.achievements),
       recentMatches: row.recent_matches,
       coins: typeof row.coins === 'number' ? row.coins : 1,
       inventory: Array.isArray(row.inventory) ? row.inventory : [],
@@ -506,6 +531,7 @@ class PostgresAccountStore {
       hat,
       hatAnim: String(slime.hatAnim || user.slime.hatAnim || 'none').slice(0, 20),
       hatDrawing: safeHatDrawing(slime.hatDrawing),
+      trail: String(slime.trail || user.slime.trail || 'none').slice(0, 20),
     };
     const rows = await this.sql`
       UPDATE users
@@ -552,11 +578,13 @@ class PostgresAccountStore {
       };
       const recentMatch = { id: matchId, playedAt, result: won ? 'win' : 'loss', scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked, opponent: opponent ? opponent.username : 'guest' };
       const recentMatches = [recentMatch].concat(user.recentMatches || []).slice(0, 10);
+      const achievements = awardMatchAchievements(user.achievements, { won, scoreFor, scoreAgainst, playedAt });
       const rankedVal = newElo ? JSON.stringify(newElo) : JSON.stringify(user.ranked || progression.defaultRanked());
       await this.sql`
         UPDATE users
         SET stats         = ${JSON.stringify(stats)}::jsonb,
             recent_matches= ${JSON.stringify(recentMatches)}::jsonb,
+            achievements  = ${JSON.stringify(achievements)}::jsonb,
             coins         = coins + ${coinsGained},
             ranked        = ${rankedVal}::jsonb,
             updated_at    = now()

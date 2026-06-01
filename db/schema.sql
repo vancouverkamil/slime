@@ -7,12 +7,13 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   stats JSONB NOT NULL DEFAULT '{"matches":0,"wins":0,"losses":0,"pointsFor":0,"pointsAgainst":0,"xp":0}'::jsonb,
-  slime JSONB NOT NULL DEFAULT '{"color":"#00ff00","hat":"none","hatAnim":"none","hatDrawing":[]}'::jsonb,
+  slime JSONB NOT NULL DEFAULT '{"color":"#00ff00","hat":"none","hatAnim":"none","hatDrawing":[],"trail":"none"}'::jsonb,
   achievements JSONB NOT NULL DEFAULT '[]'::jsonb,
   recent_matches JSONB NOT NULL DEFAULT '[]'::jsonb,
   coins INTEGER NOT NULL DEFAULT 1,
   inventory JSONB NOT NULL DEFAULT '[]'::jsonb,
-  saved_hat_drawings JSONB NOT NULL DEFAULT '[]'::jsonb
+  saved_hat_drawings JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ranked JSONB NOT NULL DEFAULT '{"season":1,"rating":1000,"peakRating":1000,"placementsLeft":5,"wins":0,"losses":0}'::jsonb
 );
 
 CREATE TABLE IF NOT EXISTS sessions (

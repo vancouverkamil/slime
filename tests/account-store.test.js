@@ -89,6 +89,31 @@ test('recordMatch updates both linked accounts', () => {
   assert.strictEqual(rightProfile.coins, 1);
 });
 
+test('dominant online wins unlock Clean Win once', () => {
+  const store = tempStore();
+  const left = store.register('clean_winner', 'password123');
+  const right = store.register('clean_loser', 'password123');
+
+  store.recordMatch(left.id, right.id, 'left', 7, 4);
+  store.recordMatch(left.id, right.id, 'left', 7, 0);
+
+  const achievements = store.publicProfile(store.findByUsername('clean_winner')).achievements;
+  assert.deepStrictEqual(achievements.map((achievement) => achievement.id), ['clean-win']);
+  assert.match(achievements[0].unlockedAt, /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepStrictEqual(store.publicProfile(store.findByUsername('clean_loser')).achievements, []);
+});
+
+test('slime trail customization persists with account settings', () => {
+  const store = tempStore();
+  const user = store.register('trail_user', 'password123');
+
+  store.updateSlime(user.id, { color: '#44aaff', trail: 'comet' });
+
+  const profile = store.publicProfile(store.findByUsername('trail_user'));
+  assert.strictEqual(profile.slime.color, '#44aaff');
+  assert.strictEqual(profile.slime.trail, 'comet');
+});
+
 test('leaderboard sorts accounts by total xp', () => {
   const store = tempStore();
   const high = store.register('high_xp', 'password123');

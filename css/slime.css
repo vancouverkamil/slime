@@ -613,6 +613,7 @@ body {
   font-family:inherit; padding:8px; border-left:3px solid var(--card-accent);
 }
 .calling-card-option.active { background:rgba(197,154,58,.1); border-color:var(--card-accent); }
+.calling-card-option.locked { opacity:.45; cursor:not-allowed; border-color:rgba(255,255,255,.06); }
 .calling-card-option b { display:block; font-size:clamp(11px,1vw,15px); letter-spacing:1px; color:#fff; }
 .calling-card-option span { display:block; margin-top:4px; color:#766f60; font-size:clamp(9px,.85vw,12px); letter-spacing:.6px; }
 .unlock-list { display:flex; flex-direction:column; gap:6px; }
@@ -620,6 +621,8 @@ body {
 .unlock-row b { display:block; color:#fff; font-size:clamp(12px,1vw,16px); letter-spacing:1px; }
 .unlock-row span { display:block; color:#88806c; font-size:clamp(10px,.9vw,13px); margin-top:3px; }
 .unlock-row i { display:block; color:#d7ae4b; font-style:normal; font-size:clamp(10px,.9vw,13px); margin-top:4px; letter-spacing:1px; }
+.unlock-row.unlocked { border-color:rgba(0,255,200,.35); background:rgba(0,255,200,.05); }
+.unlock-row.unlocked i { color:#00ffcc; }
 
 .bracket-board {
   position:relative; z-index:1; display:grid; grid-template-columns:1.3fr 1fr .9fr; gap:12px;
@@ -1060,6 +1063,14 @@ input[type='checkbox'] { margin-right:1em; accent-color:#00ffcc; }
 .profile-match.win span:first-child { color:#66ffcc; }
 .profile-match.loss span:first-child { color:#ff66aa; }
 .profile-empty { color:#444; font-size:10px; letter-spacing:.5px; padding:10px 0; }
+.profile-achievements { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.profile-achievement { border:1px solid rgba(255,255,255,.07); background:rgba(0,0,0,.16); padding:8px; }
+.profile-achievement b,.profile-achievement span,.profile-achievement i { display:block; }
+.profile-achievement b { color:#777; font-size:11px; letter-spacing:1px; }
+.profile-achievement span { color:#555; font-size:9px; margin-top:4px; }
+.profile-achievement i { color:#8a7430; font-size:9px; font-style:normal; letter-spacing:.5px; margin-top:5px; }
+.profile-achievement.unlocked { border-color:rgba(0,255,200,.32); background:rgba(0,255,200,.045); }
+.profile-achievement.unlocked b,.profile-achievement.unlocked span { color:#00ffcc; }
 
 /* ── Inventory overlay ─────────────────────────────────────────────────────── */
 #InventoryOverlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,12,.88); align-items:center; justify-content:center; }

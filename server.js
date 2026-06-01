@@ -582,7 +582,7 @@ async function handleCustomize(ws, info, msg) {
   const drawing = Array.isArray(msg.hatDrawing) ? msg.hatDrawing.slice(0, 300) : [];
   if (!canUseHat(info, hat)) hat = 'none';
   info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing; info.trail = trail;
-  if (info.userId) await accounts.updateSlime(info.userId, { hat, hatAnim, color, hatDrawing: drawing });
+  if (info.userId) await accounts.updateSlime(info.userId, { hat, hatAnim, color, hatDrawing: drawing, trail });
   if (info.state === 'slimeverse') {
     broadcastSlimeverse({ type: 'slimeverse_customized', player: getPublicPlayer(info) });
     return;

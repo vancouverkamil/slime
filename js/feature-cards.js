@@ -60,6 +60,25 @@ var SlimeFeatureCards = (function() {
     return callingCards[0];
   }
 
+  function achievementIds(profile) {
+    return ((profile && profile.achievements) || []).map(function(achievement) {
+      return typeof achievement === 'string' ? achievement : achievement && achievement.id;
+    }).filter(Boolean);
+  }
+
+  function isAchievementUnlocked(profile, achievementId) {
+    return achievementIds(profile).indexOf(achievementId) !== -1;
+  }
+
+  function isCardUnlocked(profile, cardId) {
+    if (cardId === 'rookie-grit') return true;
+    if (cardId === 'mud-line') return isAchievementUnlocked(profile, 'clean-win');
+    if (cardId === 'final-four') return isAchievementUnlocked(profile, 'final-four-clear');
+    if (cardId === 'vacuum-save') return isAchievementUnlocked(profile, 'rally-rat');
+    if (cardId === 'bracket-wound') return isAchievementUnlocked(profile, 'tournament-crown');
+    return false;
+  }
+
   function emblemForProgression(prog) {
     var level = prog && prog.level ? prog.level : 1;
     if (level >= 70) return { id: 'prestige', label: 'PRS', unlock: 'Level 70' };
@@ -79,6 +98,9 @@ var SlimeFeatureCards = (function() {
     emblems: emblems,
     achievements: achievements,
     cardById: cardById,
+    achievementIds: achievementIds,
+    isAchievementUnlocked: isAchievementUnlocked,
+    isCardUnlocked: isCardUnlocked,
     emblemForProgression: emblemForProgression,
     coinReward: coinReward,
   };

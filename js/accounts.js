@@ -195,6 +195,19 @@ function progressionHtml(user) {
     '</div>';
 }
 
+function achievementsHtml(user) {
+  if (!window.SlimeFeatureCards && typeof SlimeFeatureCards === 'undefined') return '';
+  var cards = window.SlimeFeatureCards || SlimeFeatureCards;
+  return cards.achievements.map(function(achievement) {
+    var unlocked = cards.isAchievementUnlocked(user, achievement.id);
+    return '<div class="profile-achievement' + (unlocked ? ' unlocked' : '') + '">' +
+      '<b>' + escHtml(achievement.name) + '</b>' +
+      '<span>' + escHtml(unlocked ? 'UNLOCKED' : achievement.criteria) + '</span>' +
+      '<i>' + escHtml(achievement.reward) + '</i>' +
+      '</div>';
+  }).join('');
+}
+
 function renderProfile(user) {
   var stats = user.stats || {};
   var p = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(stats.xp || 0) : { level: 1, rankTitle: 'Recruit' });
@@ -229,7 +242,7 @@ function renderProfile(user) {
     '<div class="profile-section-title">Recent Matches</div>' +
     '<div class="profile-matches">' + recent + '</div>' +
     '<div class="profile-section-title">Achievements</div>' +
-    '<div class="profile-empty">Achievement slots are ready. Unlock rules come next.</div>';
+    '<div class="profile-achievements">' + achievementsHtml(user) + '</div>';
 }
 
 var profileReturnFocus = null;
