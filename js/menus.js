@@ -57,7 +57,7 @@ function toInitialMenu() {
     '<div class="home-water-layer"><div class="hwb hwb1"></div><div class="hwb hwb2"></div><div class="hwb hwb3"></div></div>' +
     '<div class="home-showcase">' +
       '<div class="home-spin-stage">' +
-        '<canvas id="HomeSlimeCanvas" class="home-slime-canvas" width="220" height="195"></canvas>' +
+        '<canvas id="HomeSlimeCanvas" class="home-slime-canvas" width="220" height="280"></canvas>' +
       '</div>' +
       '<div class="home-pedestal" id="HomePedestal"></div>' +
     '</div>' +
@@ -135,8 +135,8 @@ function initHomeSlimeAnim() {
 function _drawHomeSlime(ctx, cv) {
   var W = cv.width, H = cv.height;
   ctx.clearRect(0, 0, W, H);
-  var cx = W / 2, cy = H * 0.64;
-  var rPix = Math.min(W * 0.32, H * 0.37);
+  var cx = W / 2, cy = H * 0.78;
+  var rPix = Math.min(W * 0.28, H * 0.30);
   var t = Date.now();
 
   // Aura glow

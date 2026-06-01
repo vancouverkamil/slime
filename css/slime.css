@@ -496,7 +496,7 @@ body {
 .home-spin-stage { perspective:580px; display:flex; align-items:center; justify-content:center; }
 .home-slime-canvas {
   display:block;
-  width:clamp(150px,20vw,220px); height:clamp(132px,17.5vw,195px);
+  width:clamp(150px,20vw,220px); height:auto; aspect-ratio:220/280;
   animation:slimeSpin360 3.5s linear infinite;
 }
 .home-pedestal {
@@ -1134,7 +1134,7 @@ input[type='checkbox'] { margin-right:1em; accent-color:#00ffcc; }
   .home-title { font-size:clamp(64px,19vw,120px); letter-spacing:2px; }
   .home-subtitle { font-size:clamp(18px,5.5vw,34px); letter-spacing:6px; }
   .home-hint { font-size:clamp(13px,3.8vw,20px); }
-  .home-slime-canvas { width:clamp(110px,30vw,156px); height:clamp(96px,26vw,138px); }
+  .home-slime-canvas { width:clamp(110px,30vw,156px); height:auto; }
   .home-rank-badge { min-width:100px; padding:8px 12px; }
   .hrb-label { font-size:clamp(9px,2.5vw,12px); letter-spacing:2px; margin-bottom:3px; }
   .hrb-title { font-size:clamp(13px,3.8vw,18px); letter-spacing:1px; }
