@@ -167,6 +167,9 @@ function _drawHomeSlime(ctx, cv) {
   ctx.shadowBlur = 0;
   ctx.restore();
 
+  // Body overlay
+  drawBodyOverlay(ctx, cx, cy, rPix, playerBodyOverlay);
+
   // Glossy shine
   var shine = ctx.createRadialGradient(cx - rPix * 0.26, cy - rPix * 0.44, rPix * 0.04, cx - rPix * 0.26, cy - rPix * 0.44, rPix * 0.66);
   shine.addColorStop(0, 'rgba(255,255,255,0.30)');
@@ -237,7 +240,7 @@ function showOptions() {
   if (gameState === GAME_STATE_RUNNING)      gameState = GAME_STATE_MENU_PAUSE;
   else if (gameState === GAME_STATE_POINT_PAUSE) gameState = GAME_STATE_MENU_PAUSE_BETWEEN_POINTS;
   document.getElementById('OptionsDiv').style.display = 'block';
-  showOptSection(_activeOptSection || 'color');
+  showOptSection(_activeOptSection || 'slime');
   syncCustomizationUI();
   updateUndoRedoUI();
 }

@@ -62,128 +62,172 @@
         </div>
       </div>
 
-      <div id="OptionsDiv" style="position:absolute;width:620px;height:auto;top:14px;left:16px;background:#07001c;display:none;border:1px solid rgba(0,255,200,.25);z-index:10;padding:0;box-sizing:border-box;overflow:hidden;">
-        <div style="display:flex;flex-direction:column;height:100%;">
+      <div id="OptionsDiv" style="display:none;z-index:10;position:absolute;box-sizing:border-box;overflow:hidden;">
+        <div class="opt-panel">
 
           <!-- header -->
-          <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(0,255,200,.1);flex-shrink:0;background:rgba(0,255,200,.02);">
-            <span style="color:#00ffcc;letter-spacing:4px;font-size:10px;text-transform:uppercase;text-shadow:0 0 10px rgba(0,255,200,.4);">&#9881; Options</span>
-            <span class="SmallButton" onclick="hideOptions()" style="margin-left:auto;font-size:9px;letter-spacing:1px;color:#444;">[ CLOSE ]</span>
+          <div class="opt-hdr">
+            <span class="opt-hdr-title">&#9881; SETTINGS</span>
+            <span class="SmallButton" onclick="hideOptions()">[ CLOSE ]</span>
           </div>
 
-          <!-- body: sidebar + content -->
-          <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+          <!-- body -->
+          <div class="opt-body">
 
-            <!-- sidebar nav -->
-            <div style="width:132px;flex-shrink:0;border-right:1px solid rgba(0,255,200,.07);display:flex;flex-direction:column;overflow:hidden;">
-              <!-- slime preview -->
-              <div style="padding:14px 12px 12px;border-bottom:1px solid rgba(0,255,200,.07);text-align:center;">
-                <canvas id="SlimePreview" width="100" height="90" style="border:1px solid rgba(0,255,200,.12);display:block;margin:0 auto 6px;border-radius:2px;"></canvas>
-                <div style="color:#2a2a2a;font-size:7px;letter-spacing:2px;">PREVIEW</div>
+            <!-- sidebar -->
+            <div class="opt-sidebar">
+              <div class="opt-preview-box">
+                <canvas id="SlimePreview" width="130" height="120"></canvas>
+                <div class="opt-preview-lbl" id="OptPreviewName">MY SLIME</div>
               </div>
-              <!-- nav items -->
-              <div style="padding:8px 0;flex:1;">
-                <div id="OptNav_color"   class="opt-nav-item opt-nav-active" onclick="showOptSection('color')"  >&#9632; COLOR</div>
-                <div id="OptNav_hat"     class="opt-nav-item" onclick="showOptSection('hat')"   >&#9836; HAT STYLE</div>
-                <div id="OptNav_studio"  class="opt-nav-item" onclick="showOptSection('studio')" >&#9998; HAT STUDIO</div>
-                <div id="OptNav_audio"   class="opt-nav-item" onclick="showOptSection('audio')"  >&#9834; AUDIO</div>
-                <div id="OptNav_display" class="opt-nav-item" onclick="showOptSection('display')">&#9881; DISPLAY</div>
-              </div>
+              <nav class="opt-nav">
+                <div id="OptNav_slime"    class="opt-nav-item opt-nav-active" onclick="showOptSection('slime')">&#9632; MY SLIME</div>
+                <div id="OptNav_hat"      class="opt-nav-item" onclick="showOptSection('hat')">&#9836; HAT STYLE</div>
+                <div id="OptNav_studio"   class="opt-nav-item" onclick="showOptSection('studio')">&#9998; HAT STUDIO</div>
+                <div id="OptNav_audio"    class="opt-nav-item" onclick="showOptSection('audio')">&#9834; AUDIO</div>
+                <div id="OptNav_display"  class="opt-nav-item" onclick="showOptSection('display')">&#9881; DISPLAY</div>
+                <div id="OptNav_gameplay" class="opt-nav-item" onclick="showOptSection('gameplay')">&#9660; GAMEPLAY</div>
+                <div id="OptNav_controls" class="opt-nav-item" onclick="showOptSection('controls')">&#9650; CONTROLS</div>
+              </nav>
             </div>
 
-            <!-- content area -->
-            <div style="flex:1;min-width:0;overflow-y:auto;padding:18px 20px;">
+            <!-- content -->
+            <div class="opt-content">
 
-              <!-- ── COLOR ── -->
-              <div id="OptSection_color">
-                <div class="opt-section-title" style="margin-top:0;">Slime Color</div>
-                <canvas id="ColorSVCanvas" width="200" height="150" style="width:100%;max-width:280px;display:block;cursor:crosshair;border:1px solid rgba(0,255,200,.15);border-radius:2px;"></canvas>
-                <canvas id="ColorHueStrip" width="200" height="14" style="width:100%;max-width:280px;display:block;cursor:pointer;border:1px solid rgba(0,255,200,.12);margin-top:5px;border-radius:2px;"></canvas>
-                <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
-                  <div id="ColorPreviewBox" style="width:28px;height:28px;border:1px solid rgba(0,255,200,.3);flex-shrink:0;border-radius:3px;"></div>
-                  <input id="ColorHexInput" type="text" maxlength="7" placeholder="#00ff00"
-                         style="width:72px;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;font-family:'Courier New',monospace;font-size:10px;padding:4px 6px;"
-                         onchange="applyColorHex(this.value)"
-                         onkeydown="if(event.key==='Enter')applyColorHex(this.value)">
-                  <div id="ColorSwatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+              <!-- ── MY SLIME ── -->
+              <div id="OptSection_slime">
+                <div class="opt-section-title" style="margin-top:0">Slime Color</div>
+                <canvas id="ColorSVCanvas" width="200" height="150" class="opt-color-picker"></canvas>
+                <canvas id="ColorHueStrip" width="200" height="14" class="opt-hue-strip"></canvas>
+                <div class="opt-color-row">
+                  <div id="ColorPreviewBox" class="opt-color-preview"></div>
+                  <input id="ColorHexInput" type="text" maxlength="7" placeholder="#00ff00" class="opt-hex-input"
+                         onchange="applyColorHex(this.value)" onkeydown="if(event.key==='Enter')applyColorHex(this.value)">
+                  <div id="ColorSwatches" class="opt-swatches"></div>
                 </div>
+                <div class="opt-section-title">Body Overlay</div>
+                <div id="BodyOverlayPicker" class="opt-chip-row"></div>
               </div>
 
               <!-- ── HAT STYLE ── -->
-              <div id="OptSection_hat" style="display:none;">
-                <div class="opt-section-title" style="margin-top:0;">Hat Style</div>
-                <div id="HatPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;"></div>
-                <div id="HatAnimSection" style="display:none;margin-top:16px;">
-                  <div class="opt-section-title">Animation</div>
-                  <div id="HatAnimPicker" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+              <div id="OptSection_hat" style="display:none">
+                <div class="opt-section-title" style="margin-top:0">Free Hats</div>
+                <div id="HatPicker" class="opt-chip-row"></div>
+                <div class="opt-section-title">Shop Hats</div>
+                <div class="opt-shop-note">Unlocked in the Slimeverse Hat Shop</div>
+                <div id="ShopHatPicker" class="opt-chip-row"></div>
+                <div id="HatAnimSection" style="display:none;margin-top:20px">
+                  <div class="opt-section-title">Hat Animation</div>
+                  <div id="HatAnimPicker" class="opt-chip-row"></div>
                 </div>
               </div>
 
               <!-- ── HAT STUDIO ── -->
-              <div id="OptSection_studio" style="display:none;">
-                <div class="opt-section-title" style="margin-top:0;">Hat Studio</div>
-                <!-- row 1: brush + color -->
-                <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
+              <div id="OptSection_studio" style="display:none">
+                <div class="opt-section-title" style="margin-top:0">Hat Studio</div>
+                <div class="opt-studio-tools">
                   <button id="DrawBrushPen"    onclick="setDrawBrush('pen')"    class="draw-tool-btn active">&#9998; Pen</button>
                   <button id="DrawBrushMarker" onclick="setDrawBrush('marker')" class="draw-tool-btn">&#9646; Marker</button>
                   <button id="DrawBrushEraser" onclick="setDrawBrush('eraser')" class="draw-tool-btn">&#9702; Erase</button>
-                  <div id="DrawColorDot" onclick="cycleDrawColor()" title="Brush color" style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,255,200,.3);cursor:pointer;flex-shrink:0;background:#ffffff;margin-left:4px;"></div>
-                </div>
-                <!-- row 2: size + undo/redo -->
-                <div style="display:flex;gap:4px;align-items:center;margin-bottom:10px;">
+                  <div id="DrawColorDot" onclick="cycleDrawColor()" title="Brush color" class="opt-color-dot"></div>
+                  <span style="flex:1"></span>
                   <button id="DrawSizeS"  onclick="setDrawSize(2)"  class="draw-tool-btn active">S</button>
                   <button id="DrawSizeM"  onclick="setDrawSize(5)"  class="draw-tool-btn">M</button>
                   <button id="DrawSizeL"  onclick="setDrawSize(11)" class="draw-tool-btn">L</button>
                   <button id="DrawSizeXL" onclick="setDrawSize(22)" class="draw-tool-btn">XL</button>
-                  <div style="flex:1;"></div>
-                  <button id="DrawUndo" onclick="hatUndo()" class="draw-tool-btn" title="Undo (Ctrl+Z)" style="opacity:.3;cursor:default;">&#8617; Undo</button>
-                  <button id="DrawRedo" onclick="hatRedo()" class="draw-tool-btn" title="Redo (Ctrl+Y)" style="opacity:.3;cursor:default;">&#8618; Redo</button>
+                  <span style="flex:1"></span>
+                  <button id="DrawUndo" onclick="hatUndo()" class="draw-tool-btn" title="Undo (Ctrl+Z)" style="opacity:.35;cursor:default">&#8617; Undo</button>
+                  <button id="DrawRedo" onclick="hatRedo()" class="draw-tool-btn" title="Redo (Ctrl+Y)" style="opacity:.35;cursor:default">&#8618; Redo</button>
                 </div>
-                <!-- canvas -->
-                <canvas id="HatDrawCanvas" width="174" height="202" style="border:1px solid rgba(0,255,200,.22);cursor:crosshair;display:block;max-width:100%;border-radius:2px;"></canvas>
-                <!-- actions -->
-                <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
-                  <button onclick="clearHatDrawing()" class="hat-opt" style="font-size:8px;padding:3px 11px;">&#10005; Clear</button>
-                  <button onclick="saveCurrentHatPreset()" class="hat-opt" style="font-size:8px;padding:3px 11px;">SAVE</button>
-                  <button onclick="openHatFullscreen()" class="hat-opt" style="font-size:8px;padding:3px 11px;margin-left:auto;">&#11036; Fullscreen</button>
+                <canvas id="HatDrawCanvas" width="174" height="202" class="opt-draw-canvas"></canvas>
+                <div class="opt-studio-actions">
+                  <button onclick="clearHatDrawing()" class="hat-opt">&#10005; Clear</button>
+                  <button onclick="saveCurrentHatPreset()" class="hat-opt">Save Preset</button>
+                  <button onclick="openHatFullscreen()" class="hat-opt" style="margin-left:auto">&#11036; Fullscreen</button>
                 </div>
                 <div id="SavedHatDrawings" class="saved-hats"></div>
-                <div id="StudioNotCustom" style="display:none;margin-top:12px;padding:8px 11px;border:1px solid rgba(0,255,200,.1);border-radius:2px;color:rgba(0,255,200,.35);font-size:9px;letter-spacing:.6px;line-height:1.6;">
-                  &#9888; Pick "Custom" in Hat Style to show your drawing in-game.
+                <div id="StudioNotCustom" class="opt-notice" style="display:none">
+                  &#9888; Select &ldquo;Custom&rdquo; in Hat Style to show your drawing in-game.
                 </div>
               </div>
 
               <!-- ── AUDIO ── -->
-              <div id="OptSection_audio" style="display:none;">
-                <div class="opt-section-title" style="margin-top:0;">Victory Music</div>
-                <div style="color:#3a3a3a;font-size:9px;letter-spacing:.4px;margin-bottom:12px;">Plays when you win a match.</div>
-                <select id="DropSelect" onchange="selectedDrop=this.value|0" style="width:100%;max-width:300px;display:block;background:#040010;border:1px solid rgba(0,255,200,.3);color:#00ffcc;padding:6px 8px;font-family:'Courier New',monospace;font-size:10px;margin-bottom:10px;"></select>
-                <button onclick="previewDrop()" style="background:transparent;border:1px solid rgba(0,255,200,.25);color:rgba(0,255,200,.55);font-size:9px;letter-spacing:2px;padding:6px 16px;cursor:pointer;font-family:inherit;" onmouseover="this.style.borderColor='#00ffcc';this.style.color='#00ffcc';" onmouseout="this.style.borderColor='rgba(0,255,200,.25)';this.style.color='rgba(0,255,200,.55)';">&#9654; PREVIEW</button>
-                <div class="opt-section-title" style="margin-top:18px;">Match Effects</div>
-                <div style="display:flex;flex-direction:column;gap:9px;">
-                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="GameSfx" type="checkbox" onchange="setGameSfx(this.checked)"> Sound Effects</label>
-                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="ScreenFx" type="checkbox" onchange="setScreenFx(this.checked)"> Screen Effects</label>
+              <div id="OptSection_audio" style="display:none">
+                <div class="opt-section-title" style="margin-top:0">Victory Music</div>
+                <div class="opt-label-dim">Plays when you win a match</div>
+                <select id="DropSelect" class="opt-select" onchange="selectedDrop=this.value|0"></select>
+                <button onclick="previewDrop()" class="opt-preview-btn">&#9654; PREVIEW</button>
+                <div class="opt-section-title">Sound &amp; Effects</div>
+                <div class="opt-toggle-group">
+                  <label class="opt-toggle"><input id="GameSfx" type="checkbox" onchange="setGameSfx(this.checked)"><span>Sound Effects</span></label>
+                  <label class="opt-toggle"><input id="ScreenFx" type="checkbox" onchange="setScreenFx(this.checked)"><span>Screen Effects</span></label>
                 </div>
               </div>
 
               <!-- ── DISPLAY ── -->
-              <div id="OptSection_display" style="display:none;">
-                <div class="opt-section-title" style="margin-top:0;">Game Size</div>
-                <div style="display:flex;gap:6px;margin-bottom:22px;">
-                  <button id="ScaleFull"    onclick="setGameScale('full')"    class="hat-opt" style="padding:5px 14px;">Fullscreen</button>
-                  <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active" style="padding:5px 14px;">Compact</button>
+              <div id="OptSection_display" style="display:none">
+                <div class="opt-section-title" style="margin-top:0">Game Size</div>
+                <div class="opt-chip-row" style="margin-bottom:20px">
+                  <button id="ScaleFull"    onclick="setGameScale('full')"    class="hat-opt">Fullscreen</button>
+                  <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active">Compact</button>
+                </div>
+                <div class="opt-section-title">Visual</div>
+                <div class="opt-toggle-group">
+                  <label class="opt-toggle"><input id="ScreenShakeToggle" type="checkbox" onchange="setScreenShakePref(this.checked)" checked><span>Screen Shake</span></label>
+                  <label class="opt-toggle"><input id="ShowPingToggle"    type="checkbox" onchange="setShowPingPref(this.checked)"><span>Show Ping</span></label>
+                  <label class="opt-toggle"><input id="ShowFPSToggle"     type="checkbox" onchange="setShowFPSPref(this.checked)"><span>Show FPS</span></label>
+                  <label class="opt-toggle"><input id="LegacyGraphics"    type="checkbox"><span>Legacy Graphics</span></label>
                 </div>
                 <div class="opt-section-title">Debug</div>
-                <div style="display:flex;flex-direction:column;gap:9px;">
-                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="LegacyGraphics" type="checkbox"> Legacy Graphics</label>
-                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="PhysicsLog" type="checkbox"> Physics Log</label>
-                  <label style="display:flex;align-items:center;gap:9px;cursor:pointer;color:#4a4a4a;font-size:10px;letter-spacing:.4px;"><input id="SlowMotion" type="checkbox"> Slow Motion</label>
+                <div class="opt-toggle-group">
+                  <label class="opt-toggle"><input id="PhysicsLog"  type="checkbox"><span>Physics Log</span></label>
+                  <label class="opt-toggle"><input id="SlowMotion"  type="checkbox"><span>Slow Motion</span></label>
                 </div>
               </div>
 
-            </div><!-- /content -->
-          </div><!-- /body -->
-        </div><!-- /flex-column wrapper -->
+              <!-- ── GAMEPLAY ── -->
+              <div id="OptSection_gameplay" style="display:none">
+                <div class="opt-section-title" style="margin-top:0">General</div>
+                <div class="opt-toggle-group">
+                  <label class="opt-toggle"><input id="ProfanityToggle"    type="checkbox" onchange="setProfanityFilter(this.checked)"  checked><span>Profanity Filter</span></label>
+                  <label class="opt-toggle"><input id="RallyCounterToggle" type="checkbox" onchange="setRallyCounterPref(this.checked)"><span>Show Rally Counter</span></label>
+                  <label class="opt-toggle"><input id="PointFlashToggle"   type="checkbox" onchange="setPointFlashPref(this.checked)"   checked><span>Point Flash Animation</span></label>
+                </div>
+                <div class="opt-section-title">Session Info</div>
+                <div class="opt-about-block">
+                  <div class="opt-about-row"><span>Server</span><span id="OptServerRegion">Railway</span></div>
+                  <div class="opt-about-row"><span>Ping</span><span id="OptPingDisplay">—</span></div>
+                  <div class="opt-about-row"><span>Version</span><span id="OptVersion">—</span></div>
+                </div>
+              </div>
+
+              <!-- ── CONTROLS ── -->
+              <div id="OptSection_controls" style="display:none">
+                <div class="opt-section-title" style="margin-top:0">Player 1</div>
+                <table class="opt-keys">
+                  <tr><td>Move Left / Right</td><td class="opt-key">A &nbsp;/&nbsp; D</td></tr>
+                  <tr><td>Jump</td><td class="opt-key">W</td></tr>
+                </table>
+                <div class="opt-section-title">Player 2</div>
+                <table class="opt-keys">
+                  <tr><td>Move Left / Right</td><td class="opt-key">&#8592; &nbsp;/&nbsp; &#8594;</td></tr>
+                  <tr><td>Jump</td><td class="opt-key">&#8593;</td></tr>
+                </table>
+                <div class="opt-section-title">General</div>
+                <table class="opt-keys">
+                  <tr><td>Pause / Menu</td><td class="opt-key">ESC</td></tr>
+                  <tr><td>Advance / Rematch</td><td class="opt-key">SPACE</td></tr>
+                  <tr><td>Options</td><td class="opt-key">O</td></tr>
+                </table>
+                <div class="opt-section-title">Emotes (in-game)</div>
+                <table class="opt-keys">
+                  <tr><td>Emote 1 &ndash; 4</td><td class="opt-key">1 &ndash; 4</td></tr>
+                </table>
+              </div>
+
+            </div><!-- /opt-content -->
+          </div><!-- /opt-body -->
+        </div><!-- /opt-panel -->
       </div>
 
       <!-- Dev Menu -->

@@ -15,8 +15,58 @@ function sendCustomization() {
 }
 
 function hasHatUnlock(hatId) {
-  if (hatId !== 'goldcrown') return true;
-  return !!(currentAccount && currentAccount.progression && currentAccount.progression.unlocks && currentAccount.progression.unlocks.goldCrown);
+  if (hatId === 'goldcrown') {
+    return !!(currentAccount && currentAccount.progression && currentAccount.progression.unlocks && currentAccount.progression.unlocks.goldCrown);
+  }
+  var shopHats = ['devil','prismatic','dragonfire','cosmic','angelic','overlord'];
+  if (shopHats.indexOf(hatId) !== -1) {
+    return !!(currentAccount && Array.isArray(currentAccount.inventory) && currentAccount.inventory.indexOf(hatId) !== -1);
+  }
+  return true;
+}
+
+function drawBodyOverlay(pctx, cx, cy, rPix, overlay) {
+  if (!overlay || overlay === 'none') return;
+  var PI2 = Math.PI * 2;
+  pctx.save();
+  pctx.beginPath();
+  pctx.arc(cx, cy, rPix, Math.PI, PI2, false);
+  pctx.closePath();
+  pctx.clip();
+  if (overlay === 'shine') {
+    var sg = pctx.createRadialGradient(cx - rPix*.28, cy - rPix*.42, 0, cx - rPix*.28, cy - rPix*.42, rPix*.75);
+    sg.addColorStop(0, 'rgba(255,255,255,.28)'); sg.addColorStop(.5, 'rgba(255,255,255,.08)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+    pctx.fillStyle = sg; pctx.fillRect(cx - rPix, cy - rPix, rPix*2, rPix);
+  } else if (overlay === 'stripes') {
+    pctx.strokeStyle = 'rgba(255,255,255,.22)'; pctx.lineWidth = rPix * 0.09;
+    for (var sy = cy - rPix; sy < cy + rPix*.05; sy += rPix*.28) {
+      pctx.beginPath(); pctx.moveTo(cx - rPix, sy); pctx.lineTo(cx + rPix, sy); pctx.stroke();
+    }
+  } else if (overlay === 'dots') {
+    pctx.fillStyle = 'rgba(255,255,255,.2)';
+    var sp = rPix * .36;
+    for (var dy = cy - rPix*.85; dy < cy + rPix*.05; dy += sp) {
+      for (var dx = cx - rPix*.8; dx < cx + rPix*.85; dx += sp) {
+        pctx.beginPath(); pctx.arc(dx, dy, rPix*.07, 0, PI2); pctx.fill();
+      }
+    }
+  } else if (overlay === 'stars') {
+    pctx.strokeStyle = 'rgba(255,255,255,.35)'; pctx.fillStyle = 'rgba(255,255,255,.38)';
+    [[-.38,-.54],[.22,-.72],[-.08,-.32],[.44,-.42],[.02,-.6]].forEach(function(p) {
+      var sx = cx + p[0]*rPix, sy2 = cy + p[1]*rPix, sr = rPix*.075;
+      pctx.lineWidth = rPix*.04;
+      pctx.beginPath();
+      for (var pt = 0; pt < 4; pt++) { var a = pt*Math.PI/2; pctx.moveTo(sx, sy2); pctx.lineTo(sx + Math.cos(a)*sr*2, sy2 + Math.sin(a)*sr*2); }
+      pctx.stroke();
+      pctx.beginPath(); pctx.arc(sx, sy2, sr, 0, PI2); pctx.fill();
+    });
+  } else if (overlay === 'grid') {
+    pctx.strokeStyle = 'rgba(255,255,255,.14)'; pctx.lineWidth = 0.6;
+    var gs = rPix * .3;
+    for (var gx = cx - rPix; gx <= cx + rPix; gx += gs) { pctx.beginPath(); pctx.moveTo(gx, cy-rPix); pctx.lineTo(gx, cy+5); pctx.stroke(); }
+    for (var gy = cy - rPix; gy <= cy; gy += gs) { pctx.beginPath(); pctx.moveTo(cx-rPix, gy); pctx.lineTo(cx+rPix, gy); pctx.stroke(); }
+  }
+  pctx.restore();
 }
 
 // drawHatAt: context-independent hat renderer used by game rendering and preview
@@ -292,6 +342,8 @@ function updateSlimePreview() {
     pctx.fillStyle = playerBodyColor;
     pctx.beginPath(); pctx.arc(cx, cy, r, Math.PI, 0); pctx.fill();
   }
+  // body overlay
+  drawBodyOverlay(pctx, cx, cy, r, playerBodyOverlay);
   // eye
   var eyeX = cx + r*0.26, eyeY = cy - r*0.38;
   pctx.fillStyle = '#fff'; pctx.beginPath(); pctx.arc(eyeX, eyeY, r*0.19, 0, TWO_PI); pctx.fill();

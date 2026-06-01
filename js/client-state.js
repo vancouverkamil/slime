@@ -42,6 +42,7 @@ function newLegacySlime(onLeft, radius, color) {
         ctx.fillStyle = this.tintColor || this.color;
         ctx.beginPath(); ctx.arc(xPix, yPix, rPix, Math.PI, TWO_PI); ctx.fill();
       }
+      if (this.onLeft) drawBodyOverlay(ctx, xPix, yPix, rPix, playerBodyOverlay);
       var eyeX = this.x + (this.onLeft ? 1 : -1) * this.radius / 4;
       var eyeY = this.y + this.radius / 2;
       ctx.translate(eyeX * pixelsPerUnitX, courtYPix - eyeY * pixelsPerUnitY);

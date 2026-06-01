@@ -22,17 +22,32 @@ var HAT_ANIM_OPTIONS = [
   { id: 'wave',   label: 'Wave'    },
 ];
 var BODY_COLORS = ['#00ff00','#00ffcc','#0066ff','#aa00ff','#ff2200','#ff8800','#ff00aa','#eeeeee'];
-var HAT_OPTIONS = [
-  { id:'none',   label:'None'    },
-  { id:'crown',  label:'Crown'   },
-  { id:'goldcrown', label:'Gold Crown', minLevel:70 },
-  { id:'tophat', label:'Top Hat' },
-  { id:'cowboy', label:'Cowboy'  },
-  { id:'halo',   label:'Halo'    },
-  { id:'party',  label:'Party'   },
-  { id:'custom', label:'Custom'  },
+var BODY_OVERLAYS = [
+  { id:'none',    label:'Classic'  },
+  { id:'shine',   label:'Shine'    },
+  { id:'stripes', label:'Stripes'  },
+  { id:'dots',    label:'Polka'    },
+  { id:'stars',   label:'Stars'    },
+  { id:'grid',    label:'Grid'     },
 ];
-var profanityFilterEnabled = true;
+var playerBodyOverlay = (typeof localStorage !== 'undefined' && localStorage.getItem('slimeBodyOverlay')) || 'none';
+var HAT_OPTIONS = [
+  { id:'none',       label:'None'         },
+  { id:'crown',      label:'Crown'        },
+  { id:'goldcrown',  label:'Gold Crown',   minLevel:70 },
+  { id:'tophat',     label:'Top Hat'      },
+  { id:'cowboy',     label:'Cowboy'       },
+  { id:'halo',       label:'Halo'         },
+  { id:'party',      label:'Party'        },
+  { id:'custom',     label:'Custom'       },
+  { id:'devil',      label:'Devil Horns',  shopPrice:400  },
+  { id:'prismatic',  label:'Prismatic',    shopPrice:600  },
+  { id:'dragonfire', label:'Dragon Fire',  shopPrice:800  },
+  { id:'cosmic',     label:'Cosmic Crown', shopPrice:1200 },
+  { id:'angelic',    label:'Triple Halo',  shopPrice:1500 },
+  { id:'overlord',   label:'Overlord',     shopPrice:2500 },
+];
+var profanityFilterEnabled = (typeof localStorage === 'undefined' || localStorage.getItem('slime_profanity') !== 'off');
 var PROFANITY_WORDS = [
   'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'dick', 'cunt', 'pussy',
   'slut', 'whore', 'fag', 'nigger', 'retard'
