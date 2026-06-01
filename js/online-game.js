@@ -19,6 +19,17 @@ function handleServerMessage(msg) {
     }
     addChatMessage(null, 'Connected as ' + myPlayerName);
     if (msg.playerList) updateOnlineList(msg.playerList);
+    // Auto-rejoin if we were mid-game when connection dropped
+    var rjRoom  = null, rjToken = null;
+    try { rjRoom  = localStorage.getItem('slime_pendingRejoinRoom');  } catch(e) {}
+    try { rjToken = localStorage.getItem('slime_pendingRejoinToken'); } catch(e) {}
+    if (rjRoom !== null && rjToken) {
+      try { localStorage.removeItem('slime_pendingRejoinRoom'); localStorage.removeItem('slime_pendingRejoinToken'); } catch(e) {}
+      setTimeout(function() {
+        if (lobbySocket && lobbySocket.readyState === 1)
+          lobbySocket.send(JSON.stringify({ type: 'join_room', roomId: parseInt(rjRoom, 10), rejoinToken: rjToken }));
+      }, 150);
+    }
 
   } else if (msg.type === 'lobby_list') {
     currentLobbies = msg.lobbies || [];
@@ -34,6 +45,7 @@ function handleServerMessage(msg) {
 
   } else if (msg.type === 'room_joined') {
     currentRoomId = msg.roomId;
+    if (msg.rejoinToken) try { localStorage.setItem('slime_rejoinToken', msg.rejoinToken); } catch(e) {}
     showLeaveBtn(true);
     if (msg.role === 'spectator') {
       isSpectator = true; onlineMode = false;
@@ -115,7 +127,29 @@ function handleServerMessage(msg) {
       else     finishOnlineGame(_w);
     });
 
+  } else if (msg.type === 'opponent_reconnecting') {
+    showReconnectOverlay(Math.round((msg.timeoutMs || 30000) / 1000));
+    // Store their token so WE can rejoin if we disconnect
+    if (msg.rejoinToken) try { localStorage.setItem('slime_rejoinToken', msg.rejoinToken); } catch(e) {}
+    addChatMessage(null, 'Opponent disconnected — waiting 30s for reconnect…');
+
+  } else if (msg.type === 'opponent_reconnected') {
+    hideReconnectOverlay();
+    addChatMessage(null, 'Opponent reconnected!');
+
+  } else if (msg.type === 'reconnected') {
+    // We reconnected to our own game
+    hideReconnectOverlay();
+    mySide = msg.side;
+    currentRoomId = msg.roomId;
+    playerNameLeft  = msg.nameLeft  || 'Player 1';
+    playerNameRight = msg.nameRight || 'Player 2';
+    if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
+    launchOnlineGame();
+    addChatMessage(null, 'Reconnected to match!');
+
   } else if (msg.type === 'opponent_disconnected') {
+    hideReconnectOverlay();
     if (typeof slimeverseActive !== 'undefined' && slimeverseActive) leaveSlimeverse();
     if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
     clearInterval(onlineInputInterval); onlineInputInterval = null;
@@ -312,4 +346,36 @@ function finishSpectating(winner) {
     '</div>';
   showBottomBar();
 }
+
+// ── reconnect overlay ─────────────────────────────────────
+var _rcOverlay = null, _rcTimer = null;
+
+function showReconnectOverlay(seconds) {
+  hideReconnectOverlay();
+  _rcOverlay = document.createElement('div');
+  _rcOverlay.id = 'ReconnectOverlay';
+  var remaining = seconds;
+  _rcOverlay.innerHTML =
+    '<div class="rco-icon">&#9203;</div>' +
+    '<div class="rco-title">OPPONENT DISCONNECTED</div>' +
+    '<div class="rco-sub">Waiting for them to reconnect&hellip;</div>' +
+    '<div class="rco-timer" id="RcoTimer">' + remaining + 's</div>';
+  var parent = document.getElementById('ContentDiv') || document.getElementById('GameContentDiv') || document.body;
+  parent.appendChild(_rcOverlay);
+  _rcTimer = setInterval(function() {
+    remaining = Math.max(0, remaining - 1);
+    var el = document.getElementById('RcoTimer');
+    if (el) el.textContent = remaining + 's';
+    if (remaining <= 0) { clearInterval(_rcTimer); _rcTimer = null; }
+  }, 1000);
+}
+
+function hideReconnectOverlay() {
+  if (_rcTimer) { clearInterval(_rcTimer); _rcTimer = null; }
+  if (_rcOverlay) {
+    if (_rcOverlay.parentNode) _rcOverlay.parentNode.removeChild(_rcOverlay);
+    _rcOverlay = null;
+  }
+}
+
 

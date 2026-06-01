@@ -944,6 +944,18 @@ body {
 #HatFullscreenOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2,0,12,.97); z-index:9999; align-items:center; justify-content:center; }
 #HatFullscreenOverlay.fs-open { display:flex; }
 
+/* ── reconnect overlay ── */
+#ReconnectOverlay {
+  position:absolute; inset:0; z-index:500;
+  background:rgba(4,0,18,.82); backdrop-filter:blur(2px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.rco-icon  { font-size:clamp(28px,4vh,48px); margin-bottom:12px; }
+.rco-title { color:#ff6666; letter-spacing:4px; font-size:clamp(13px,1.5vw,20px); text-transform:uppercase; margin-bottom:8px; text-shadow:0 0 14px rgba(255,80,80,.5); }
+.rco-sub   { color:rgba(0,255,200,.5); font-size:clamp(10px,1.1vw,14px); letter-spacing:2px; margin-bottom:18px; }
+.rco-timer { color:#ffd700; font-size:clamp(28px,4vw,52px); letter-spacing:3px; text-shadow:0 0 20px rgba(255,215,0,.5); font-weight:bold; }
+
 /* ── game ui ── */
 h1 { font-size:60px; }
 h2 { margin:8px 0; }

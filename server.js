@@ -10,8 +10,10 @@ const progression = require('./progression');
 
 loadLocalEnv();
 
-const WIN_AMOUNT = 7;
-const TICK_MS    = 20;
+const crypto = require('crypto');
+const WIN_AMOUNT            = 7;
+const TICK_MS               = 20;
+const RECONNECT_TIMEOUT_MS  = 30_000;
 const SLIMEVERSE_TICK_MS = 16;
 const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
 
@@ -77,11 +79,12 @@ const slimeverseClients = new Map();
 // 8 persistent rooms
 const rooms = ROOM_NAMES.map((name, id) => ({
   id, name,
-  players:    [], // [{ ws, info }], max 2
-  spectators: [], // [{ ws, info }], unlimited
-  state:      null,
-  interval:   null,
-  phase:      'empty', // 'empty' | 'waiting' | 'playing'
+  players:          [], // [{ ws, info }], max 2
+  spectators:       [], // [{ ws, info }], unlimited
+  state:            null,
+  interval:         null,
+  phase:            'empty', // 'empty' | 'waiting' | 'playing'
+  pendingReconnect: null,    // { side, userId, rejoinToken, timer, resumeGame }
 }));
 
 function parseCookies(header) {
@@ -502,7 +505,9 @@ wss.on('connection', async (ws, req) => {
   ws.on('close', () => {
     handleTournamentLeave(ws, info);
     leaveSlimeverse(ws, info);
-    leaveRoom(ws, info, true);
+    // Active-game players: the in-game handleDisconnect manages the grace period
+    const handledByGame = info.room && info.role === 'player' && info.room.phase === 'playing';
+    if (!handledByGame) leaveRoom(ws, info, true);
     allClients.delete(ws);
     pushLobbyState();
   });
@@ -521,7 +526,7 @@ async function handleMsg(ws, info, msg) {
     }
   } else if (msg.type === 'join_room') {
     leaveSlimeverse(ws, info);
-    handleJoinRoom(ws, info, msg.roomId);
+    handleJoinRoom(ws, info, msg.roomId, msg.rejoinToken);
   } else if (msg.type === 'customize') {
     await handleCustomize(ws, info, msg);
   } else if (msg.type === 'enter_slimeverse') {
@@ -588,28 +593,40 @@ function relayChat(info, msg) {
 }
 
 // ── room join ─────────────────────────────────────────────
-function handleJoinRoom(ws, info, roomId) {
+function handleJoinRoom(ws, info, roomId, rejoinToken) {
   const id = parseInt(roomId, 10);
   const room = (id >= 0 && id < rooms.length) ? rooms[id] : null;
   if (!room) return;
   leaveRoom(ws, info, false);
 
-  if (room.players.length < 2) {
-    // ── join as player ──
-    const side = room.players.length === 0 ? 'left' : 'right';
-    room.players.push({ ws, info });
-    info.room  = room;
-    info.role  = 'player';
-    info.state = 'in_room';
-    room.phase = room.players.length === 1 ? 'waiting' : 'playing';
-
-    send(ws, { type: 'room_joined', roomId: room.id, role: 'player', side });
-
-    if (room.players.length === 2) {
-      startRoomGame(room);
+  // ── reconnect path ──────────────────────────────────────
+  if (room.pendingReconnect) {
+    const pr = room.pendingReconnect;
+    const tokenMatch = rejoinToken && pr.rejoinToken === rejoinToken;
+    const userMatch  = info.userId && pr.userId && info.userId === pr.userId;
+    if (tokenMatch || userMatch) {
+      pr.resumeGame(ws, info);
+      return;
     }
+  }
+
+  // ── normal join path ────────────────────────────────────
+  const spotFree = room.players.length < 2 && !room.pendingReconnect;
+  if (spotFree) {
+    const side      = room.players.length === 0 ? 'left' : 'right';
+    const joinToken = crypto.randomBytes(16).toString('hex');
+    room.players.push({ ws, info });
+    info.room        = room;
+    info.role        = 'player';
+    info.state       = 'in_room';
+    info.rejoinToken = joinToken;
+    room.phase       = room.players.length === 1 ? 'waiting' : 'playing';
+
+    send(ws, { type: 'room_joined', roomId: room.id, role: 'player', side, rejoinToken: joinToken });
+
+    if (room.players.length === 2) startRoomGame(room);
   } else {
-    // ── join as spectator ──
+    // ── spectator ──
     room.spectators.push({ ws, info });
     info.room  = room;
     info.role  = 'spectator';
@@ -617,13 +634,13 @@ function handleJoinRoom(ws, info, roomId) {
 
     send(ws, { type: 'room_joined', roomId: room.id, role: 'spectator', side: null });
 
-    // Push current game state immediately so spectator sees live action
     if (room.state) {
       send(ws, buildStateMsg(room.state));
+    } else if (room.pendingReconnect) {
+      send(ws, { type: 'opponent_reconnecting', side: room.pendingReconnect.side, timeoutMs: RECONNECT_TIMEOUT_MS });
     } else {
       send(ws, { type: 'spectator_waiting' });
     }
-    // Send current player customizations to spectator
     if (room.players[0]) send(ws, { type: 'customize', side: 'left',  hat: room.players[0].info.hat, hatAnim: room.players[0].info.hatAnim, color: room.players[0].info.bodyColor, hatDrawing: room.players[0].info.hatDrawing });
     if (room.players[1]) send(ws, { type: 'customize', side: 'right', hat: room.players[1].info.hat, hatAnim: room.players[1].info.hatAnim, color: room.players[1].info.bodyColor, hatDrawing: room.players[1].info.hatDrawing });
   }
@@ -637,6 +654,13 @@ function leaveRoom(ws, info, disconnecting) {
 
   if (info.role === 'player') {
     room.players = room.players.filter(p => p.ws !== ws);
+
+    // Cancel any pending reconnect (explicit leave = no grace period)
+    if (room.pendingReconnect) {
+      clearTimeout(room.pendingReconnect.timer);
+      room.pendingReconnect = null;
+    }
+
     if (room.interval) {
       clearInterval(room.interval);
       room.interval = null;
@@ -644,7 +668,6 @@ function leaveRoom(ws, info, disconnecting) {
       if (!disconnecting) {
         broadcastRoom(room, { type: 'opponent_disconnected' });
       }
-      // Reset remaining player back to in_room state
       room.players.forEach(({ info: i }) => {
         i.gameHandler = null;
         i.state = 'in_room';
@@ -740,8 +763,10 @@ function startRoomGame(room) {
     if (msg.jump) input.jump = true;
   }
 
-  left.info.state        = 'playing';
-  right.info.state       = 'playing';
+  left.info.state     = 'playing';
+  right.info.state    = 'playing';
+  left.info.gameSide  = 'left';
+  right.info.gameSide = 'right';
   left.info.gameHandler  = (msg) => {
     handleInput('left', msg);
     if (msg.type === 'emote') {
@@ -757,19 +782,98 @@ function startRoomGame(room) {
     }
   };
 
-  let cleaned = false;
-  function cleanup() {
-    if (cleaned) return; cleaned = true;
-    clearInterval(room.interval); room.interval = null; room.state = null; room.phase = 'empty';
-    bcast({ type: 'opponent_disconnected' });
-    [...room.players, ...room.spectators].forEach(({ info }) => {
-      info.room = null; info.role = null; info.state = 'lobby'; info.gameHandler = null;
-    });
-    room.players = []; room.spectators = [];
+  function handleDisconnect(side) {
+    // Both players dropped → immediate full cleanup
+    if (room.pendingReconnect) {
+      clearTimeout(room.pendingReconnect.timer);
+      room.pendingReconnect = null;
+      clearInterval(room.interval); room.interval = null;
+      room.state = null; room.phase = 'empty';
+      bcast({ type: 'opponent_disconnected' });
+      [...room.players, ...room.spectators].forEach(({ info: i }) => {
+        i.room = null; i.role = null; i.state = 'lobby'; i.gameHandler = null;
+      });
+      room.players = []; room.spectators = [];
+      pushLobbyState();
+      return;
+    }
+
+    const disconnIdx = room.players.findIndex(p => p.info.gameSide === side);
+    if (disconnIdx === -1) return;
+    const dp = room.players.splice(disconnIdx, 1)[0];
+    dp.info.room = null; dp.info.role = null; dp.info.gameHandler = null; dp.info.state = 'lobby';
+
+    clearInterval(room.interval);
+    room.interval = null;
+    room.phase    = 'waiting';
+
+    const token = crypto.randomBytes(16).toString('hex');
+
+    function finalCleanup() {
+      room.pendingReconnect = null;
+      room.state = null; room.phase = 'empty';
+      bcast({ type: 'opponent_disconnected' });
+      [...room.players, ...room.spectators].forEach(({ info: i }) => {
+        i.room = null; i.role = null; i.state = 'lobby'; i.gameHandler = null;
+      });
+      room.players = []; room.spectators = [];
+      pushLobbyState();
+    }
+
+    room.pendingReconnect = {
+      side,
+      userId:      dp.info.userId || null,
+      rejoinToken: token,
+      timer:       setTimeout(finalCleanup, RECONNECT_TIMEOUT_MS),
+      resumeGame:  function(newWs, newInfo) {
+        const pr = room.pendingReconnect;
+        if (!pr) return;
+        clearTimeout(pr.timer);
+        room.pendingReconnect = null;
+
+        newInfo.room        = room;
+        newInfo.role        = 'player';
+        newInfo.state       = 'playing';
+        newInfo.gameSide    = side;
+        newInfo.gameHandler = (msg) => {
+          handleInput(side, msg);
+          if (msg.type === 'emote') {
+            const e = String(msg.emoji || '').slice(0, 4);
+            if (e) bcast({ type: 'emote', side, emoji: e });
+          }
+        };
+
+        if (side === 'left') room.players.unshift({ ws: newWs, info: newInfo });
+        else                 room.players.push(   { ws: newWs, info: newInfo });
+        room.phase = 'playing';
+
+        newWs.on('close', () => handleDisconnect(side));
+
+        room.interval = setInterval(() => gameTick().catch(err => {
+          console.error('gameTick error after reconnect', err);
+          clearInterval(room.interval); room.interval = null;
+          room.state = null; room.phase = 'empty'; pushLobbyState();
+        }), TICK_MS);
+
+        const other    = room.players.find(p => p.ws !== newWs);
+        const nameLeft  = side === 'left'  ? newInfo.name : (other ? other.info.name : 'Player 1');
+        const nameRight = side === 'right' ? newInfo.name : (other ? other.info.name : 'Player 2');
+        send(newWs, { type: 'reconnected', side, roomId: room.id, nameLeft, nameRight });
+        if (room.state) send(newWs, buildStateMsg(room.state));
+        if (other) send(newWs, { type: 'customize', side: other.info.gameSide,
+          hat: other.info.hat, hatAnim: other.info.hatAnim,
+          color: other.info.bodyColor, hatDrawing: other.info.hatDrawing });
+        bcast({ type: 'opponent_reconnected', side });
+        pushLobbyState();
+      },
+    };
+
+    bcast({ type: 'opponent_reconnecting', side, timeoutMs: RECONNECT_TIMEOUT_MS, rejoinToken: token, roomId: room.id });
     pushLobbyState();
   }
-  left.ws.on('close',  cleanup);
-  right.ws.on('close', cleanup);
+
+  left.ws.on('close',  () => handleDisconnect('left'));
+  right.ws.on('close', () => handleDisconnect('right'));
 
   room.interval = setInterval(() => {
     gameTick().catch((err) => {
