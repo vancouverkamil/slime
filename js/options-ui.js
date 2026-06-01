@@ -173,6 +173,23 @@ function syncCustomizationUI() {
     });
   }
 
+  // Trail picker
+  var tp = document.getElementById('TrailPicker');
+  if (tp) {
+    tp.innerHTML = '';
+    TRAIL_OPTIONS.forEach(function(o) {
+      var b = document.createElement('button');
+      b.className = 'hat-opt' + (o.id === playerTrail ? ' active' : '');
+      b.textContent = o.label;
+      b.onclick = function() {
+        playerTrail = o.id;
+        try { localStorage.setItem('slimeTrail', o.id); } catch(e) {}
+        syncCustomizationUI(); sendCustomization();
+      };
+      tp.appendChild(b);
+    });
+  }
+
   if (playerHatAnim !== 'none' && playerHat !== 'none') startPreviewAnim();
   else stopPreviewAnim();
   renderSavedHatDrawings();

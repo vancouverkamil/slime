@@ -473,6 +473,8 @@ wss.on('connection', async (ws, req) => {
     hatAnim: profile && profile.slime ? profile.slime.hatAnim : 'none',
     bodyColor: profile && profile.slime ? profile.slime.color : '#00ff00',
     hatDrawing: profile && profile.slime ? profile.slime.hatDrawing : [],
+    trail: 'none',
+    ranked: profile ? (profile.ranked || progression.defaultRanked()) : null,
     tournamentBracket: null,
   };
   allClients.set(ws, info);
@@ -505,6 +507,7 @@ wss.on('connection', async (ws, req) => {
   ws.on('close', () => {
     handleTournamentLeave(ws, info);
     leaveSlimeverse(ws, info);
+    cancelRankedQueue(ws, info);
     // Active-game players: the in-game handleDisconnect manages the grace period
     const handledByGame = info.room && info.role === 'player' && info.room.phase === 'playing';
     if (!handledByGame) leaveRoom(ws, info, true);
@@ -524,6 +527,11 @@ async function handleMsg(ws, info, msg) {
       info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
       info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
     }
+  } else if (msg.type === 'ranked_queue') {
+    leaveSlimeverse(ws, info);
+    handleRankedQueue(ws, info);
+  } else if (msg.type === 'ranked_queue_cancel') {
+    cancelRankedQueue(ws, info);
   } else if (msg.type === 'join_room') {
     leaveSlimeverse(ws, info);
     handleJoinRoom(ws, info, msg.roomId, msg.rejoinToken);
@@ -570,9 +578,10 @@ async function handleCustomize(ws, info, msg) {
   let hat       = String(msg.hat      || 'none').slice(0, 20);
   const hatAnim = String(msg.hatAnim  || 'none').slice(0, 20);
   const color   = String(msg.color    || '#00ff00').slice(0, 20);
+  const trail   = String(msg.trail    || 'none').slice(0, 20);
   const drawing = Array.isArray(msg.hatDrawing) ? msg.hatDrawing.slice(0, 300) : [];
   if (!canUseHat(info, hat)) hat = 'none';
-  info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing;
+  info.hat = hat; info.hatAnim = hatAnim; info.bodyColor = color; info.hatDrawing = drawing; info.trail = trail;
   if (info.userId) await accounts.updateSlime(info.userId, { hat, hatAnim, color, hatDrawing: drawing });
   if (info.state === 'slimeverse') {
     broadcastSlimeverse({ type: 'slimeverse_customized', player: getPublicPlayer(info) });
@@ -583,7 +592,7 @@ async function handleCustomize(ws, info, msg) {
   const sideIdx = room.players.findIndex(p => p.ws === ws);
   if (sideIdx === -1) return;
   const side = sideIdx === 0 ? 'left' : 'right';
-  broadcastRoom(room, { type: 'customize', side, hat, hatAnim, color, hatDrawing: drawing });
+  broadcastRoom(room, { type: 'customize', side, hat, hatAnim, color, hatDrawing: drawing, trail });
 }
 
 function relayChat(info, msg) {
@@ -641,8 +650,8 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
     } else {
       send(ws, { type: 'spectator_waiting' });
     }
-    if (room.players[0]) send(ws, { type: 'customize', side: 'left',  hat: room.players[0].info.hat, hatAnim: room.players[0].info.hatAnim, color: room.players[0].info.bodyColor, hatDrawing: room.players[0].info.hatDrawing });
-    if (room.players[1]) send(ws, { type: 'customize', side: 'right', hat: room.players[1].info.hat, hatAnim: room.players[1].info.hatAnim, color: room.players[1].info.bodyColor, hatDrawing: room.players[1].info.hatDrawing });
+    if (room.players[0]) send(ws, { type: 'customize', side: 'left',  hat: room.players[0].info.hat, hatAnim: room.players[0].info.hatAnim, color: room.players[0].info.bodyColor, hatDrawing: room.players[0].info.hatDrawing, trail: room.players[0].info.trail || 'none' });
+    if (room.players[1]) send(ws, { type: 'customize', side: 'right', hat: room.players[1].info.hat, hatAnim: room.players[1].info.hatAnim, color: room.players[1].info.bodyColor, hatDrawing: room.players[1].info.hatDrawing, trail: room.players[1].info.trail || 'none' });
   }
   pushLobbyState();
 }
@@ -684,6 +693,53 @@ function leaveRoom(ws, info, disconnecting) {
   info.role  = null;
 }
 
+// ── ranked queue ──────────────────────────────────────────
+const rankedQueue = [];
+
+function handleRankedQueue(ws, info) {
+  if (!info.userId) {
+    send(ws, { type: 'ranked_error', message: 'Sign in to play ranked.' });
+    return;
+  }
+  leaveRoom(ws, info, false);
+  rankedQueue.push({ ws, info });
+  info.state = 'ranked_queue';
+  send(ws, { type: 'ranked_queued', position: rankedQueue.length });
+  tryMatchRanked();
+}
+
+function cancelRankedQueue(ws, info) {
+  const idx = rankedQueue.findIndex(q => q.ws === ws);
+  if (idx === -1) return;
+  rankedQueue.splice(idx, 1);
+  if (info.state === 'ranked_queue') info.state = 'lobby';
+  send(ws, { type: 'ranked_queue_left' });
+}
+
+function tryMatchRanked() {
+  if (rankedQueue.length < 2) return;
+  const p1 = rankedQueue.shift();
+  const p2 = rankedQueue.shift();
+  // Find a free room (prefer higher-numbered rooms for ranked)
+  const room = [...rooms].reverse().find(r => r.phase === 'empty') || null;
+  if (!room) {
+    rankedQueue.unshift(p1, p2);
+    return;
+  }
+  room.ranked = true;
+  [p1, p2].forEach((p, i) => {
+    const side = i === 0 ? 'left' : 'right';
+    const tok = crypto.randomBytes(16).toString('hex');
+    room.players.push({ ws: p.ws, info: p.info });
+    p.info.room = room; p.info.role = 'player'; p.info.state = 'in_room'; p.info.rejoinToken = tok;
+    const tier = progression.getRankedTier(p.info.ranked ? p.info.ranked.rating : 1000, p.info.ranked ? p.info.ranked.placementsLeft : 5);
+    send(p.ws, { type: 'room_joined', roomId: room.id, role: 'player', side, ranked: true, rejoinToken: tok, opponentTier: tier.label });
+  });
+  room.phase = 'playing';
+  startRoomGame(room);
+  pushLobbyState();
+}
+
 // ── game ──────────────────────────────────────────────────
 function startRoomGame(room) {
   room.state = createState();
@@ -696,11 +752,11 @@ function startRoomGame(room) {
   send(right.ws, { type: 'start', side: 'right', ...names });
   room.spectators.forEach(({ ws }) => send(ws, { type: 'game_started', ...names }));
   // Exchange customizations so each player sees the opponent's hat/color/anim
-  send(left.ws,  { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing });
-  send(right.ws, { type: 'customize', side: 'left',  hat: left.info.hat,  hatAnim: left.info.hatAnim,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing  });
+  send(left.ws,  { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing, trail: right.info.trail||'none' });
+  send(right.ws, { type: 'customize', side: 'left',  hat: left.info.hat,  hatAnim: left.info.hatAnim,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing,  trail: left.info.trail ||'none' });
   room.spectators.forEach(({ ws: sw }) => {
-    send(sw, { type: 'customize', side: 'left',  hat: left.info.hat,  hatAnim: left.info.hatAnim,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing  });
-    send(sw, { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing });
+    send(sw, { type: 'customize', side: 'left',  hat: left.info.hat,  hatAnim: left.info.hatAnim,  color: left.info.bodyColor,  hatDrawing: left.info.hatDrawing,  trail: left.info.trail ||'none' });
+    send(sw, { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing, trail: right.info.trail||'none' });
   });
 
   function bcast(msg) { broadcastRoom(room, msg); }
@@ -736,7 +792,7 @@ function startRoomGame(room) {
       if (room.state.scoreLeft >= WIN_AMOUNT || room.state.scoreRight >= WIN_AMOUNT) {
         room.state.phase = 'done';
         const winner = room.state.scoreLeft >= WIN_AMOUNT ? 'left' : 'right';
-        await accounts.recordMatch(left.info.userId, right.info.userId, winner, room.state.scoreLeft, room.state.scoreRight);
+        await accounts.recordMatch(left.info.userId, right.info.userId, winner, room.state.scoreLeft, room.state.scoreRight, !!room.ranked);
         for (const playerInfo of [left.info, right.info]) {
           if (!playerInfo.userId) continue;
           const user = await accounts.findById(playerInfo.userId);
@@ -745,6 +801,12 @@ function startRoomGame(room) {
           playerInfo.matches = user.stats.matches;
           playerInfo.rank = getRank(user.stats.wins);
           playerInfo.progression = progressionForUser(user);
+          if (user.ranked) playerInfo.ranked = user.ranked;
+        }
+        // Send ranked rating change to each player individually
+        if (room.ranked) {
+          send(left.ws,  { type: 'ranked_result', ranked: left.info.ranked  || progression.defaultRanked() });
+          send(right.ws, { type: 'ranked_result', ranked: right.info.ranked || progression.defaultRanked() });
         }
         bcast({ type: 'game_over', winner });
         endRoomGame();

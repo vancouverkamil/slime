@@ -73,30 +73,37 @@ function toInitialMenu() {
   setTimeout(initHomeSlimeAnim, 0);
 }
 
-function _homeCompRank(wins) {
-  if (wins >= 400) return { title: 'DIAMOND',  color: '#88eeff' };
-  if (wins >= 150) return { title: 'PLATINUM', color: '#c8d8ff' };
-  if (wins >= 50)  return { title: 'GOLD',     color: '#ffd700' };
-  if (wins >= 10)  return { title: 'SILVER',   color: '#cccccc' };
-  return               { title: 'BRONZE',   color: '#cd7f32' };
-}
-
 function _buildHomeRanksHtml() {
-  var prog = null, cr = null, wins = 0;
+  var prog = null, rt = null;
   if (currentAccount && window.SlimeProgression) {
     var xp = (currentAccount.stats && currentAccount.stats.xp) || 0;
-    wins   = (currentAccount.stats && currentAccount.stats.wins) || 0;
     prog = window.SlimeProgression.getProgression(xp);
-    cr   = _homeCompRank(wins);
+    if (currentAccount.ranked) {
+      rt = window.SlimeProgression.getRankedTier(currentAccount.ranked.rating, currentAccount.ranked.placementsLeft);
+    }
   }
-  var pColor = prog ? (prog.prestige ? '#ffd700' : '#00ffcc') : '#333';
-  var pTitle = prog ? prog.rankTitle : 'UNRANKED';
+
+  // Prestige badge
+  var pColor  = prog ? (prog.prestige ? '#ffd700' : '#00ffcc') : '#333';
+  var pTitle  = prog ? prog.rankTitle : 'UNRANKED';
   var pArrows = prog ? '^'.repeat(prog.badgeArrows) : '--';
   var pLevel  = prog ? 'LVL ' + prog.level : '';
-  var cColor  = cr ? cr.color : '#333';
-  var cTitle  = cr ? cr.title : 'UNRANKED';
-  var cSub    = cr ? wins + ' WINS' : 'LOG IN';
-  var cFoot   = cr ? 'LIFETIME' : '';
+
+  // Ranked badge
+  var rColor, rTitle, rSub, rFoot;
+  if (rt) {
+    rColor = rt.color;
+    rTitle = rt.label.toUpperCase();
+    rSub   = rt.placementsLeft > 0
+      ? (5 - rt.placementsLeft) + '/5 PLACEMENT'
+      : rt.rating + ' LP';
+    rFoot  = 'SEASON 1';
+    var rd = currentAccount.ranked;
+    if (rd && rt.placementsLeft === 0) rFoot = (rd.wins||0) + 'W  ' + (rd.losses||0) + 'L';
+  } else {
+    rColor = '#333'; rTitle = 'UNRANKED'; rSub = 'PLAY RANKED'; rFoot = '';
+  }
+
   return (
     '<div class="home-rank-badge home-rank-prestige">' +
       '<div class="hrb-label">PRESTIGE</div>' +
@@ -105,10 +112,10 @@ function _buildHomeRanksHtml() {
       '<div class="hrb-level">' + pLevel + '</div>' +
     '</div>' +
     '<div class="home-rank-badge home-rank-comp">' +
-      '<div class="hrb-label">COMPETITIVE</div>' +
-      '<div class="hrb-title" style="color:' + cColor + '">' + cTitle + '</div>' +
-      '<div class="hrb-sub" style="color:' + cColor + '">' + cSub + '</div>' +
-      '<div class="hrb-level">' + cFoot + '</div>' +
+      '<div class="hrb-label">RANKED</div>' +
+      '<div class="hrb-title" style="color:' + rColor + ';text-shadow:0 0 12px ' + rColor + '">' + rTitle + '</div>' +
+      '<div class="hrb-sub" style="color:' + rColor + '">' + rSub + '</div>' +
+      '<div class="hrb-level">' + rFoot + '</div>' +
     '</div>'
   );
 }
@@ -349,4 +356,57 @@ function startFinal4Round() {
   if (gameIntervalObject) clearInterval(gameIntervalObject);
   gameIntervalObject = setInterval(gameIteration, 20);
 }
+
+// ── Ranked queue ──────────────────────────────────────────
+var _rqTimerInterval = null, _rqStartTime = 0;
+
+function joinRankedQueue() {
+  if (!currentAccount) {
+    showOptions(); showOptSection('slime');
+    accountMessage('Sign in to play ranked.', true);
+    return;
+  }
+  if (!lobbySocket || lobbySocket.readyState !== 1) return;
+  lobbySocket.send(JSON.stringify({ type: 'ranked_queue' }));
+}
+
+function cancelRankedQueue() {
+  if (lobbySocket && lobbySocket.readyState === 1)
+    lobbySocket.send(JSON.stringify({ type: 'ranked_queue_cancel' }));
+  stopRankedQueueUI();
+  toInitialMenu();
+}
+
+function showRankedQueueUI() {
+  canvas.style.display = 'none'; menuDiv.style.display = 'block';
+  _rqStartTime = Date.now();
+  var tier = '—';
+  if (currentAccount && currentAccount.ranked && window.SlimeProgression) {
+    var rt = window.SlimeProgression.getRankedTier(currentAccount.ranked.rating, currentAccount.ranked.placementsLeft);
+    tier = rt.label + ' &nbsp; ' + currentAccount.ranked.rating + ' LP';
+  }
+  menuDiv.innerHTML =
+    '<div class="ranked-queue-screen">' +
+    '<div class="rq-crown">&#9819;</div>' +
+    '<div class="rq-title">FINDING MATCH</div>' +
+    '<div class="rq-sub">Searching for an opponent&hellip;</div>' +
+    '<div class="rq-timer" id="RqTimer">0:00</div>' +
+    '<div class="rq-rank" id="RqRank">' + tier + '</div>' +
+    '<div style="margin-top:clamp(14px,2vh,24px)">' +
+    '<button class="hat-opt" onclick="cancelRankedQueue()">&#10005;&nbsp; CANCEL</button>' +
+    '</div></div>';
+  showBottomBar();
+  if (_rqTimerInterval) clearInterval(_rqTimerInterval);
+  _rqTimerInterval = setInterval(function() {
+    var el = document.getElementById('RqTimer');
+    if (!el) { clearInterval(_rqTimerInterval); return; }
+    var s = Math.floor((Date.now() - _rqStartTime) / 1000);
+    el.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }, 1000);
+}
+
+function stopRankedQueueUI() {
+  if (_rqTimerInterval) { clearInterval(_rqTimerInterval); _rqTimerInterval = null; }
+}
+
 

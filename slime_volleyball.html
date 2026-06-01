@@ -107,6 +107,8 @@
                 </div>
                 <div class="opt-section-title">Body Overlay</div>
                 <div id="BodyOverlayPicker" class="opt-chip-row"></div>
+                <div class="opt-section-title">Trail Effect</div>
+                <div id="TrailPicker" class="opt-chip-row"></div>
               </div>
 
               <!-- ── HAT STYLE ── -->
@@ -295,6 +297,7 @@
   <div id="BottomBar">
     <span class="verseBtn homeBtn" onclick="enterSlimeverseEye(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();enterSlimeverseEye(this);}" title="Slimeverse Home" data-sigil="HOME" role="button" tabindex="0"><span class="verseIcon" aria-hidden="true"></span><span class="eyeCode" aria-hidden="true">0101 1100 1010 0011</span></span>
     <span class="bigBtn playBtn" onclick="showLobbySelect()" data-sigil="I">QUICK PLAY</span>
+    <span class="bigBtn rankedBtn" onclick="joinRankedQueue()" data-sigil="RNK">RANKED</span>
     <span class="bigBtn duoBtn" onclick="start(false)" data-sigil="II">2 PLAYER</span>
     <span class="bigBtn cpuBtn" onclick="start(true)" data-sigil="CPU">VS CPU</span>
     <span class="verseBtn infernoBtn" onclick="startFinal4()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();startFinal4();}" title="The Final 4" data-sigil="IV" role="button" tabindex="0"><span class="verseIcon" aria-hidden="true"></span><span class="skullFire" aria-hidden="true"></span></span>

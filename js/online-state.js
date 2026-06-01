@@ -6,8 +6,8 @@ var playerHat        = 'none';
 var playerHatAnim    = 'none';
 var playerHatDrawing = [];
 var hatConfigs = {
-  left:  { hat: 'none', color: '#00ff00', drawing: [], anim: 'none' },
-  right: { hat: 'none', color: '#ff0000', drawing: [], anim: 'none' }
+  left:  { hat: 'none', color: '#00ff00', drawing: [], anim: 'none', trail: 'none' },
+  right: { hat: 'none', color: '#ff0000', drawing: [], anim: 'none', trail: 'none' }
 };
 var _tintCache = {};
 var waitingInterval = null;
@@ -31,6 +31,14 @@ var BODY_OVERLAYS = [
   { id:'grid',    label:'Grid'     },
 ];
 var playerBodyOverlay = (typeof localStorage !== 'undefined' && localStorage.getItem('slimeBodyOverlay')) || 'none';
+var playerTrail       = (typeof localStorage !== 'undefined' && localStorage.getItem('slimeTrail'))       || 'none';
+var TRAIL_OPTIONS = [
+  { id: 'none',    label: 'None'    },
+  { id: 'comet',   label: 'Comet'   },
+  { id: 'sparkle', label: 'Sparkle' },
+  { id: 'pulse',   label: 'Pulse'   },
+  { id: 'neon',    label: 'Neon'    },
+];
 var HAT_OPTIONS = [
   { id:'none',       label:'None'         },
   { id:'crown',      label:'Crown'        },

@@ -31,6 +31,23 @@ function handleServerMessage(msg) {
       }, 150);
     }
 
+  } else if (msg.type === 'ranked_queued') {
+    showRankedQueueUI();
+
+  } else if (msg.type === 'ranked_queue_left') {
+    stopRankedQueueUI();
+
+  } else if (msg.type === 'ranked_error') {
+    stopRankedQueueUI();
+    addChatMessage(null, msg.message || 'Ranked error.');
+
+  } else if (msg.type === 'ranked_result') {
+    // Update local ranked data after a ranked match
+    if (currentAccount && msg.ranked) {
+      currentAccount.ranked = msg.ranked;
+      try { localStorage.setItem('slime_rankedData', JSON.stringify(msg.ranked)); } catch(e) {}
+    }
+
   } else if (msg.type === 'lobby_list') {
     currentLobbies = msg.lobbies || [];
     updatePlayerCount(msg.totalPlayers);
@@ -46,6 +63,8 @@ function handleServerMessage(msg) {
   } else if (msg.type === 'room_joined') {
     currentRoomId = msg.roomId;
     if (msg.rejoinToken) try { localStorage.setItem('slime_rejoinToken', msg.rejoinToken); } catch(e) {}
+    if (msg.ranked) try { localStorage.setItem('slime_inRanked', '1'); } catch(e) {}
+    else try { localStorage.removeItem('slime_inRanked'); } catch(e) {}
     showLeaveBtn(true);
     if (msg.role === 'spectator') {
       isSpectator = true; onlineMode = false;
@@ -107,9 +126,9 @@ function handleServerMessage(msg) {
 
   } else if (msg.type === 'customize') {
     var side = msg.side === 'left' ? 'left' : 'right';
-    hatConfigs[side] = { hat: msg.hat || 'none', anim: msg.hatAnim || 'none', color: msg.color || (side==='left'?'#00ff00':'#ff0000'), drawing: msg.hatDrawing || [] };
-    if (side === 'left'  && slimeLeft)  slimeLeft.tintColor  = hatConfigs.left.color;
-    if (side === 'right' && slimeRight) slimeRight.tintColor = hatConfigs.right.color;
+    hatConfigs[side] = { hat: msg.hat || 'none', anim: msg.hatAnim || 'none', color: msg.color || (side==='left'?'#00ff00':'#ff0000'), drawing: msg.hatDrawing || [], trail: msg.trail || 'none' };
+    if (side === 'left'  && slimeLeft)  { slimeLeft.tintColor  = hatConfigs.left.color;  slimeLeft._trailType  = hatConfigs.left.trail;  }
+    if (side === 'right' && slimeRight) { slimeRight.tintColor = hatConfigs.right.color; slimeRight._trailType = hatConfigs.right.trail; }
 
   } else if (msg.type === 'emote') {
     var now = Date.now();
@@ -180,11 +199,11 @@ function launchOnlineGame() {
   if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
   replayBuffer = [];
   // Seed own side's config from local settings
-  hatConfigs[mySide] = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing };
+  hatConfigs[mySide] = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing, trail: playerTrail };
   slimeLeft  = newLegacySlime(true,  100, '#0f0');
   slimeRight = newLegacySlime(false, 100, '#f00');
-  slimeLeft.tintColor  = hatConfigs.left.color;
-  slimeRight.tintColor = hatConfigs.right.color;
+  slimeLeft.tintColor   = hatConfigs.left.color;  slimeLeft._trailType  = hatConfigs.left.trail;
+  slimeRight.tintColor  = hatConfigs.right.color; slimeRight._trailType = hatConfigs.right.trail;
   ball       = newLegacyBall(25, '#ff0');
   slimeLeftScore = 0; slimeRightScore = 0;
   slimeLeft.img = greenSlimeImage; slimeRight.img = redSlimeImage;

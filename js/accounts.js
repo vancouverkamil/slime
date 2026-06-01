@@ -63,10 +63,11 @@ function applyAccount(user) {
   var prog = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(user.stats ? user.stats.xp : 0) : null);
   totalWins = user.stats ? user.stats.wins : totalWins;
   myPlayerName = user.displayName || user.username;
-  playerBodyColor = user.slime && user.slime.color ? user.slime.color : playerBodyColor;
-  playerHat = user.slime && user.slime.hat ? user.slime.hat : playerHat;
-  playerHatAnim = user.slime && user.slime.hatAnim ? user.slime.hatAnim : playerHatAnim;
+  playerBodyColor  = user.slime && user.slime.color    ? user.slime.color    : playerBodyColor;
+  playerHat        = user.slime && user.slime.hat      ? user.slime.hat      : playerHat;
+  playerHatAnim    = user.slime && user.slime.hatAnim  ? user.slime.hatAnim  : playerHatAnim;
   playerHatDrawing = user.slime && Array.isArray(user.slime.hatDrawing) ? user.slime.hatDrawing : playerHatDrawing;
+  if (user.slime && user.slime.trail) { playerTrail = user.slime.trail; try { localStorage.setItem('slimeTrail', playerTrail); } catch(e) {} }
   if (name) name.textContent = '@' + user.username;
   if (stats) stats.innerHTML =
     (prog ? '<span style="color:#ffd966;">L' + prog.level + '</span> ' : '') +

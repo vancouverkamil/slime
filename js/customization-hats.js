@@ -11,7 +11,7 @@ function sendCustomization() {
     try { localStorage.setItem('slimeHat', playerHat); } catch(e) {}
     syncCustomizationUI();
   }
-  lobbySocket.send(JSON.stringify({ type: 'customize', hat: playerHat, hatAnim: playerHatAnim, color: playerBodyColor, hatDrawing: playerHatDrawing }));
+  lobbySocket.send(JSON.stringify({ type: 'customize', hat: playerHat, hatAnim: playerHatAnim, color: playerBodyColor, hatDrawing: playerHatDrawing, trail: playerTrail }));
 }
 
 function hasHatUnlock(hatId) {

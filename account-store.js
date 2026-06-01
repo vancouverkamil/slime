@@ -93,6 +93,7 @@ function defaultUser(username, password) {
     coins: 1,
     inventory: [],
     savedHatDrawings: [],
+    ranked: progression.defaultRanked(),
   };
 }
 
@@ -210,14 +211,28 @@ class AccountStore {
     return user;
   }
 
-  recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight) {
+  recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked) {
     const left = leftUserId ? this.findById(leftUserId) : null;
     const right = rightUserId ? this.findById(rightUserId) : null;
     if (!left && !right) return;
     const matchId = makeId();
     const playedAt = nowIso();
 
-    const apply = (user, side, opponent, scoreFor, scoreAgainst) => {
+    // ELO update for ranked matches
+    let eloLeft = null, eloRight = null;
+    if (ranked && left && right) {
+      const lr = left.ranked  || progression.defaultRanked();
+      const rr = right.ranked || progression.defaultRanked();
+      const winner = winnerSide === 'left' ? lr : rr;
+      const loser  = winnerSide === 'left' ? rr : lr;
+      const result = progression.updateElo(winner.rating, loser.rating, winner.placementsLeft, loser.placementsLeft);
+      const winnerNew = { ...winner, rating: result.winnerNew, peakRating: Math.max(winner.peakRating, result.winnerNew), placementsLeft: Math.max(0, winner.placementsLeft - 1), wins: winner.wins + 1 };
+      const loserNew  = { ...loser,  rating: result.loserNew,  peakRating: Math.max(loser.peakRating,  result.loserNew),  placementsLeft: Math.max(0, loser.placementsLeft  - 1), losses: loser.losses + 1 };
+      eloLeft  = winnerSide === 'left' ? winnerNew : loserNew;
+      eloRight = winnerSide === 'left' ? loserNew  : winnerNew;
+    }
+
+    const apply = (user, side, opponent, scoreFor, scoreAgainst, newElo) => {
       if (!user) return;
       const won = winnerSide === side;
       user.stats = normalizeStats(user.stats);
@@ -230,23 +245,28 @@ class AccountStore {
       user.stats.pointsAgainst += scoreAgainst;
       user.stats.xp += xpGained;
       user.coins = normalizeCoins(user.coins) + coinsGained;
+      if (newElo) user.ranked = newElo;
       user.recentMatches.unshift({
-        id: matchId,
-        playedAt,
-        result: won ? 'win' : 'loss',
-        scoreFor,
-        scoreAgainst,
-        xpGained,
-        coinsGained,
+        id: matchId, playedAt, result: won ? 'win' : 'loss',
+        scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked,
         opponent: opponent ? opponent.username : 'guest',
       });
       user.recentMatches = user.recentMatches.slice(0, 10);
       user.updatedAt = playedAt;
     };
 
-    apply(left, 'left', right, scoreLeft, scoreRight);
-    apply(right, 'right', left, scoreRight, scoreLeft);
+    apply(left,  'left',  right, scoreLeft,  scoreRight, eloLeft);
+    apply(right, 'right', left,  scoreRight, scoreLeft,  eloRight);
     this.save();
+  }
+
+  updateRanked(userId, rankedData) {
+    const user = this.findById(userId);
+    if (!user) return null;
+    user.ranked = { ...(user.ranked || progression.defaultRanked()), ...rankedData };
+    user.updatedAt = nowIso();
+    this.save();
+    return user;
   }
 
   purchaseItem(userId, hatId, price) {
@@ -309,6 +329,7 @@ class AccountStore {
       coins: normalizeCoins(user.coins),
       inventory: user.inventory || [],
       savedHatDrawings: safeSavedHatDrawings(user.savedHatDrawings),
+      ranked: user.ranked || progression.defaultRanked(),
     };
   }
 
@@ -360,6 +381,7 @@ class PostgresAccountStore {
     await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER NOT NULL DEFAULT 1`;
     await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS inventory JSONB NOT NULL DEFAULT '[]'::jsonb`;
     await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS saved_hat_drawings JSONB NOT NULL DEFAULT '[]'::jsonb`;
+    await this.sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ranked JSONB NOT NULL DEFAULT '{"season":1,"rating":1000,"peakRating":1000,"placementsLeft":5,"wins":0,"losses":0}'::jsonb`;
     await this.sql`
       CREATE TABLE IF NOT EXISTS sessions (
         token TEXT PRIMARY KEY,
@@ -386,6 +408,7 @@ class PostgresAccountStore {
       coins: typeof row.coins === 'number' ? row.coins : 1,
       inventory: Array.isArray(row.inventory) ? row.inventory : [],
       savedHatDrawings: safeSavedHatDrawings(row.saved_hat_drawings),
+      ranked: row.ranked && typeof row.ranked === 'object' ? row.ranked : progression.defaultRanked(),
     };
   }
 
@@ -493,7 +516,7 @@ class PostgresAccountStore {
     return this.rowToUser(rows[0]);
   }
 
-  async recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight) {
+  async recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked) {
     await this.ready;
     const left = leftUserId ? await this.findById(leftUserId) : null;
     const right = rightUserId ? await this.findById(rightUserId) : null;
@@ -501,7 +524,20 @@ class PostgresAccountStore {
     const matchId = makeId();
     const playedAt = nowIso();
 
-    const apply = async (user, side, opponent, scoreFor, scoreAgainst) => {
+    let eloLeft = null, eloRight = null;
+    if (ranked && left && right) {
+      const lr = left.ranked  || progression.defaultRanked();
+      const rr = right.ranked || progression.defaultRanked();
+      const winner = winnerSide === 'left' ? lr : rr;
+      const loser  = winnerSide === 'left' ? rr : lr;
+      const result = progression.updateElo(winner.rating, loser.rating, winner.placementsLeft, loser.placementsLeft);
+      const wNew = { ...winner, rating: result.winnerNew, peakRating: Math.max(winner.peakRating, result.winnerNew), placementsLeft: Math.max(0, winner.placementsLeft - 1), wins: winner.wins + 1 };
+      const lNew = { ...loser,  rating: result.loserNew,  peakRating: Math.max(loser.peakRating,  result.loserNew),  placementsLeft: Math.max(0, loser.placementsLeft  - 1), losses: loser.losses + 1 };
+      eloLeft  = winnerSide === 'left' ? wNew : lNew;
+      eloRight = winnerSide === 'left' ? lNew : wNew;
+    }
+
+    const apply = async (user, side, opponent, scoreFor, scoreAgainst, newElo) => {
       if (!user) return;
       const won = winnerSide === side;
       const xpGained = progression.getMatchXp({ won, scoreFor, scoreAgainst });
@@ -514,28 +550,31 @@ class PostgresAccountStore {
         pointsAgainst: (user.stats.pointsAgainst || 0) + scoreAgainst,
         xp: (user.stats.xp || 0) + xpGained,
       };
-      const recentMatches = [{
-        id: matchId,
-        playedAt,
-        result: won ? 'win' : 'loss',
-        scoreFor,
-        scoreAgainst,
-        xpGained,
-        coinsGained,
-        opponent: opponent ? opponent.username : 'guest',
-      }].concat(user.recentMatches || []).slice(0, 10);
+      const recentMatch = { id: matchId, playedAt, result: won ? 'win' : 'loss', scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked, opponent: opponent ? opponent.username : 'guest' };
+      const recentMatches = [recentMatch].concat(user.recentMatches || []).slice(0, 10);
+      const rankedVal = newElo ? JSON.stringify(newElo) : JSON.stringify(user.ranked || progression.defaultRanked());
       await this.sql`
         UPDATE users
-        SET stats = ${JSON.stringify(stats)}::jsonb,
-            recent_matches = ${JSON.stringify(recentMatches)}::jsonb,
-            coins = coins + ${coinsGained},
-            updated_at = now()
+        SET stats         = ${JSON.stringify(stats)}::jsonb,
+            recent_matches= ${JSON.stringify(recentMatches)}::jsonb,
+            coins         = coins + ${coinsGained},
+            ranked        = ${rankedVal}::jsonb,
+            updated_at    = now()
         WHERE id = ${user.id}
       `;
     };
 
-    await apply(left, 'left', right, scoreLeft, scoreRight);
-    await apply(right, 'right', left, scoreRight, scoreLeft);
+    await apply(left,  'left',  right, scoreLeft,  scoreRight, eloLeft);
+    await apply(right, 'right', left,  scoreRight, scoreLeft,  eloRight);
+  }
+
+  async updateRanked(userId, rankedData) {
+    await this.ready;
+    const user = await this.findById(userId);
+    if (!user) return null;
+    const updated = { ...(user.ranked || progression.defaultRanked()), ...rankedData };
+    const rows = await this.sql`UPDATE users SET ranked = ${JSON.stringify(updated)}::jsonb, updated_at = now() WHERE id = ${userId} RETURNING *`;
+    return this.rowToUser(rows[0]);
   }
 
   async purchaseItem(userId, hatId, price) {
