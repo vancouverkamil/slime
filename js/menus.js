@@ -54,18 +54,164 @@ function toInitialMenu() {
   menuDiv.innerHTML =
     '<div class="home-screen">' +
     '<div class="home-grid"></div>' +
+    '<div class="home-showcase">' +
+      '<div class="home-spin-stage">' +
+        '<canvas id="HomeSlimeCanvas" class="home-slime-canvas" width="220" height="195"></canvas>' +
+      '</div>' +
+      '<div class="home-pedestal" id="HomePedestal"></div>' +
+    '</div>' +
     '<div class="home-title">SLIME</div>' +
     '<div class="home-subtitle">VOLLEYBALL</div>' +
+    '<div id="HomeRankRow" class="home-rank-row"></div>' +
     (sessionWins + sessionLosses > 0
-      ? '<div class="home-session">' +
-        'SESSION: <span style="color:#66ffcc;">' + sessionWins + 'W</span> / ' +
-        '<span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>'
+      ? '<div class="home-session">SESSION: <span style="color:#66ffcc;">' + sessionWins + 'W</span> / <span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>'
       : '') +
-    '<div class="home-emotes">' +
-    'Use keys 1-4 during game for emotes</div>' +
     '<div class="home-hint">Quick Play to start</div>' +
     '</div>';
   showBottomBar();
+  setTimeout(initHomeSlimeAnim, 0);
+}
+
+function _homeCompRank(wins) {
+  if (wins >= 400) return { title: 'DIAMOND',  color: '#88eeff' };
+  if (wins >= 150) return { title: 'PLATINUM', color: '#c8d8ff' };
+  if (wins >= 50)  return { title: 'GOLD',     color: '#ffd700' };
+  if (wins >= 10)  return { title: 'SILVER',   color: '#cccccc' };
+  return               { title: 'BRONZE',   color: '#cd7f32' };
+}
+
+function _buildHomeRanksHtml() {
+  var prog = null, cr = null, wins = 0;
+  if (currentAccount && window.SlimeProgression) {
+    var xp = (currentAccount.stats && currentAccount.stats.xp) || 0;
+    wins   = (currentAccount.stats && currentAccount.stats.wins) || 0;
+    prog = window.SlimeProgression.getProgression(xp);
+    cr   = _homeCompRank(wins);
+  }
+  var pColor = prog ? (prog.prestige ? '#ffd700' : '#00ffcc') : '#333';
+  var pTitle = prog ? prog.rankTitle : 'UNRANKED';
+  var pArrows = prog ? '^'.repeat(prog.badgeArrows) : '--';
+  var pLevel  = prog ? 'LVL ' + prog.level : '';
+  var cColor  = cr ? cr.color : '#333';
+  var cTitle  = cr ? cr.title : 'UNRANKED';
+  var cSub    = cr ? wins + ' WINS' : 'LOG IN';
+  var cFoot   = cr ? 'LIFETIME' : '';
+  return (
+    '<div class="home-rank-badge home-rank-prestige">' +
+      '<div class="hrb-label">PRESTIGE</div>' +
+      '<div class="hrb-title" style="color:' + pColor + '">' + pTitle + '</div>' +
+      '<div class="hrb-sub">' + pArrows + '</div>' +
+      '<div class="hrb-level">' + pLevel + '</div>' +
+    '</div>' +
+    '<div class="home-rank-badge home-rank-comp">' +
+      '<div class="hrb-label">COMPETITIVE</div>' +
+      '<div class="hrb-title" style="color:' + cColor + '">' + cTitle + '</div>' +
+      '<div class="hrb-sub" style="color:' + cColor + '">' + cSub + '</div>' +
+      '<div class="hrb-level">' + cFoot + '</div>' +
+    '</div>'
+  );
+}
+
+function initHomeSlimeAnim() {
+  var homeCanvas = document.getElementById('HomeSlimeCanvas');
+  if (!homeCanvas) return;
+  var ctx = homeCanvas.getContext('2d');
+  var rankRow = document.getElementById('HomeRankRow');
+  if (rankRow) rankRow.innerHTML = _buildHomeRanksHtml();
+  var ped = document.getElementById('HomePedestal');
+  if (ped) {
+    ped.style.boxShadow = '0 0 28px 6px ' + playerBodyColor + '55, 0 0 60px 16px ' + playerBodyColor + '1a';
+    ped.style.background = 'radial-gradient(ellipse at center, ' + playerBodyColor + '2e 0%, transparent 70%)';
+  }
+  homeCanvas.style.filter = 'drop-shadow(0 0 16px ' + playerBodyColor + ') drop-shadow(0 0 36px ' + playerBodyColor + '66)';
+  (function frame() {
+    if (!document.getElementById('HomeSlimeCanvas')) return;
+    _drawHomeSlime(ctx, homeCanvas);
+    requestAnimationFrame(frame);
+  })();
+}
+
+function _drawHomeSlime(ctx, cv) {
+  var W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  var cx = W / 2, cy = H * 0.64;
+  var rPix = Math.min(W * 0.32, H * 0.37);
+  var t = Date.now();
+
+  // Aura glow
+  var aura = ctx.createRadialGradient(cx, cy - rPix * 0.3, 0, cx, cy - rPix * 0.3, rPix * 1.7);
+  aura.addColorStop(0, playerBodyColor + '25');
+  aura.addColorStop(0.6, playerBodyColor + '0a');
+  aura.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = aura;
+  ctx.fillRect(0, 0, W, H);
+
+  // Orbit ring
+  var rp = (t / 1800) % (Math.PI * 2);
+  ctx.save();
+  ctx.strokeStyle = playerBodyColor; ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 0.28 + 0.14 * Math.abs(Math.sin(rp));
+  ctx.shadowColor = playerBodyColor; ctx.shadowBlur = 7;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - rPix * 0.18, rPix * 1.08, rPix * 0.22 * Math.abs(Math.sin(rp)) + 2, 0, 0, TWO_PI);
+  ctx.stroke();
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Slime body with glow
+  ctx.save();
+  ctx.shadowColor = playerBodyColor; ctx.shadowBlur = rPix * 0.52;
+  ctx.fillStyle = playerBodyColor;
+  ctx.beginPath(); ctx.arc(cx, cy, rPix, Math.PI, TWO_PI, false); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Glossy shine
+  var shine = ctx.createRadialGradient(cx - rPix * 0.26, cy - rPix * 0.44, rPix * 0.04, cx - rPix * 0.26, cy - rPix * 0.44, rPix * 0.66);
+  shine.addColorStop(0, 'rgba(255,255,255,0.30)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.save();
+  ctx.fillStyle = shine;
+  ctx.beginPath(); ctx.arc(cx, cy, rPix, Math.PI, TWO_PI, false); ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // Eye
+  var eyeX = cx + rPix * 0.28, eyeY = cy - rPix * 0.44;
+  ctx.save();
+  ctx.shadowColor = '#fff'; ctx.shadowBlur = 5;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(eyeX, eyeY, rPix * 0.24, 0, TWO_PI); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(eyeX + rPix * 0.07, eyeY + rPix * 0.02, rPix * 0.13, 0, TWO_PI); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath(); ctx.arc(eyeX + rPix * 0.01, eyeY - rPix * 0.05, rPix * 0.044, 0, TWO_PI); ctx.fill();
+  ctx.restore();
+
+  // Hat
+  drawHatAt(ctx, cx, cy - rPix, rPix, { hat: playerHat, anim: playerHatAnim, drawing: playerHatDrawing });
+
+  // Floating particles
+  for (var i = 0; i < 6; i++) {
+    var pf = (t / 2200 / 1 + i / 6) % 1;
+    var px = cx + Math.sin(i * 1.1 + t / 1100) * rPix * 0.78;
+    var py = cy - pf * rPix * 2.1 - rPix * 0.38;
+    var pa = Math.min(1, pf * 5) * Math.min(1, (1 - pf) * 5) * 0.55;
+    var pr = 1.4 + 1.2 * Math.sin(pf * Math.PI);
+    ctx.save();
+    ctx.globalAlpha = pa;
+    ctx.fillStyle = playerBodyColor; ctx.shadowColor = playerBodyColor; ctx.shadowBlur = 9;
+    ctx.beginPath(); ctx.arc(px, py, pr, 0, TWO_PI); ctx.fill();
+    ctx.restore();
+  }
+
+  // Ground shadow oval
+  ctx.save();
+  var gsh = ctx.createRadialGradient(cx, cy + 4, 0, cx, cy + 4, rPix * 0.88);
+  gsh.addColorStop(0, 'rgba(0,0,0,0.28)'); gsh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gsh;
+  ctx.beginPath(); ctx.ellipse(cx, cy + 5, rPix * 0.88, rPix * 0.13, 0, 0, TWO_PI); ctx.fill();
+  ctx.restore();
 }
 
 function enterSlimeverseEye(btn) {
