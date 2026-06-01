@@ -668,10 +668,12 @@ function leaveRoom(ws, info, disconnecting) {
       if (!disconnecting) {
         broadcastRoom(room, { type: 'opponent_disconnected' });
       }
-      room.players.forEach(({ info: i }) => {
-        i.gameHandler = null;
-        i.state = 'in_room';
+      // Fully evict remaining players/spectators so the room is truly empty
+      [...room.players, ...room.spectators].forEach(({ info: i }) => {
+        i.room = null; i.role = null; i.state = 'lobby'; i.gameHandler = null;
       });
+      room.players    = [];
+      room.spectators = [];
     }
     room.phase = room.players.length === 0 ? 'empty' : 'waiting';
   } else if (info.role === 'spectator') {
