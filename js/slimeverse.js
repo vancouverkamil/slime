@@ -42,6 +42,7 @@ var SV_HORIZ_FRAC  = 0.39;
 var SV_FAR_SCALE   = 0.10;   // keep distant players readable while the local avatar feels closer
 var SV_PLAYER_SCALE = 1.42;
 var SV_WORLD_ZOOM   = 1.34;   // narrow the exterior viewport so the commons feels character-scale
+var SV_LANDMARK_SCALE = 2.0;  // oversized social landmarks should dominate the commons skyline
 
 var SV_STORE_ITEMS = [
   { hat: 'devil',      name: 'Devil Horns',     price: 400  },
@@ -322,7 +323,7 @@ function renderSlimeverse(ts) {
   // Store proximity prompt
   var dx = Math.abs(mvLocal.x - SV_STORE_X);
   var dz = Math.abs(mvLocal.z - SV_STORE_Z);
-  if (dz < 90 && dx < 240) {
+  if (dz < 90 * SV_LANDMARK_SCALE && dx < 240 * SV_LANDMARK_SCALE) {
     drawStoreEnterPrompt();
     var now = Date.now();
     if (keysDown[KEY_E] && now - svStoreKeyDebounce > 200) {
@@ -334,7 +335,7 @@ function renderSlimeverse(ts) {
 
   var f4dx = Math.abs(mvLocal.x - SV_FINAL4_X);
   var f4dz = Math.abs(mvLocal.z - SV_FINAL4_Z);
-  if (f4dz < 125 && f4dx < 190) {
+  if (f4dz < 125 * SV_LANDMARK_SCALE && f4dx < 190 * SV_LANDMARK_SCALE) {
     drawFinal4GatePrompt();
     var nowF4 = Date.now();
     if (keysDown[KEY_E] && nowF4 - svStoreKeyDebounce > 260) {
@@ -488,14 +489,14 @@ function drawSlimeverseWorld() {
   // ── Fireflies ─────────────────────────────────────────────────────────
   drawSVFireflies(cx, t, w, hY);
   drawSVLanterns(cx, t, w);
-  drawSVColiseum(cx, svSX(SV_COLISEUM_X, SV_COLISEUM_Z), svGroundY(SV_COLISEUM_Z), svScaleAt(SV_COLISEUM_Z), t);
+  drawSVColiseum(cx, svSX(SV_COLISEUM_X, SV_COLISEUM_Z), svGroundY(SV_COLISEUM_Z), svScaleAt(SV_COLISEUM_Z) * SV_LANDMARK_SCALE, t);
 
   // ── Final 4 grounds and tower ─────────────────────────────────────────
   drawFinal4MysticGround(cx, w, h, hY, floorFY, vp, camX, t);
 
   // ── Store building ─────────────────────────────────────────────────────
-  drawSlimeverseStoreBuilding(svSX(SV_STORE_X, SV_STORE_Z), svGroundY(SV_STORE_Z), svScaleAt(SV_STORE_Z));
-  drawFinal4Tower(svSX(SV_FINAL4_X, SV_FINAL4_Z), svGroundY(SV_FINAL4_Z), svScaleAt(SV_FINAL4_Z), t);
+  drawSlimeverseStoreBuilding(svSX(SV_STORE_X, SV_STORE_Z), svGroundY(SV_STORE_Z), svScaleAt(SV_STORE_Z) * SV_LANDMARK_SCALE);
+  drawFinal4Tower(svSX(SV_FINAL4_X, SV_FINAL4_Z), svGroundY(SV_FINAL4_Z), svScaleAt(SV_FINAL4_Z) * SV_LANDMARK_SCALE, t);
 }
 
 // ── Bush decorator ─────────────────────────────────────────────────────────
@@ -577,7 +578,7 @@ function drawSVLanterns(cx, t, w) {
 }
 
 function drawSVColiseum(cx, bx, by, sc, t) {
-  if (bx < -620 || bx > viewWidth + 620 || sc < 0.08) return;
+  if (bx < -760 || bx > viewWidth + 760 || sc < 0.08) return;
   var bw = 570 * sc, bh = 270 * sc;
   var screenW = 350 * sc, screenH = 160 * sc;
   cx.save();
@@ -830,8 +831,8 @@ function drawSlimeverseStoreBuilding(bx, by, sc) {
 function drawFinal4MysticGround(cx, w, h, hY, floorFY, vp, camX, t) {
   var sx = svSX(SV_FINAL4_X, SV_FINAL4_Z);
   var sy = svGroundY(SV_FINAL4_Z);
-  var sc = svScaleAt(SV_FINAL4_Z);
-  if (sx < -320 || sx > w + 320) return;
+  var sc = svScaleAt(SV_FINAL4_Z) * SV_LANDMARK_SCALE;
+  if (sx < -640 || sx > w + 640) return;
 
   cx.save();
 

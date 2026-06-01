@@ -31,6 +31,16 @@ test('slimeverse uses a closer readable character-scale camera', () => {
   assert.match(source, /var SV_WORLD_ZOOM\s*=\s*1\.34/);
 });
 
+test('slimeverse landmarks and entrance zones render at double scale', () => {
+  assert.match(source, /var SV_LANDMARK_SCALE\s*=\s*2\.0/);
+  assert.match(source, /drawSVColiseum\([\s\S]*svScaleAt\(SV_COLISEUM_Z\) \* SV_LANDMARK_SCALE/);
+  assert.match(source, /drawSlimeverseStoreBuilding\([\s\S]*svScaleAt\(SV_STORE_Z\) \* SV_LANDMARK_SCALE/);
+  assert.match(source, /drawFinal4Tower\([\s\S]*svScaleAt\(SV_FINAL4_Z\) \* SV_LANDMARK_SCALE/);
+  assert.match(source, /var sc = svScaleAt\(SV_FINAL4_Z\) \* SV_LANDMARK_SCALE/);
+  assert.match(source, /dz < 90 \* SV_LANDMARK_SCALE && dx < 240 \* SV_LANDMARK_SCALE/);
+  assert.match(source, /f4dz < 125 \* SV_LANDMARK_SCALE && f4dx < 190 \* SV_LANDMARK_SCALE/);
+});
+
 test('slimeverse smooths remote player snapshots before rendering', () => {
   assert.match(source, /function smoothSlimeverseRemotePlayer\(/);
   assert.match(source, /drawSlimeversePlayer\(smoothSlimeverseRemotePlayer\(p\)\)/);
