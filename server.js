@@ -16,6 +16,7 @@ const TICK_MS               = 20;
 const RECONNECT_TIMEOUT_MS  = 30_000;
 const SLIMEVERSE_TICK_MS = 16;
 const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
+const RPS_CHOICES = new Set(['rock', 'paper', 'scissors']);
 
 const ROOM_NAMES = [
   'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
@@ -518,7 +519,9 @@ wss.on('connection', async (ws, req) => {
 
 // ── message routing ───────────────────────────────────────
 async function handleMsg(ws, info, msg) {
-  if (msg.type === 'chat') {
+  if (msg.type === 'perf_ping') {
+    send(ws, { type: 'perf_pong', t: msg.t });
+  } else if (msg.type === 'chat') {
     relayChat(info, msg);
   } else if (msg.type === 'set_name') {
     const name = String(msg.name || '').trim().slice(0, 20);
@@ -744,6 +747,7 @@ function tryMatchRanked() {
 function startRoomGame(room) {
   room.state = createState();
   room.state.mapId = room.id;
+  room.state.phase = 'rps';
   room.phase = 'playing';
 
   const [left, right] = room.players;
@@ -761,6 +765,62 @@ function startRoomGame(room) {
 
   function bcast(msg) { broadcastRoom(room, msg); }
   function broadcastState() { bcast(buildStateMsg(room.state)); }
+
+  function sendRpsPrompt(reason) {
+    room.state.phase = 'rps';
+    room.state.rps = { choices: {}, reason: reason || 'start' };
+    bcast({ type: 'rps_start', reason: room.state.rps.reason });
+  }
+
+  function rpsWinner(a, b) {
+    if (a === b) return null;
+    if ((a === 'rock' && b === 'scissors') ||
+        (a === 'paper' && b === 'rock') ||
+        (a === 'scissors' && b === 'paper')) return 'left';
+    return 'right';
+  }
+
+  function maybeResolveRps() {
+    if (!room.state || room.state.phase !== 'rps' || !room.state.rps) return;
+    const choices = room.state.rps.choices || {};
+    if (!choices.left || !choices.right) return;
+    const winner = rpsWinner(choices.left, choices.right);
+    if (!winner) {
+      bcast({ type: 'rps_result', tie: true, choices: { left: choices.left, right: choices.right } });
+      setTimeout(() => { if (room.state && room.state.phase === 'rps') sendRpsPrompt('tie'); }, 900);
+      return;
+    }
+    room.state.leftServes = winner === 'left';
+    room.state.phase = 'countdown';
+    bcast({
+      type: 'rps_result',
+      tie: false,
+      winner,
+      serveSide: winner,
+      choices: { left: choices.left, right: choices.right },
+    });
+    [3, 2, 1].forEach((n, i) => {
+      setTimeout(() => {
+        if (room.state && room.state.phase === 'countdown') bcast({ type: 'pregame_countdown', n });
+      }, 650 + i * 1000);
+    });
+    setTimeout(() => {
+      if (!room.state || room.state.phase !== 'countdown') return;
+      startNextPoint();
+      broadcastState();
+    }, 3650);
+  }
+
+  function handleRpsChoice(side, choice) {
+    if (!room.state || room.state.phase !== 'rps') return;
+    choice = String(choice || '').toLowerCase();
+    if (!RPS_CHOICES.has(choice)) return;
+    if (!room.state.rps) room.state.rps = { choices: {} };
+    if (room.state.rps.choices[side]) return;
+    room.state.rps.choices[side] = choice;
+    bcast({ type: 'rps_locked', side });
+    maybeResolveRps();
+  }
 
   function endRoomGame() {
     clearInterval(room.interval);
@@ -822,6 +882,10 @@ function startRoomGame(room) {
 
   function handleInput(side, msg) {
     if (!room.state) return;
+    if (msg.type === 'rps_choice') {
+      handleRpsChoice(side, msg.choice);
+      return;
+    }
     const input = side === 'left' ? room.state.inputLeft : room.state.inputRight;
     if (typeof msg.movement === 'number') input.movement = msg.movement;
     if (msg.jump) input.jump = true;
@@ -949,6 +1013,7 @@ function startRoomGame(room) {
       pushLobbyState();
     });
   }, TICK_MS);
+  sendRpsPrompt('start');
   pushLobbyState();
 }
 
@@ -960,6 +1025,7 @@ function buildStateMsg(state) {
     slimeRight: { x: state.slimeRight.x, y: state.slimeRight.y },
     scoreLeft:  state.scoreLeft,
     scoreRight: state.scoreRight,
+    phase:      state.phase,
   };
 }
 

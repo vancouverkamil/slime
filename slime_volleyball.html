@@ -5,33 +5,32 @@
 <title>Slime Volleyball</title>
 <script src="slime-config.js"></script>
 <script src="ws-config.js"></script>
-<script src="progression.js"></script>
+<script src="progression.js" defer></script>
 <link rel="stylesheet" href="css/slime.css">
-<script type="text/javascript" src="Input.js"></script>
-<script type="text/javascript" src="SlimeAI.js"></script>
-<script type="text/javascript" src="MentalSlimeAI.js"></script>
-<script type="text/javascript" src="js/client-state.js"></script>
-<script type="text/javascript" src="js/accounts.js"></script>
-<script type="text/javascript" src="js/inventory-ui.js"></script>
-<script type="text/javascript" src="js/render-maps.js"></script>
-<script type="text/javascript" src="js/render-game.js"></script>
-<script type="text/javascript" src="js/local-game.js"></script>
-<script type="text/javascript" src="js/online-state.js"></script>
-<script type="text/javascript" src="js/feature-cards.js"></script>
-<script type="text/javascript" src="js/calling-cards.js"></script>
-<script type="text/javascript" src="js/tournament-mode.js"></script>
-<script type="text/javascript" src="js/online-effects.js"></script>
-<script type="text/javascript" src="js/lobby-ui.js"></script>
-<script type="text/javascript" src="js/online-game.js"></script>
-<script type="text/javascript" src="js/multiverse-physics.js"></script>
-<script type="text/javascript" src="js/slimeverse.js"></script>
-<script type="text/javascript" src="js/menus.js"></script>
-<script type="text/javascript" src="js/replay.js"></script>
-<script type="text/javascript" src="js/customization-hats.js"></script>
-<script type="text/javascript" src="js/hat-studio.js"></script>
-<script type="text/javascript" src="js/options-ui.js"></script>
-<script type="text/javascript" src="js/audio.js"></script>
-<script type="text/javascript" src="js/bootstrap.js"></script>
+<script type="text/javascript" src="Input.js" defer></script>
+<script type="text/javascript" src="SlimeAI.js" defer></script>
+<script type="text/javascript" src="MentalSlimeAI.js" defer></script>
+<script type="text/javascript" src="js/client-state.js" defer></script>
+<script type="text/javascript" src="js/accounts.js" defer></script>
+<script type="text/javascript" src="js/inventory-ui.js" defer></script>
+<script type="text/javascript" src="js/render-maps.js" defer></script>
+<script type="text/javascript" src="js/render-game.js" defer></script>
+<script type="text/javascript" src="js/local-game.js" defer></script>
+<script type="text/javascript" src="js/online-state.js" defer></script>
+<script type="text/javascript" src="js/feature-cards.js" defer></script>
+<script type="text/javascript" src="js/calling-cards.js" defer></script>
+<script type="text/javascript" src="js/tournament-mode.js" defer></script>
+<script type="text/javascript" src="js/online-effects.js" defer></script>
+<script type="text/javascript" src="js/lobby-ui.js" defer></script>
+<script type="text/javascript" src="js/online-game.js" defer></script>
+<script type="text/javascript" src="js/menus.js" defer></script>
+<script type="text/javascript" src="js/replay.js" defer></script>
+<script type="text/javascript" src="js/customization-hats.js" defer></script>
+<script type="text/javascript" src="js/hat-studio.js" defer></script>
+<script type="text/javascript" src="js/options-ui.js" defer></script>
+<script type="text/javascript" src="js/audio.js" defer></script>
+<script type="text/javascript" src="js/perf-overlay.js" defer></script>
+<script type="text/javascript" src="js/bootstrap.js" defer></script>
 </head><body onload="bodyload()">
 
 <div id="LobbyWrapper">
@@ -300,7 +299,6 @@
     <span class="bigBtn rankedBtn" onclick="joinRankedQueue()" data-sigil="RNK">RANKED</span>
     <span class="bigBtn duoBtn" onclick="start(false)" data-sigil="II">2 PLAYER</span>
     <span class="bigBtn cpuBtn" onclick="start(true)" data-sigil="CPU">VS CPU</span>
-    <span class="verseBtn infernoBtn" onclick="startFinal4()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();startFinal4();}" title="The Final 4" data-sigil="IV" role="button" tabindex="0"><span class="verseIcon" aria-hidden="true"></span><span class="skullFire" aria-hidden="true"></span></span>
     <span class="barDivider" aria-hidden="true"></span>
     <span class="bigBtn bracketBtn" onclick="startTournament()" data-sigil="BR">TOURNAMENT</span>
     <span class="bigBtn cardsBtn" onclick="showProgressionHub()" data-sigil="ID">CARDS</span>

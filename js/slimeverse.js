@@ -1449,11 +1449,8 @@ function getSlimeversePlayerLevel() {
 function drawFinal4GatePrompt() {
   var cx = ctx, px = viewWidth / 2, py = viewHeight * SV_FLOOR_FRAC - 54;
   var s = typeof uiScale === 'function' ? uiScale() : 1;
-  var level = getSlimeversePlayerLevel();
-  var ready = level >= 70;
-  var msg = ready
-    ? 'PRESS  E  TO  ENTER  THE  FINAL 4'
-    : 'FIRST PRESTIGE REQUIRED  //  LEVEL 70';
+  var ready = true;
+  var msg = 'PRESS  E  TO  ENTER  THE  FINAL 4';
   cx.save();
   cx.font = 'bold ' + Math.round(13 * s) + 'px Courier New';
   var tw = cx.measureText(msg).width + 30 * s;
@@ -1481,12 +1478,6 @@ function drawFinal4GatePrompt() {
 }
 
 function tryEnterFinal4Tower() {
-  var level = getSlimeversePlayerLevel();
-  if (level < 70) {
-    svFinal4Msg = 'YOU ARE LEVEL ' + level + ' / 70';
-    svFinal4MsgTimer = Date.now();
-    return;
-  }
   slimeverseActive = false;
   svStoreInside = false;
   if (slimeverseInputInterval) { clearInterval(slimeverseInputInterval); slimeverseInputInterval = null; }

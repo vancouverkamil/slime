@@ -125,7 +125,10 @@ function connectLobby() {
     lobbySocket = null; updatePlayerCount(0);
     if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
       slimeverseActive = false;
-      if (slimeverseInputTimer) { clearInterval(slimeverseInputTimer); slimeverseInputTimer = null; }
+      if (typeof slimeverseInputInterval !== 'undefined' && slimeverseInputInterval) {
+        clearInterval(slimeverseInputInterval);
+        slimeverseInputInterval = null;
+      }
       canvas.style.display = 'none';
       menuDiv.style.display = 'block';
       showLeaveBtn(false); showBottomBar(); toInitialMenu();
@@ -193,6 +196,7 @@ var onlineInputInterval = null;
 var onlinePointText     = null;
 var showingLobbySelect  = false;
 var currentRoomId       = null;
+var onlinePregameState  = null;
 
 // ── online player info ────────────────────────────────────
 var playerNameLeft  = 'Player 1';

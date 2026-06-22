@@ -77,6 +77,8 @@ function applyAccount(user) {
   hatConfigs.left = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing };
   syncCustomizationUI();
   renderSavedHatDrawings();
+  var rankRow = document.getElementById('HomeRankRow');
+  if (rankRow && typeof _buildHomeRanksHtml === 'function') rankRow.innerHTML = _buildHomeRanksHtml();
   sendCustomization();
   loadLeaderboard();
 }

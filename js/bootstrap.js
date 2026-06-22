@@ -55,9 +55,6 @@ function bodyload() {
   hatConfigs.left.color = playerBodyColor; hatConfigs.left.hat = playerHat; hatConfigs.left.drawing = playerHatDrawing; hatConfigs.left.anim = playerHatAnim;
   syncCustomizationUI();
 
-  // Pre-render map preview thumbnails for lobby select
-  buildMapPreviews();
-
   // Populate drop selector
   var sel = document.getElementById('DropSelect');
   if (sel) dropNames.forEach(function(name, i) {
@@ -89,11 +86,11 @@ function bodyload() {
   var sfx = document.getElementById('GameSfx'), fx = document.getElementById('ScreenFx');
   if (sfx) sfx.checked = gameSfxEnabled;
   if (fx) fx.checked = screenFxEnabled;
+  if (typeof initPerfOverlay === 'function') initPerfOverlay();
 
+  toInitialMenu();
   loadAccount().then(function() {
-    loadLeaderboard();
-    setInterval(loadLeaderboard, 20000);
-    toInitialMenu();
     connectLobby();
   });
+  setInterval(loadLeaderboard, 60000);
 }

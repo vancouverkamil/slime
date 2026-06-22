@@ -42,6 +42,7 @@ const files = [
   'js/hat-studio.js',
   'js/options-ui.js',
   'js/audio.js',
+  'js/perf-overlay.js',
   'js/bootstrap.js',
 ];
 

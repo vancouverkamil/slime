@@ -225,13 +225,34 @@ function _drawHomeSlime(ctx, cv) {
   ctx.restore();
 }
 
+var _lazyScriptPromises = {};
+function loadLazyScript(src) {
+  if (_lazyScriptPromises[src]) return _lazyScriptPromises[src];
+  _lazyScriptPromises[src] = new Promise(function(resolve, reject) {
+    var s = document.createElement('script');
+    s.src = window.slimeAssetUrl ? window.slimeAssetUrl(src) : src;
+    s.onload = resolve;
+    s.onerror = function() { reject(new Error('Failed to load ' + src)); };
+    document.head.appendChild(s);
+  });
+  return _lazyScriptPromises[src];
+}
+
+function ensureSlimeverseLoaded() {
+  if (typeof startSlimeverse === 'function') return Promise.resolve();
+  return loadLazyScript('js/multiverse-physics.js')
+    .then(function() { return loadLazyScript('js/slimeverse.js'); });
+}
+
 function enterSlimeverseEye(btn) {
   if (btn && btn.classList) {
     btn.classList.remove('eyeActivated');
     void btn.offsetWidth;
     btn.classList.add('eyeActivated');
   }
-  setTimeout(startSlimeverse, 620);
+  ensureSlimeverseLoaded()
+    .then(function() { setTimeout(startSlimeverse, 620); })
+    .catch(function() { addChatMessage(null, 'Could not load Slimeverse.'); });
 }
 
 function loadOptions() {
@@ -308,6 +329,7 @@ function applyGameScale() {
   if (canvas && (canvas.width !== nw || canvas.height !== nh)) {
     canvas.width = nw;
     canvas.height = nh;
+    if (typeof clearMapBackgroundCache === 'function') clearMapBackgroundCache();
   }
   updateWindowSize(nw, nh);
   if (menuDiv) {
@@ -408,5 +430,3 @@ function showRankedQueueUI() {
 function stopRankedQueueUI() {
   if (_rqTimerInterval) { clearInterval(_rqTimerInterval); _rqTimerInterval = null; }
 }
-
-

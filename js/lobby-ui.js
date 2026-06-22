@@ -1,5 +1,6 @@
 // ── map preview thumbnails ────────────────────────────────
 var mapPreviews = [];
+var mapPreviewBuildStarted = false;
 function getMapPreview(id, pw, ph) {
   var offC = document.createElement('canvas');
   offC.width = pw; offC.height = ph;
@@ -12,6 +13,26 @@ function getMapPreview(id, pw, ph) {
 }
 function buildMapPreviews() {
   for (var i = 0; i < 15; i++) mapPreviews[i] = getMapPreview(i, 284, 148);
+}
+function ensureMapPreviews() {
+  if (mapPreviewBuildStarted) return;
+  mapPreviewBuildStarted = true;
+  var ids = [];
+  LOBBY_CATS.forEach(function(cat) {
+    cat.ids.forEach(function(id) {
+      if (ids.indexOf(id) === -1) ids.push(id);
+    });
+  });
+  var i = 0;
+  function buildNext() {
+    if (i >= ids.length) return;
+    var id = ids[i++];
+    if (!mapPreviews[id]) mapPreviews[id] = getMapPreview(id, 284, 148);
+    if (showingLobbySelect) renderLobbySelect(currentLobbies);
+    var idle = window.requestIdleCallback || function(cb) { return setTimeout(cb, 60); };
+    idle(buildNext, { timeout: 250 });
+  }
+  buildNext();
 }
 
 // ── online player list ────────────────────────────────────
@@ -180,6 +201,7 @@ var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#
 
 function renderLobbySelect(lobbies) {
   if (!showingLobbySelect) return;
+  ensureMapPreviews();
   var rank    = getPlayerRank();
   var rankCol = totalWins >= 10 ? '#ffcc00' : totalWins >= 6 ? '#aaaaff' : totalWins >= 3 ? '#88ffcc' : '#888';
 

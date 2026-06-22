@@ -227,10 +227,6 @@ function updateBall() {
     localPointFlashEnd = Date.now() + 700;
     localRallyCount = 0; localLastBallSide = null;
     playSfx('score');
-    if (screenFxEnabled) {
-      shakeFrames = 8; shakeAmt = 4;
-      spawnParticles(leftWon ? slimeLeft.x : slimeRight.x, 90, leftWon ? '#66ffcc' : '#ff66aa', 12);
-    }
     endPoint(); return true;
   }
   return false;

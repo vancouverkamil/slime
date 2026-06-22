@@ -31,6 +31,9 @@ function handleServerMessage(msg) {
       }, 150);
     }
 
+  } else if (msg.type === 'perf_pong') {
+    if (typeof handlePerfPong === 'function') handlePerfPong(msg);
+
   } else if (msg.type === 'ranked_queued') {
     showRankedQueueUI();
 
@@ -97,6 +100,18 @@ function handleServerMessage(msg) {
   } else if (msg.type === 'spectator_waiting') {
     // already showing spectator waiting screen
 
+  } else if (msg.type === 'rps_start') {
+    showRpsOverlay(msg);
+
+  } else if (msg.type === 'rps_locked') {
+    updateRpsLocked(msg.side);
+
+  } else if (msg.type === 'rps_result') {
+    showRpsResult(msg);
+
+  } else if (msg.type === 'pregame_countdown') {
+    showPregameCountdown(msg.n);
+
   } else if (msg.type === 'state') {
     // track rally from ball crossing net
     var prevRally = rallyCount;
@@ -105,17 +120,15 @@ function handleServerMessage(msg) {
       if (crossed) rallyCount++;
     }
     applyServerState(msg);
+    if (msg.phase === 'playing') hidePregameOverlay();
 
   } else if (msg.type === 'point') {
     rallyCount = 0;
-    if (screenFxEnabled) { shakeFrames = 8; shakeAmt = 5; }
     playSfx('score');
     if (msg.scorer === 'left') {
       leftStreak++; rightStreak = 0;
-      if (screenFxEnabled) spawnParticles(slimeLeft.x, slimeLeft.y + 80, '#66ffcc');
     } else {
       rightStreak++; leftStreak = 0;
-      if (screenFxEnabled) spawnParticles(slimeRight.x, slimeRight.y + 80, '#ff66aa');
     }
     if (!isSpectator) {
       onlinePointText = (mySide === msg.scorer) ? 'YOU SCORED' : 'OPPONENT SCORES';
@@ -197,6 +210,7 @@ function handleServerMessage(msg) {
 // ── online game (player) ──────────────────────────────────
 function launchOnlineGame() {
   if (waitingInterval) { clearInterval(waitingInterval); waitingInterval = null; }
+  hidePregameOverlay();
   replayBuffer = [];
   // Seed own side's config from local settings
   hatConfigs[mySide] = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing, trail: playerTrail };
@@ -284,6 +298,7 @@ function launchWaitingMode(side) {
 
 // ── spectator mode ────────────────────────────────────────
 function launchSpectatorMode() {
+  hidePregameOverlay();
   replayBuffer = [];
   slimeLeft  = newLegacySlime(true,  100, '#0f0');
   slimeRight = newLegacySlime(false, 100, '#f00');
@@ -330,6 +345,7 @@ function applyServerState(msg) {
 }
 
 function finishOnlineGame(winner) {
+  hidePregameOverlay();
   onlineMode = false; showLeaveBtn(false); particles = [];
   var iWon = (mySide === winner);
   if (iWon) { sessionWins++; recordWin(); } else sessionLosses++;
@@ -352,6 +368,7 @@ function finishOnlineGame(winner) {
 }
 
 function finishSpectating(winner) {
+  hidePregameOverlay();
   isSpectator = false; hideSpecBadge(); showLeaveBtn(false); particles = [];
   var wName = winner === 'left' ? playerNameLeft : playerNameRight;
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
@@ -395,6 +412,122 @@ function hideReconnectOverlay() {
     if (_rcOverlay.parentNode) _rcOverlay.parentNode.removeChild(_rcOverlay);
     _rcOverlay = null;
   }
+}
+
+function ensurePregameOverlay() {
+  var el = document.getElementById('PregameOverlay');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'PregameOverlay';
+  el.style.cssText = [
+    'position:absolute',
+    'inset:0',
+    'z-index:12',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'background:rgba(0,0,18,.42)',
+    'pointer-events:auto'
+  ].join(';');
+  var parent = document.getElementById('ContentDiv') || document.getElementById('GameContentDiv') || document.body;
+  parent.appendChild(el);
+  return el;
+}
+
+function hidePregameOverlay() {
+  onlinePregameState = null;
+  var el = document.getElementById('PregameOverlay');
+  if (el && el.parentNode) el.parentNode.removeChild(el);
+}
+
+function rpsLabel(choice) {
+  return choice === 'rock' ? 'ROCK' : choice === 'paper' ? 'PAPER' : choice === 'scissors' ? 'SCISSORS' : '...';
+}
+
+function rpsStatusLine() {
+  var left = onlinePregameState && onlinePregameState.locked && onlinePregameState.locked.left;
+  var right = onlinePregameState && onlinePregameState.locked && onlinePregameState.locked.right;
+  return '<div style="display:flex;justify-content:center;gap:18px;margin-top:16px;color:#777;font-size:10px;letter-spacing:2px;">' +
+    '<span>' + escHtml(playerNameLeft || 'Player 1') + ': ' + (left ? '<b style="color:#00ffcc;">LOCKED</b>' : 'CHOOSING') + '</span>' +
+    '<span>' + escHtml(playerNameRight || 'Player 2') + ': ' + (right ? '<b style="color:#ff66aa;">LOCKED</b>' : 'CHOOSING') + '</span>' +
+  '</div>';
+}
+
+function renderRpsOverlay(body) {
+  var el = ensurePregameOverlay();
+  el.innerHTML =
+    '<div style="width:min(560px,90vw);border:1px solid rgba(0,255,200,.34);background:rgba(3,0,18,.92);box-shadow:0 0 40px rgba(0,255,200,.14);padding:28px 30px;text-align:center;font-family:Courier New,monospace;">' +
+      '<div style="color:#00ffcc;font-size:12px;letter-spacing:4px;margin-bottom:8px;">FIRST SERVE</div>' +
+      '<div style="color:#fff;font-size:28px;font-weight:bold;letter-spacing:3px;margin-bottom:8px;">ROCK PAPER SCISSORS</div>' +
+      body +
+    '</div>';
+}
+
+function showRpsOverlay(msg) {
+  onlinePregameState = { locked: {}, choice: null, reason: msg && msg.reason };
+  var note = msg && msg.reason === 'tie'
+    ? '<div style="color:#ffd966;font-size:11px;letter-spacing:2px;margin-bottom:18px;">TIE - PICK AGAIN</div>'
+    : '<div style="color:#666;font-size:11px;letter-spacing:1px;margin-bottom:18px;">Choices are hidden until both players lock in.</div>';
+  var body = note;
+  if (isSpectator) {
+    body += '<div style="color:#aaa;font-size:13px;letter-spacing:2px;">PLAYERS ARE CHOOSING...</div>' + rpsStatusLine();
+  } else {
+    body += '<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">' +
+      ['rock','paper','scissors'].map(function(choice) {
+        return '<button class="hat-opt" style="font-size:13px;padding:11px 16px;min-width:120px;" onclick="sendRpsChoice(\'' + choice + '\')">' + rpsLabel(choice) + '</button>';
+      }).join('') +
+    '</div>' + rpsStatusLine();
+  }
+  renderRpsOverlay(body);
+}
+
+function sendRpsChoice(choice) {
+  if (!onlinePregameState || onlinePregameState.choice) return;
+  onlinePregameState.choice = choice;
+  onlinePregameState.locked = onlinePregameState.locked || {};
+  onlinePregameState.locked[mySide] = true;
+  if (lobbySocket && lobbySocket.readyState === 1) {
+    lobbySocket.send(JSON.stringify({ type: 'rps_choice', choice: choice }));
+  }
+  renderRpsOverlay(
+    '<div style="color:#ffd966;font-size:14px;letter-spacing:2px;margin:12px 0;">YOU CHOSE ' + rpsLabel(choice) + '</div>' +
+    '<div style="color:#666;font-size:11px;letter-spacing:1px;">Waiting for opponent...</div>' +
+    rpsStatusLine()
+  );
+}
+
+function updateRpsLocked(side) {
+  if (!onlinePregameState) onlinePregameState = { locked: {} };
+  onlinePregameState.locked[side] = true;
+  if (!onlinePregameState.choice && !isSpectator) return;
+  var choiceText = onlinePregameState.choice
+    ? '<div style="color:#ffd966;font-size:14px;letter-spacing:2px;margin:12px 0;">YOU CHOSE ' + rpsLabel(onlinePregameState.choice) + '</div>'
+    : '<div style="color:#aaa;font-size:13px;letter-spacing:2px;">PLAYERS ARE CHOOSING...</div>';
+  renderRpsOverlay(choiceText + rpsStatusLine());
+}
+
+function showRpsResult(msg) {
+  if (!onlinePregameState) onlinePregameState = { locked: {} };
+  var leftChoice = msg.choices ? msg.choices.left : null;
+  var rightChoice = msg.choices ? msg.choices.right : null;
+  var result = msg.tie
+    ? '<div style="color:#ffd966;font-size:20px;font-weight:bold;letter-spacing:3px;margin:12px 0;">TIE</div>'
+    : '<div style="color:#00ffcc;font-size:20px;font-weight:bold;letter-spacing:3px;margin:12px 0;">' + escHtml(msg.winner === 'left' ? playerNameLeft : playerNameRight) + ' SERVES</div>';
+  renderRpsOverlay(
+    '<div style="display:flex;justify-content:center;gap:24px;color:#aaa;font-size:12px;letter-spacing:2px;margin:12px 0;">' +
+      '<span>' + escHtml(playerNameLeft || 'Player 1') + ': <b style="color:#00ffcc;">' + rpsLabel(leftChoice) + '</b></span>' +
+      '<span>' + escHtml(playerNameRight || 'Player 2') + ': <b style="color:#ff66aa;">' + rpsLabel(rightChoice) + '</b></span>' +
+    '</div>' +
+    result +
+    '<div style="color:#666;font-size:11px;letter-spacing:1px;">' + (msg.tie ? 'Choose again...' : 'Get ready...') + '</div>'
+  );
+}
+
+function showPregameCountdown(n) {
+  renderRpsOverlay(
+    '<div style="color:#666;font-size:11px;letter-spacing:2px;margin-bottom:12px;">BALL DROPS IN</div>' +
+    '<div style="color:#fff;font-size:72px;font-weight:bold;line-height:1;text-shadow:0 0 24px rgba(0,255,200,.45);">' + escHtml(n) + '</div>'
+  );
 }
 
 
