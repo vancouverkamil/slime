@@ -388,6 +388,7 @@ function enterSlimeverse(ws, info) {
     back: false,
     inStore: false,
     storeX: 1050,
+    clientPoseAt: 0,
   });
   info.room = null;
   info.role = 'wanderer';
@@ -426,6 +427,7 @@ function tickSlimeverse() {
   const maxZ = SLIMEVERSE_WORLD.maxZ;
   slimeverseClients.forEach((sv) => {
     if (sv.inStore) return;
+    if (sv.clientPoseAt && Date.now() - sv.clientPoseAt < 120) return;
     sv.vx = sv.left && !sv.right ? -7 : sv.right && !sv.left ? 7 : 0;
     sv.vz = sv.fwd  && !sv.back ? -8 : sv.back  && !sv.fwd  ? 8 : 0;
     if (sv.jump && sv.y >= SLIMEVERSE_WORLD.floorY) sv.vy = -22;
@@ -553,6 +555,19 @@ async function handleMsg(ws, info, msg) {
       sv.fwd  = !!msg.fwd;
       sv.back = !!msg.back;
       if (msg.jump) sv.jump = true;
+      const px = Number(msg.x);
+      const py = Number(msg.y);
+      const pz = Number(msg.z);
+      if (Number.isFinite(px) && Number.isFinite(py) && Number.isFinite(pz)) {
+        sv.x = Math.max(70, Math.min(SLIMEVERSE_WORLD.width - 70, px));
+        sv.y = Math.max(0, Math.min(SLIMEVERSE_WORLD.floorY, py));
+        sv.z = Math.max(0, Math.min(SLIMEVERSE_WORLD.maxZ, pz));
+        sv.vx = Number.isFinite(Number(msg.vx)) ? Math.max(-12, Math.min(12, Number(msg.vx))) : sv.vx;
+        sv.vy = Number.isFinite(Number(msg.vy)) ? Math.max(-30, Math.min(30, Number(msg.vy))) : sv.vy;
+        sv.vz = Number.isFinite(Number(msg.vz)) ? Math.max(-14, Math.min(14, Number(msg.vz))) : sv.vz;
+        sv.jump = false;
+        sv.clientPoseAt = Date.now();
+      }
     }
   } else if (msg.type === 'slimeverse_enter_store') {
     const sv = slimeverseClients.get(ws);

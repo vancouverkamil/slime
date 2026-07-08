@@ -39,12 +39,30 @@ test('render pose extrapolates smoothly between fixed physics steps', () => {
   assert.deepStrictEqual(JSON.parse(JSON.stringify(pose)), { x: 104, y: 1980, z: 197 });
 });
 
-test('ordinary depth drift is corrected without teleporting', () => {
+test('release before the next fixed step does not extrapolate stale movement', () => {
+  const p = loadPhysics();
+  const local = { x: 100, y: 1980, z: 200, vx: 7, vy: 0, vz: 0, onFloor: true };
+  p.mvApplyInput(local, { left: false, right: false, fwd: false, back: false, jump: false });
+  const pose = p.mvRenderState(local, 8, {
+    width: 4500,
+    floorY: 1980,
+    maxZ: 3000,
+  });
+  assert.strictEqual(pose.x, 100);
+});
+
+test('local movement is not pulled toward delayed server snapshots', () => {
   const p = loadPhysics();
   const local = { x: 500, y: 1980, z: 500 };
-  p.keysDown[p.KEY_UP] = true;
   p.mvReconcile(local, { x: 500, y: 1980, z: 150 }, 0.06);
-  assert.strictEqual(local.z, 496);
+  assert.strictEqual(local.z, 500);
+});
+
+test('ordinary idle drift is ignored in the social world', () => {
+  const p = loadPhysics();
+  const local = { x: 500, y: 1980, z: 500 };
+  p.mvReconcile(local, { x: 460, y: 1980, z: 480 }, 0.06);
+  assert.deepStrictEqual(local, { x: 500, y: 1980, z: 500 });
 });
 
 test('spawn-scale drift still hard-syncs', () => {

@@ -38,25 +38,22 @@ function mvStep(s, world) {
   }
 }
 
-// Pay down authoritative drift without dragging latency-delayed snapshots
-// directly into the rendered pose. Only spawn-scale errors hard-sync.
-function mvBoundedCorrection(error, alpha, maxStep) {
-  return Math.max(-maxStep, Math.min(maxStep, error * alpha));
-}
-
 function mvReconcile(local, server, alpha) {
-  var movingX = !!(keysDown[KEY_A] || keysDown[KEY_LEFT] || keysDown[KEY_D] || keysDown[KEY_RIGHT]);
-  var movingZ = !!(keysDown[KEY_UP] || keysDown[KEY_DOWN]);
   var dx = server.x - local.x;
   var dz = server.z - local.z;
   var dy = server.y - local.y;
-  if (!movingX || Math.abs(dx) > 260) local.x += mvBoundedCorrection(dx, movingX ? 0.035 : alpha, movingX ? 4 : 16);
-  if (!movingZ || Math.abs(dz) > 300) local.z += mvBoundedCorrection(dz, movingZ ? 0.035 : alpha, movingZ ? 4 : 18);
-  local.y += mvBoundedCorrection(dy, alpha, 12);
+  // Slimeverse is a social world, not an authoritative match. Small server
+  // drift is expected from packet delay and should never tug the local avatar.
+  // Only impossible spawn/teleport-scale differences are accepted.
   if (Math.abs(dx) > 1400 || Math.abs(dz) > 1000 || Math.abs(dy) > 900) {
     local.x = server.x;
     local.y = server.y;
     local.z = server.z;
+    if ('vx' in local) local.vx = server.vx || 0;
+    if ('vy' in local) local.vy = server.vy || 0;
+    if ('vz' in local) local.vz = server.vz || 0;
+    if ('onFloor' in local) local.onFloor = local.y >= 1980;
+    return;
   }
 }
 

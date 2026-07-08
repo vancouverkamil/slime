@@ -196,6 +196,8 @@ function startSlimeverseInput() {
       type: 'slimeverse_input',
       left: inp.left, right: inp.right,
       jump: inp.jump, fwd: inp.fwd, back: inp.back,
+      x: mvLocal.x, y: mvLocal.y, z: mvLocal.z,
+      vx: mvLocal.vx, vy: mvLocal.vy, vz: mvLocal.vz,
     }));
   }, 16);
 }
@@ -299,11 +301,15 @@ function renderSlimeverse(ts) {
     mvStep(mvLocal, slimeverseWorld);
     mvAccum -= 16;
   }
+  // Refresh velocity before render extrapolation so releasing or changing
+  // direction between fixed ticks does not draw a tiny overshoot then snap back.
+  mvApplyInput(mvLocal, inp);
   var mvRender = mvRenderState(mvLocal, mvAccum, slimeverseWorld);
 
-  // Camera tracks local predicted position (instant, no wait for server round-trip)
+  // Camera tracks local predicted position without easing, so stopping movement
+  // does not make the avatar drift backward while the camera catches up.
   var svVisibleWorldW = viewWidth / SV_WORLD_ZOOM;
-  slimeverseCamera.x += (mvRender.x - svVisibleWorldW / 2 - slimeverseCamera.x) * 0.22;
+  slimeverseCamera.x = mvRender.x - svVisibleWorldW / 2;
   slimeverseCamera.x = Math.max(0, Math.min(slimeverseWorld.width - svVisibleWorldW, slimeverseCamera.x));
 
   drawSlimeverseWorld();
