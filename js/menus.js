@@ -257,8 +257,8 @@ function enterSlimeverseEye(btn) {
 
 function loadOptions() {
   legacyGraphics = document.getElementById('LegacyGraphics').checked;
-  slowMotion     = document.getElementById('SlowMotion').checked;
-  physicsLog     = document.getElementById('PhysicsLog').checked ? 120 : 0;
+  slowMotion     = false;
+  physicsLog     = 0;
   var sfx = document.getElementById('GameSfx');
   var fx  = document.getElementById('ScreenFx');
   if (sfx) gameSfxEnabled = sfx.checked;

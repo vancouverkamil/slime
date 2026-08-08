@@ -56,6 +56,8 @@ var HAT_OPTIONS = [
   { id:'overlord',   label:'Overlord',     shopPrice:2500 },
 ];
 var profanityFilterEnabled = (typeof localStorage === 'undefined' || localStorage.getItem('slime_profanity') !== 'off');
+var chatJoined = (typeof localStorage !== 'undefined' && localStorage.getItem('slime_chat_joined') === '1');
+var chatUnreadCount = 0;
 var PROFANITY_WORDS = [
   'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'dick', 'cunt', 'pussy',
   'slut', 'whore', 'fag', 'nigger', 'retard'
@@ -75,16 +77,26 @@ function censorProfanity(text) {
 
 function setProfanityFilter(on) {
   profanityFilterEnabled = !!on;
-  try { localStorage.setItem('slime_profanity_filter', profanityFilterEnabled ? '1' : '0'); } catch(e) {}
+  try {
+    localStorage.setItem('slime_profanity', profanityFilterEnabled ? 'on' : 'off');
+    localStorage.setItem('slime_profanity_filter', profanityFilterEnabled ? '1' : '0');
+  } catch(e) {}
+  syncProfanityToggles();
+}
+
+function syncProfanityToggles() {
+  var toggles = document.querySelectorAll('.profanity-toggle');
+  for (var i = 0; i < toggles.length; i++) toggles[i].checked = profanityFilterEnabled;
 }
 
 function initProfanityToggle() {
   try {
-    var saved = localStorage.getItem('slime_profanity_filter');
-    if (saved !== null) profanityFilterEnabled = saved !== '0';
+    var saved = localStorage.getItem('slime_profanity');
+    var legacy = localStorage.getItem('slime_profanity_filter');
+    if (saved !== null) profanityFilterEnabled = saved !== 'off';
+    else if (legacy !== null) profanityFilterEnabled = legacy !== '0';
   } catch(e) {}
-  var el = document.getElementById('ProfanityToggle');
-  if (el) el.checked = profanityFilterEnabled;
+  syncProfanityToggles();
 }
 
 function getTintedCanvas(img, color) {
@@ -160,6 +172,30 @@ function connectLobby() {
   };
 }
 
+function applyChatJoinState() {
+  var section = document.getElementById('ChatSection');
+  if (!section) return;
+  section.classList.toggle('chat-locked', !chatJoined);
+  updateChatUnreadNote();
+}
+function updateChatUnreadNote() {
+  var note = document.getElementById('ChatUnreadNote');
+  if (!note) return;
+  note.textContent = chatUnreadCount > 0
+    ? (chatUnreadCount + ' new message' + (chatUnreadCount === 1 ? '' : 's') + ' waiting')
+    : '';
+}
+function joinGlobalChat() {
+  chatJoined = true;
+  chatUnreadCount = 0;
+  try { localStorage.setItem('slime_chat_joined', '1'); } catch(e) {}
+  applyChatJoinState();
+}
+function leaveGlobalChat() {
+  chatJoined = false;
+  try { localStorage.setItem('slime_chat_joined', '0'); } catch(e) {}
+  applyChatJoinState();
+}
 function sendChat() {
   var input = document.getElementById('ChatInput');
   var msg   = (input.value || '').trim();

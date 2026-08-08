@@ -17,6 +17,7 @@
 <script type="text/javascript" src="js/render-game.js" defer></script>
 <script type="text/javascript" src="js/local-game.js" defer></script>
 <script type="text/javascript" src="js/online-state.js" defer></script>
+<script type="text/javascript" src="js/map-thumbnails.js" defer></script>
 <script type="text/javascript" src="js/feature-cards.js" defer></script>
 <script type="text/javascript" src="js/calling-cards.js" defer></script>
 <script type="text/javascript" src="js/tournament-mode.js" defer></script>
@@ -38,7 +39,7 @@
   <div id="TopBar">
     <span id="VersionText">v2.0</span>
     <span id="AnnouncementText">// SLIME VOLLEYBALL // ONLINE MULTIPLAYER //</span>
-    <span style="color:rgba(0,255,200,.25);font-size:9px;letter-spacing:1px;">KEYS 1-4 EMOTES</span>
+    <span class="top-hint">KEYS 1-4 EMOTES</span>
   </div>
 
   <div id="MiddleRow">
@@ -47,11 +48,7 @@
       <div id="GameContentDiv"></div>
 
       <!-- ESC pause menu -->
-      <div id="EscMenu">
-        <div class="esc-title">// PAUSED //</div>
-        <button class="eBtn" onclick="hideEscMenu()">&#9654;&nbsp; RESUME</button>
-        <button class="eBtn danger" onclick="hideEscMenu(); leaveLobby();">&#8592;&nbsp; LEAVE MATCH</button>
-      </div>
+      <div id="EscMenu"></div>
 
       <!-- Replay overlay (canvas renders underneath; this sits on top for text/buttons) -->
       <div id="ReplayOverlay">
@@ -61,7 +58,7 @@
         </div>
       </div>
 
-      <div id="OptionsDiv" style="display:none;z-index:10;position:absolute;box-sizing:border-box;overflow:hidden;">
+      <div id="OptionsDiv" style="display:none;">
         <div class="opt-panel">
 
           <!-- header -->
@@ -179,18 +176,13 @@
                   <label class="opt-toggle"><input id="ShowFPSToggle"     type="checkbox" onchange="setShowFPSPref(this.checked)"><span>Show FPS</span></label>
                   <label class="opt-toggle"><input id="LegacyGraphics"    type="checkbox"><span>Legacy Graphics</span></label>
                 </div>
-                <div class="opt-section-title">Debug</div>
-                <div class="opt-toggle-group">
-                  <label class="opt-toggle"><input id="PhysicsLog"  type="checkbox"><span>Physics Log</span></label>
-                  <label class="opt-toggle"><input id="SlowMotion"  type="checkbox"><span>Slow Motion</span></label>
-                </div>
               </div>
 
               <!-- ── GAMEPLAY ── -->
               <div id="OptSection_gameplay" style="display:none">
                 <div class="opt-section-title" style="margin-top:0">General</div>
                 <div class="opt-toggle-group">
-                  <label class="opt-toggle"><input id="ProfanityToggle"    type="checkbox" onchange="setProfanityFilter(this.checked)"  checked><span>Profanity Filter</span></label>
+                  <label class="opt-toggle"><input id="ProfanityToggleOptions" class="profanity-toggle" type="checkbox" onchange="setProfanityFilter(this.checked)" checked><span>Profanity Filter</span></label>
                   <label class="opt-toggle"><input id="RallyCounterToggle" type="checkbox" onchange="setRallyCounterPref(this.checked)"><span>Show Rally Counter</span></label>
                   <label class="opt-toggle"><input id="PointFlashToggle"   type="checkbox" onchange="setPointFlashPref(this.checked)"   checked><span>Point Flash Animation</span></label>
                 </div>
@@ -276,18 +268,26 @@
         <div id="OnlineListHeader">players online</div>
         <div id="OnlineList"></div>
       </div>
-      <div id="ChatHeader">
-        <span>GLOBAL CHAT:</span>
-        <label title="Toggle profanity filtering">
-          <input id="ProfanityToggle" type="checkbox" onchange="setProfanityFilter(this.checked)">
-          profanity
-        </label>
-      </div>
-      <div id="ChatLog"></div>
-      <div id="ChatInputRow">
-        <input id="ChatInput" type="text" placeholder="Chat..." maxlength="200"
-               onkeydown="if(event.key==='Enter')sendChat()">
-        <button id="ChatSendBtn" onclick="sendChat()">&#10148;</button>
+      <div id="ChatSection">
+        <div id="ChatHeader">
+          <span>GLOBAL CHAT:</span>
+          <label title="Toggle profanity filtering">
+            <input id="ProfanityToggleChat" class="profanity-toggle" type="checkbox" onchange="setProfanityFilter(this.checked)">
+            profanity
+          </label>
+          <button id="ChatLeaveBtn" title="Stop seeing global chat" onclick="leaveGlobalChat()">leave chat</button>
+        </div>
+        <div id="ChatLog"></div>
+        <div id="ChatOptInRow">
+          <span id="ChatOptInText">Player messages are hidden until you join.</span>
+          <span id="ChatUnreadNote"></span>
+          <button id="ChatJoinBtn" onclick="joinGlobalChat()">JOIN CHAT</button>
+        </div>
+        <div id="ChatInputRow">
+          <input id="ChatInput" type="text" placeholder="Chat..." maxlength="200"
+                 onkeydown="if(event.key==='Enter')sendChat()">
+          <button id="ChatSendBtn" onclick="sendChat()">&#10148;</button>
+        </div>
       </div>
     </div>
 

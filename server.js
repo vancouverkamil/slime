@@ -24,6 +24,8 @@ const ROOM_NAMES = [
   'Space Court', 'Volcano Court', 'Ocean Court',
   'Overpass Court', 'Bunker Court', 'Reactor Court', 'Void Court',
 ];
+const QUICKPLAY_MAP_IDS = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10];
+const LOBBIES_PER_MAP = 10;
 
 const app = express();
 const accounts = createAccountStore();
@@ -77,16 +79,20 @@ const wss    = new WebSocketServer({ server });
 const allClients = new Map();
 const slimeverseClients = new Map();
 
-// 8 persistent rooms
-const rooms = ROOM_NAMES.map((name, id) => ({
-  id, name,
+// Ten persistent Quick Play rooms per visible map.
+const rooms = QUICKPLAY_MAP_IDS.flatMap((mapId) =>
+  Array.from({ length: LOBBIES_PER_MAP }, (_, lobbyIndex) => ({
+  id: mapId * LOBBIES_PER_MAP + lobbyIndex,
+  mapId,
+  lobbyIndex,
+  name: ROOM_NAMES[mapId],
   players:          [], // [{ ws, info }], max 2
   spectators:       [], // [{ ws, info }], unlimited
   state:            null,
   interval:         null,
   phase:            'empty', // 'empty' | 'waiting' | 'playing'
   pendingReconnect: null,    // { side, userId, rejoinToken, timer, resumeGame }
-}));
+})));
 
 function parseCookies(header) {
   const cookies = {};
@@ -280,11 +286,13 @@ function broadcastRoom(room, msg) {
 function getLobbySnapshot() {
   return rooms.map(r => ({
     id:             r.id,
+    mapId:          r.mapId,
+    lobbyIndex:     r.lobbyIndex,
     name:           r.name,
     playerCount:    r.players.length,
     spectatorCount: r.spectators.length,
     phase:          r.phase,
-    restricted:     r.id >= 11,
+    restricted:     r.mapId >= 11,
   }));
 }
 function getPlayerList() {
@@ -622,7 +630,7 @@ function relayChat(info, msg) {
 // ── room join ─────────────────────────────────────────────
 function handleJoinRoom(ws, info, roomId, rejoinToken) {
   const id = parseInt(roomId, 10);
-  const room = (id >= 0 && id < rooms.length) ? rooms[id] : null;
+  const room = rooms.find(r => r.id === id) || null;
   if (!room) return;
   leaveRoom(ws, info, false);
 
@@ -761,7 +769,7 @@ function tryMatchRanked() {
 // ── game ──────────────────────────────────────────────────
 function startRoomGame(room) {
   room.state = createState();
-  room.state.mapId = room.id;
+  room.state.mapId = room.mapId;
   room.state.phase = 'rps';
   room.phase = 'playing';
 

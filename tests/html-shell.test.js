@@ -30,7 +30,18 @@ test('html shell loads the extracted inventory component', () => {
   assert.ok(html.indexOf('js/inventory-ui.js') < html.indexOf('js/bootstrap.js'));
 });
 
+test('html shell loads map thumbnail assets before lobby rendering', () => {
+  assert.match(html, /src="js\/map-thumbnails\.js"/);
+  assert.ok(html.indexOf('js/map-thumbnails.js') < html.indexOf('js/lobby-ui.js'));
+});
+
 test('profile and inventory overlays expose modal semantics', () => {
   assert.match(html, /id="ProfileOverlay" role="dialog" aria-modal="true"/);
   assert.match(html, /id="InventoryOverlay" role="dialog" aria-modal="true"/);
+});
+
+test('html shell does not reuse element ids', () => {
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+  assert.deepStrictEqual([...new Set(duplicates)], []);
 });

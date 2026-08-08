@@ -10,8 +10,6 @@ function setShowPingPref(v)    { showPingEnabled    = v; try { localStorage.setI
 function setShowFPSPref(v)     { showFPSEnabled     = v; try { localStorage.setItem('slime_showFPS',     v ? 'on' : 'off'); } catch(e) {} }
 function setRallyCounterPref(v){ showRallyCounter   = v; try { localStorage.setItem('slime_rallyCounter',v ? 'on' : 'off'); } catch(e) {} }
 function setPointFlashPref(v)  { pointFlashEnabled  = v; try { localStorage.setItem('slime_pointFlash',  v ? 'on' : 'off'); } catch(e) {} }
-function setProfanityFilter(v) { profanityFilterEnabled = v; try { localStorage.setItem('slime_profanity', v ? 'on' : 'off'); } catch(e) {} }
-
 var _optSections = ['slime','hat','studio','audio','display','gameplay','controls'];
 function showOptSection(sec) {
   _activeOptSection = sec;
@@ -37,7 +35,7 @@ function showOptSection(sec) {
     var sft = document.getElementById('ShowFPSToggle');     if (sft) sft.checked = showFPSEnabled;
   }
   if (sec === 'gameplay') {
-    var pft = document.getElementById('ProfanityToggle');    if (pft) pft.checked = profanityFilterEnabled;
+    if (typeof syncProfanityToggles === 'function') syncProfanityToggles();
     var rct = document.getElementById('RallyCounterToggle'); if (rct) rct.checked = showRallyCounter;
     var ppt = document.getElementById('PointFlashToggle');   if (ppt) ppt.checked = pointFlashEnabled;
     var ov  = document.getElementById('OptVersion');         if (ov)  ov.textContent  = (typeof window !== 'undefined' && window.SLIME_VERSION) || '—';

@@ -42,6 +42,7 @@ function bodyload() {
     myPlayerName = savedName;
   }
   initProfanityToggle();
+  applyChatJoinState();
 
   // Load persisted customization
   playerBodyColor = localStorage.getItem('slimeBodyColor') || '#00ff00';

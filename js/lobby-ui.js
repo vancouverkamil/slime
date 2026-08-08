@@ -35,29 +35,6 @@ function ensureMapPreviews() {
   buildNext();
 }
 
-// ── online player list ────────────────────────────────────
-function updateOnlineList(list) {
-  _playerListCache = list;
-  var el = document.getElementById('OnlineList');
-  if (!el) return;
-  el.innerHTML = list.map(function(p, i) {
-    var cls = p.status === 'playing' ? ' playing' : p.status === 'spectating' ? ' spectating' : '';
-    var tag = p.status === 'playing' ? ' ▶' : p.status === 'spectating' ? ' 👁' : '';
-    var rankCol = p.rank==='LIEUTENANT'?'#ffcc00':p.rank==='SERGEANT'?'#aaaaff':p.rank==='CORPORAL'?'#88ffcc':'#555';
-    var badge = (p.rank && p.rank !== 'PRIVATE')
-      ? '<span style="color:' + rankCol + ';font-size:6px;margin-left:3px;">' + p.rank.slice(0,3) + '</span>'
-      : '';
-    var nameHtml = p.username
-      ? '<span onclick="showProfile(\'' + escHtml(p.username) + '\')" style="cursor:pointer;color:#00ffcc;">' + escHtml(p.name) + '</span>'
-      : escHtml(p.name);
-    return '<div class="opl' + cls + '" style="display:flex;align-items:center;justify-content:space-between;cursor:default;" ' +
-      'onmouseover="showPlayerTip(' + i + ',this)" onmouseout="hidePlayerTip()">' +
-      '<span>' + nameHtml + badge + '</span>' +
-      '<span style="color:#555;font-size:8px;">' + tag + '</span>' +
-      '</div>';
-  }).join('');
-}
-
 // ── lobby select UI ───────────────────────────────────────
 function showLobbySelect() {
   if (!lobbySocket || lobbySocket.readyState !== 1) {
@@ -69,8 +46,10 @@ function showLobbySelect() {
   hideSpecBadge();
   canvas.style.display = 'none';
   menuDiv.style.display = 'block';
+  lobbySelectFreshOpen = true;
   renderLobbySelect(currentLobbies);
 }
+var lobbySelectFreshOpen = false;
 
 // Desert Court (id=6) is hidden from lobby — kept on server for backward compat
 var LOBBY_CATS = [
@@ -130,25 +109,6 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── player tooltip ────────────────────────────────────────
-function showPlayerTip(idx, el) {
-  var p = _playerListCache[idx];
-  if (!p) return;
-  var tip = document.getElementById('PlayerTooltip');
-  if (!tip) return;
-  var rankCol = p.rank==='LIEUTENANT'?'#ffcc00':p.rank==='SERGEANT'?'#aaaaff':p.rank==='CORPORAL'?'#88ffcc':'#666';
-  var statusLabel = p.status==='playing'?'▶ In Match':p.status==='spectating'?'👁 Watching':'● In Lobby';
-  tip.innerHTML =
-    '<div style="font-weight:bold;color:#fff;font-size:10px;margin-bottom:5px;letter-spacing:.5px;">' + escHtml(p.name) + '</div>' +
-    '<div style="color:' + rankCol + ';letter-spacing:1.5px;font-size:8px;margin-bottom:3px;">' + (p.rank || 'PRIVATE') + '</div>' +
-    '<div style="color:#00ffcc;font-size:8px;margin-bottom:3px;">' + (p.wins||0) + ' WIN' + ((p.wins||0)!==1?'S':'') + '</div>' +
-    '<div style="color:#777;font-size:8px;margin-bottom:3px;">' + (p.matches||0) + ' MATCH' + ((p.matches||0)!==1?'ES':'') + '</div>' +
-    (p.username ? '<div style="color:#444;font-size:7px;margin-bottom:3px;">Click name for profile</div>' : '') +
-    '<div style="color:#555;font-size:7px;letter-spacing:.5px;">' + statusLabel + '</div>';
-  var r = el.getBoundingClientRect();
-  tip.style.left  = Math.max(0, r.left - 155) + 'px';
-  tip.style.top   = (r.top - 10) + 'px';
-  tip.style.display = 'block';
-}
 function hidePlayerTip() {
   var tip = document.getElementById('PlayerTooltip');
   if (tip) tip.style.display = 'none';
@@ -195,68 +155,162 @@ function showPlayerTip(idx, el) {
   tip.style.display = 'block';
 }
 
-var MAP_ICONS  = ['☀️','🔮','🌅','⛈️','🌿','❄️','🌵','🌆','🌙','🌋','🌊','🏗️','🏰','☢️','💀'];
-var MAP_COLORS = ['#1a6bb5','#1e1630','#8b2252','#1c1c38','#1e4806','#b0cce8','#e8871a','#100028','#050a1a','#2a0400','#001428','#0a0a0a','#060a04','#021008','#000000'];
-var MAP_TEXT   = ['#e8f4ff','#00ffcc','#ffd0e0','#ffee66','#aaff66','#1a5580','#5a2d00','#00ffcc','#aaddff','#ff6622','#00ccff','#ffcc44','#cc3333','#44ff66','#cc44ff'];
+var MAP_TEXT = {
+  0: '#e8f4ff',
+  1: '#00ffcc',
+  2: '#ffd0e0',
+  3: '#ffee66',
+  4: '#aaff66',
+  5: '#d8f3ff',
+  7: '#00ffcc',
+  8: '#aaddff',
+  9: '#ff6622',
+  10: '#00ccff'
+};
+var MAP_NAMES = {
+  0: 'Sky Court',
+  1: 'Cave Court',
+  2: 'Sunset Court',
+  3: 'Storm Court',
+  4: 'Jungle Court',
+  5: 'Frozen Court',
+  7: 'Neon Court',
+  8: 'Space Court',
+  9: 'Volcano Court',
+  10: 'Ocean Court'
+};
+
+function getMapLobbyGroups(lobbies) {
+  var groups = {};
+  lobbies.forEach(function(room) {
+    var mapId = typeof room.mapId === 'number' ? room.mapId : room.id;
+    if (!groups[mapId]) groups[mapId] = [];
+    groups[mapId].push(room);
+  });
+  Object.keys(groups).forEach(function(mapId) {
+    groups[mapId].sort(function(a, b) {
+      return (a.lobbyIndex || 0) - (b.lobbyIndex || 0);
+    });
+  });
+  return groups;
+}
+
+function getPrimaryMapRoom(mapId, rooms) {
+  return (rooms && rooms[0]) || {
+    id: mapId,
+    mapId: mapId,
+    lobbyIndex: 0,
+    name: 'Court ' + mapId,
+    playerCount: 0,
+    spectatorCount: 0,
+    phase: 'empty'
+  };
+}
+
+function getMapOccupancy(rooms) {
+  return (rooms || []).reduce(function(total, room) {
+    return total + (room.playerCount || 0);
+  }, 0);
+}
+
+function renderLobbyRows(mapId, rooms) {
+  var list = (rooms || []).slice();
+  for (var i = list.length; i < 10; i++) {
+    list.push({
+      id: mapId * 10 + i,
+      mapId: mapId,
+      lobbyIndex: i,
+      name: MAP_NAMES[mapId] || 'Court ' + mapId,
+      playerCount: 0,
+      spectatorCount: 0,
+      phase: 'empty'
+    });
+  }
+  return list.slice(0, 10).map(function(room) {
+    var idx = (room.lobbyIndex || 0) + 1;
+    var count = (room.playerCount || 0) + '/2';
+    var phase = room.phase === 'playing' ? 'IN MATCH' : room.phase === 'waiting' ? 'WAITING' : 'EMPTY';
+    var disabled = room.phase === 'playing' && (room.playerCount || 0) >= 2;
+    return '<button class="map-lobby-row' + (disabled ? ' is-full' : '') + '" onclick="' + (disabled ? '' : 'joinRoom(' + room.id + ')') + '">' +
+      '<span class="map-lobby-name">Lobby ' + idx + '</span>' +
+      '<span class="map-lobby-phase">' + phase + '</span>' +
+      '<span class="map-lobby-count">' + count + '</span>' +
+    '</button>';
+  }).join('');
+}
+
+function showMapLobbyBrowser(mapId) {
+  var groups = getMapLobbyGroups(currentLobbies || []);
+  var rooms = groups[mapId] || [];
+  var primary = getPrimaryMapRoom(mapId, rooms);
+  var title = primary.name || 'Court ' + mapId;
+  var panel = document.getElementById('MapLobbyBrowser');
+  if (!panel && menuDiv) {
+    panel = document.createElement('div');
+    panel.id = 'MapLobbyBrowser';
+    menuDiv.appendChild(panel);
+  }
+  if (!panel) return;
+  panel.innerHTML =
+    '<div class="map-lobby-panel">' +
+      '<div class="map-lobby-head">' +
+        '<div><b>' + escHtml(title) + '</b><span>Choose an open lobby</span></div>' +
+        '<button onclick="hideMapLobbyBrowser()">CLOSE</button>' +
+      '</div>' +
+      '<div class="map-lobby-list">' + renderLobbyRows(mapId, rooms) + '</div>' +
+    '</div>';
+  panel.className = 'is-open';
+}
+
+function hideMapLobbyBrowser() {
+  var panel = document.getElementById('MapLobbyBrowser');
+  if (panel) panel.className = '';
+}
 
 function renderLobbySelect(lobbies) {
   if (!showingLobbySelect) return;
-  ensureMapPreviews();
   var rank    = getPlayerRank();
   var rankCol = totalWins >= 10 ? '#ffcc00' : totalWins >= 6 ? '#aaaaff' : totalWins >= 3 ? '#88ffcc' : '#888';
-
-  // Build quick-lookup by room id
-  var byId = {};
-  lobbies.forEach(function(r) { byId[r.id] = r; });
+  var groups = getMapLobbyGroups(lobbies || []);
 
   var html =
-    '<div style="padding:clamp(18px,2.2vw,34px);background:#06001a;height:100%;box-sizing:border-box;overflow:auto;">' +
-    '<div style="display:flex;align-items:center;margin-bottom:clamp(18px,2vh,30px);gap:18px;">' +
-      '<div style="color:#fff;font-size:clamp(34px,4vh,58px);font-weight:bold;letter-spacing:5px;flex:1;' +
-        'text-shadow:0 0 10px rgba(255,255,255,.3);">SELECT A COURT</div>' +
-      '<div style="font-size:clamp(16px,1.4vw,24px);letter-spacing:1.5px;color:' + rankCol + ';white-space:nowrap;">' +
-        rank + ' &nbsp;·&nbsp; ' + totalWins + ' WIN' + (totalWins !== 1 ? 'S' : '') + '</div>' +
+    '<div class="lobby-select-screen' + (lobbySelectFreshOpen ? ' first-open' : '') + '">' +
+    '<div class="lobby-select-head">' +
+      '<div class="lobby-select-heading">' +
+        '<div class="lobby-select-title">SELECT A COURT</div>' +
+        '<div class="lobby-select-sub">Choose your arena</div>' +
+      '</div>' +
+      '<div class="lobby-select-rank" style="--rank-col:' + rankCol + ';">' +
+        '<span class="lobby-select-rank-name">' + rank + '</span>' +
+        '<span class="lobby-select-rank-wins">' + totalWins + ' WIN' + (totalWins !== 1 ? 'S' : '') + '</span>' +
+      '</div>' +
     '</div>';
 
   LOBBY_CATS.forEach(function(cat, ci) {
-    var catLabelCol = cat.restricted ? 'rgba(255,180,0,.45)' : 'rgba(0,255,200,.28)';
-    html += '<div style="margin-bottom:' + (ci < LOBBY_CATS.length - 1 ? '24' : '0') + 'px;">' +
-      '<div style="font-size:clamp(16px,1.25vw,22px);letter-spacing:3px;color:' + catLabelCol + ';margin-bottom:10px;padding:0 1px;">' +
-        cat.label + '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(10px,1vw,18px);">';
+    html += '<div class="lobby-map-section' + (ci === LOBBY_CATS.length - 1 ? ' is-last' : '') + '">' +
+      '<div class="lobby-map-section-title">' + cat.label + '</div>' +
+      '<div class="lobby-map-grid">';
 
     cat.ids.forEach(function(id) {
-      var r = byId[id];
-      if (!r) { html += '<div style="flex:1;"></div>'; return; }
+      var rooms = groups[id] || [];
+      var r = getPrimaryMapRoom(id, rooms);
       var isLocked = cat.restricted && totalWins < 10;
-      var badge, badgeCol;
-      if (isLocked)               { badge = '🔒';  badgeCol = '#886600'; }
-      else if (r.phase==='playing'){ badge = '▶';  badgeCol = '#00ff88'; }
-      else if (r.playerCount===1) { badge = '⚡'; badgeCol = '#ff9900'; }
-      else                        { badge = '';    badgeCol = '#444'; }
-      var spec   = r.spectatorCount > 0 ? '👁' + r.spectatorCount : '';
       var txtCol = MAP_TEXT[id] || '#fff';
-      var prev   = mapPreviews[id] ? 'url(\'' + mapPreviews[id] + '\')' : 'linear-gradient(#111,#222)';
-      var dots   = (r.playerCount >= 1 ? '●' : '○') + (r.playerCount >= 2 ? '●' : '○');
+      var occupied = getMapOccupancy(rooms);
+      var openLobbies = rooms.filter(function(room) { return (room.playerCount || 0) < 2; }).length || 10;
       var clickFn = isLocked ? 'showLockedNotice(' + (10 - totalWins) + ')' : 'joinRoom(' + id + ')';
-      var borderBase = isLocked ? 'rgba(180,140,0,.2)' : 'rgba(255,255,255,.1)';
-      var borderHov  = isLocked ? 'rgba(255,200,0,.4)' : (txtCol + '66');
 
       html +=
-        '<div style="flex:1;min-width:0;cursor:pointer;border:1px solid ' + borderBase + ';overflow:hidden;' +
-          'background:#050014;transition:border-color .14s;" ' +
-          'onclick="' + clickFn + '" ' +
-          'onmouseover="this.style.borderColor=\'' + borderHov + '\'" ' +
-          'onmouseout="this.style.borderColor=\'' + borderBase + '\'">' +
-          '<div style="height:clamp(118px,17vh,190px);background:' + prev + ';background-size:cover;background-position:center;position:relative;">' +
-            '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 25%,rgba(0,0,20,.65))' +
-              (isLocked ? ',rgba(0,0,0,.35)' : '') + ';"></div>' +
-            '<div style="position:absolute;top:8px;left:10px;font-size:clamp(24px,2.2vw,36px);">' + MAP_ICONS[id] + '</div>' +
-            (badge ? '<div style="position:absolute;bottom:8px;right:10px;font-size:clamp(16px,1.2vw,22px);font-weight:bold;color:' + badgeCol + ';">' + badge + spec + '</div>' : '') +
-          '</div>' +
-          '<div style="padding:clamp(10px,1vw,15px) clamp(12px,1vw,18px);background:rgba(0,0,18,.6);">' +
-            '<div style="font-size:clamp(16px,1.25vw,24px);font-weight:bold;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + (isLocked ? 'rgba(255,180,0,.5)' : txtCol) + ';">' + r.name + '</div>' +
-            '<div style="font-size:clamp(12px,1vw,18px);color:#505050;letter-spacing:.4px;margin-top:4px;">' + (isLocked ? totalWins + '/10W' : dots + ' ' + r.playerCount + '/2') + '</div>' +
+        '<div class="lobby-map-card' + (isLocked ? ' is-locked' : '') + '" style="--map-text:' + txtCol + ';">' +
+          '<button class="lobby-map-art" onclick="' + (isLocked ? clickFn : 'showMapLobbyBrowser(' + id + ')') + '">' +
+            (typeof renderMapThumbnail === 'function' ? renderMapThumbnail(id) : '') +
+          '</button>' +
+          '<div class="lobby-map-body">' +
+            '<div class="lobby-map-name">' + escHtml(r.name) + '</div>' +
+            '<button class="lobby-map-open" onclick="' + (isLocked ? clickFn : 'showMapLobbyBrowser(' + id + ')') + '">' +
+              (isLocked ? totalWins + '/10 WINS' : 'LOBBIES') +
+            '</button>' +
+            '<div class="lobby-map-meta">' + (isLocked ? 'Locked court' : openLobbies + ' open - ' + occupied + ' players') + '</div>' +
           '</div>' +
         '</div>';
     });
@@ -266,6 +320,33 @@ function renderLobbySelect(lobbies) {
 
   html += '</div>';
   menuDiv.innerHTML = html;
+  lobbySelectFreshOpen = false;
+  initCardTilt();
+}
+
+// ── holographic card tilt (mouse-tracked, foil-card style) ──
+function initCardTilt() {
+  if (window.matchMedia && !window.matchMedia('(pointer:fine)').matches) return;
+  var cards = menuDiv.querySelectorAll('.lobby-map-card');
+  for (var i = 0; i < cards.length; i++) {
+    (function(card) {
+      card.addEventListener('mousemove', function(e) {
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width;
+        var py = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--mx', (px * 100) + '%');
+        card.style.setProperty('--my', (py * 100) + '%');
+        card.style.setProperty('--ry', ((px - 0.5) * 16) + 'deg');
+        card.style.setProperty('--rx', ((0.5 - py) * 12) + 'deg');
+        card.classList.add('is-tilting');
+      });
+      card.addEventListener('mouseleave', function() {
+        card.classList.remove('is-tilting');
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      });
+    })(cards[i]);
+  }
 }
 
 function joinRoom(roomId) {
@@ -273,11 +354,6 @@ function joinRoom(roomId) {
   showingLobbySelect = false;
   lobbySocket.send(JSON.stringify({ type: 'join_room', roomId: roomId }));
   sendCustomization();
-}
-
-function cancelLobbySelect() {
-  showingLobbySelect = false;
-  showBottomBar(); toInitialMenu();
 }
 
 function leaveLobby() {

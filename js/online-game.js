@@ -58,7 +58,12 @@ function handleServerMessage(msg) {
     if (showingLobbySelect) renderLobbySelect(currentLobbies);
 
   } else if (msg.type === 'chat') {
-    addChatMessage(msg.name, msg.message);
+    if (chatJoined) {
+      addChatMessage(msg.name, msg.message);
+    } else if (msg.name) {
+      chatUnreadCount++;
+      updateChatUnreadNote();
+    }
 
   } else if (msg.type === 'player_count') {
     updatePlayerCount(msg.count);
