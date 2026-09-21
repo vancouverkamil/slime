@@ -57,3 +57,35 @@
     display: none;
   }
 }
+
+#RotateDeviceOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: #05000f;
+  color: #ffd27a;
+  text-align: center;
+  z-index: 100000;
+  padding: 24px;
+}
+
+.rotate-icon {
+  font-size: 56px;
+  animation: rotate-hint 1.6s ease-in-out infinite;
+}
+
+.rotate-text {
+  font-size: 15px;
+  letter-spacing: 2px;
+  line-height: 1.6;
+}
+
+@keyframes rotate-hint {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+}
+

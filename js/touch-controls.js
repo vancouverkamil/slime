@@ -72,10 +72,34 @@
     return !!(window.canvas && window.canvas.style.display === 'block');
   }
 
+  function isPortrait() {
+    return !!(window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
+  }
+
+  function buildRotateOverlay() {
+    var el = document.createElement('div');
+    el.id = 'RotateDeviceOverlay';
+    el.innerHTML =
+      '<div class="rotate-icon">↻</div>' +
+      '<div class="rotate-text">ROTATE YOUR DEVICE<br>PLAY IN LANDSCAPE</div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
   var wasActive = false;
+  var rotateOverlay;
   function syncVisibility() {
     var active = gameIsActive();
-    overlay.style.display = active ? 'flex' : 'none';
+    var blockedByPortrait = active && isPortrait();
+
+    overlay.style.display = (active && !blockedByPortrait) ? 'flex' : 'none';
+    rotateOverlay.style.display = blockedByPortrait ? 'flex' : 'none';
+    if (blockedByPortrait) {
+      setKey(KEY_A, false);
+      setKey(KEY_D, false);
+      setKey(KEY_W, false);
+    }
+
     // On narrow/stacked mobile layouts the sidebar sits right below the
     // canvas in normal flow; free that space for the game + touch buttons.
     document.body.classList.toggle('tc-game-active', active);
@@ -85,8 +109,11 @@
 
   function init() {
     buildOverlay();
+    rotateOverlay = buildRotateOverlay();
     syncVisibility();
     setInterval(syncVisibility, 250);
+    window.addEventListener('orientationchange', syncVisibility);
+    window.addEventListener('resize', syncVisibility);
   }
 
   if (document.readyState === 'loading') {
