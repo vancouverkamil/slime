@@ -21,7 +21,7 @@ test('html shell declares its document metadata', () => {
 });
 
 test('html shell declares a mobile viewport', () => {
-  assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
+  assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1,/);
 });
 
 test('html shell loads the extracted inventory component', () => {

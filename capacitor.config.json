@@ -1,0 +1,8 @@
+{
+  "appId": "com.slimevolleyball.app",
+  "appName": "Slime Volleyball",
+  "webDir": "www",
+  "android": {
+    "androidScheme": "https"
+  }
+}

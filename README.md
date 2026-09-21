@@ -27,6 +27,20 @@ Open `slime_volleyball.html` in a browser, or visit the hosted version via GitHu
 
 The recommended production setup is Vercel for the static frontend, Supabase `slimetime` Postgres for durable account/game data, and a persistent Node WebSocket host for online matches. See `DEPLOYMENT.md`.
 
+## Mobile App
+
+The game ships as a native iOS/Android app via [Capacitor](https://capacitorjs.com), wrapping the same frontend files (no rewrite) with touch controls swapped in for the keyboard.
+
+- **Controls**: MapleStory M–style overlay — left/right pad + a JUMP button, bottom corners of the screen. It only appears on touch devices, only while a canvas-rendered mode (match/tournament/replay/slimeverse) is showing, and always drives player 1's keys (`A`/`D`/`W`), which is what "my slime" reads in CPU/online/tournament modes.
+- **Backend**: the packaged app bundles static assets only (see `scripts/build-mobile-www.js`) and talks to the same production WebSocket/API host as the web build (`slime-config.js`). It needs a network connection; there's no offline mode.
+- **Build**:
+  ```powershell
+  npm run mobile:sync      # rebuild www/ and copy into the native project
+  npx cap open android     # opens Android Studio to run/build
+  ```
+  iOS (`npx cap add ios`) requires a Mac with Xcode; it hasn't been added on this Windows machine.
+- Before publishing, change the placeholder `appId` in `capacitor.config.json` (`com.slimevolleyball.app`) to match your Apple/Google developer account's bundle ID.
+
 ## Local Development
 
 ```powershell

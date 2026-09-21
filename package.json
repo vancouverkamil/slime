@@ -9,12 +9,20 @@
     "db:init": "node scripts/init-db.js",
     "db:migrate-data": "node scripts/migrate-postgres-data.js",
     "supabase:bundle": "node scripts/build-supabase-function.js",
-    "supabase:deploy": "npm run supabase:bundle && supabase functions deploy slime --no-verify-jwt"
+    "supabase:deploy": "npm run supabase:bundle && supabase functions deploy slime --no-verify-jwt",
+    "mobile:build": "node scripts/build-mobile-www.js",
+    "mobile:sync": "npm run mobile:build && npx cap sync",
+    "mobile:android": "npm run mobile:sync && npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
     "@neondatabase/serverless": "^1.0.2",
     "compression": "^1.8.1",
     "express": "^4.18.2",
     "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
   }
 }
