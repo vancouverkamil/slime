@@ -8,7 +8,8 @@ var MAP_NAMES = {
   7: 'Neon Court',
   8: 'Space Court',
   9: 'Volcano Court',
-  10: 'Ocean Court'
+  10: 'Ocean Court',
+  15: 'Championship Court'
 };
 
 function getMapLobbyGroups(lobbies) {

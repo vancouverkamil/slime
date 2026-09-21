@@ -9,7 +9,7 @@ function drawMapBackgroundRaw(id) {
   renderer(viewWidth, viewHeight, courtYPix, ctx);
 }
 
-var MAP_RENDERERS = [drawMap0, drawMap1, drawMap2, drawMap3, drawMap4, drawMap5, drawMap6, drawMap7, drawMap8, drawMap9, drawMap10, drawMap11, drawMap12, drawMap13, drawMap14];
+var MAP_RENDERERS = [drawMap0, drawMap1, drawMap2, drawMap3, drawMap4, drawMap5, drawMap6, drawMap7, drawMap8, drawMap9, drawMap10, drawMap11, drawMap12, drawMap13, drawMap14, drawMap15];
 
 function _cacheMapBackground(id, w, h, gy) {
   var key = [id, w, h, gy].join(':');

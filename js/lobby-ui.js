@@ -55,6 +55,7 @@ var lobbySelectFreshOpen = false;
 var LOBBY_CATS = [
   { label: 'STANDARD',           ids: [0,1,2,3,4],     restricted: false },
   { label: 'PREMIUM',            ids: [5,7,8,9,10],    restricted: false },
+  { label: 'CHAMPIONSHIP',       ids: [15],            restricted: false },
 ];
 var _playerListCache = [];
 
@@ -165,5 +166,6 @@ var MAP_TEXT = {
   7: '#00ffcc',
   8: '#aaddff',
   9: '#ff6622',
-  10: '#00ccff'
+  10: '#00ccff',
+  15: '#ff2fb0'
 };

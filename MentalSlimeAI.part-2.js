@@ -26,9 +26,9 @@ var final4AIs = [
   {
     name:          'Mental Slime',
     color:         '#ff0033',
-    mapId:         7,           // Neon Court — final boss energy
-    newGroundColor:'#060010',
-    backTextColor: '#ff0033',
+    mapId:         15,          // Championship Court — the final boss stage
+    newGroundColor:'#f6d9ee',
+    backTextColor: '#4a0030',
     level:         4,
   },
 ];

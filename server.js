@@ -23,8 +23,9 @@ const ROOM_NAMES = [
   'Jungle Court', 'Frozen Court', 'Desert Court', 'Neon Court',
   'Space Court', 'Volcano Court', 'Ocean Court',
   'Overpass Court', 'Bunker Court', 'Reactor Court', 'Void Court',
+  'Championship Court',
 ];
-const QUICKPLAY_MAP_IDS = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10];
+const QUICKPLAY_MAP_IDS = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15];
 const LOBBIES_PER_MAP = 10;
 
 const app = express();

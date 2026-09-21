@@ -8,7 +8,8 @@ var MAP_THUMBNAIL_ASSETS = {
   7: { slug: 'neon', sigil: 'NEO', layers: ['city', 'towers', 'signs', 'haze', 'street'] },
   8: { slug: 'space', sigil: 'LUN', layers: ['space', 'stars', 'moon', 'nebula', 'ground'] },
   9: { slug: 'volcano', sigil: 'VOL', layers: ['sky', 'volcano', 'lava', 'embers', 'basalt'] },
-  10: { slug: 'ocean', sigil: 'SEA', layers: ['water', 'rays', 'bubbles', 'kelp', 'reef'] }
+  10: { slug: 'ocean', sigil: 'SEA', layers: ['water', 'rays', 'bubbles', 'kelp', 'reef'] },
+  15: { slug: 'championship', sigil: 'CHMP', layers: ['sky', 'skyline', 'crowd', 'spotlights', 'floor'] }
 };
 
 function getMapThumbnailAsset(mapId) {

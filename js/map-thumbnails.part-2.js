@@ -165,6 +165,21 @@ function renderMapThumbnail(mapId) {
         '<g data-layer="kelp" class="thumb-sway"><path d="M42 130 C28 96 52 82 40 48 M272 132 C252 98 286 82 270 56" stroke="#16a760" stroke-width="7" fill="none"/><path d="M42 130 C28 96 52 82 40 48" stroke="#3fe08a" stroke-width="2" opacity=".5" fill="none"/></g>' +
         '<g data-layer="reef"><rect y="126" width="320" height="44" fill="#0a2b18"/><circle cx="126" cy="134" r="15" fill="#ff6d75" opacity=".62"/><circle cx="202" cy="138" r="13" fill="#ffaa4a" opacity=".55"/><circle cx="126" cy="128" r="6" fill="#ffb8c0" opacity=".5"/></g>'
       );
+    case 15:
+      return svgWrap(15,
+        '<defs>' +
+          '<linearGradient id="mt-sky15" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdfa"/><stop offset=".6" stop-color="#f8d8ee"/><stop offset="1" stop-color="#ffc7ea"/></linearGradient>' +
+          '<linearGradient id="mt-beam15" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+        '</defs>' +
+        '<g data-layer="sky"><rect width="320" height="170" fill="url(#mt-sky15)"/></g>' +
+        '<g data-layer="skyline"><rect x="14" y="70" width="30" height="60" fill="#7a145a" opacity=".55"/><rect x="70" y="52" width="34" height="78" fill="#7a145a" opacity=".55"/><rect x="216" y="52" width="34" height="78" fill="#7a145a" opacity=".55"/><rect x="276" y="70" width="30" height="60" fill="#7a145a" opacity=".55"/>' +
+          '<g fill="#fff" opacity=".7"><rect x="22" y="80" width="4" height="4"/><rect x="80" y="64" width="4" height="4"/><rect x="92" y="90" width="4" height="4"/><rect x="226" y="64" width="4" height="4"/><rect x="238" y="90" width="4" height="4"/><rect x="286" y="80" width="4" height="4"/></g></g>' +
+        '<g data-layer="crowd"><path d="M0 118 Q160 100 320 118 V134 H0 Z" fill="#9c1272" opacity=".5"/>' +
+          '<g fill="#ff2fb0"><circle cx="20" cy="116" r="2"/><circle cx="52" cy="112" r="2"/><circle cx="88" cy="110" r="2"/><circle cx="230" cy="110" r="2"/><circle cx="268" cy="112" r="2"/><circle cx="300" cy="116" r="2"/></g>' +
+          '<g fill="#fff"><circle cx="36" cy="114" r="2"/><circle cx="70" cy="110" r="2"/><circle cx="160" cy="104" r="2"/><circle cx="250" cy="110" r="2"/><circle cx="284" cy="114" r="2"/></g></g>' +
+        '<g data-layer="spotlights" class="thumb-pulse"><path d="M160 4 L150 4 L110 130 L200 130 Z" fill="url(#mt-beam15)" opacity=".5"/><path d="M110 4 L104 4 L60 118 L128 118 Z" fill="url(#mt-beam15)" opacity=".3"/><path d="M210 4 L216 4 L260 118 L192 118 Z" fill="url(#mt-beam15)" opacity=".3"/></g>' +
+        '<g data-layer="floor"><rect y="130" width="320" height="40" fill="#f0c4e2"/><path d="M0 170 L120 130 M320 170 L200 130 M160 130 V170" stroke="#ff2fb0" stroke-width="1.4" opacity=".5"/><path d="M0 150 H320" stroke="#ff2fb0" stroke-width="1" opacity=".35"/></g>'
+      );
     default:
       return renderMapThumbnail(0);
   }
