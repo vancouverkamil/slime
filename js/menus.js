@@ -36,6 +36,9 @@ function start(startAsOnePlayer) {
     backTextColor = '#000'; legacyGroundColor = '#888';
     legacyBallColor = '#fff'; newGroundColor = '#ca6';
     slimeRight.img = redSlimeImage; slimeAI = null;
+    // Local 1v1 duels play out on the Championship Court (used unless
+    // the Legacy Graphics option is on, which keeps the plain sky look above).
+    localMapId = 15;
   }
   initRound(true); updatesToPaint = 0; updateCount = 0;
   loadOptions(); gameState = GAME_STATE_RUNNING;
