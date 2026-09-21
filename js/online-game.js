@@ -58,6 +58,7 @@ function handleServerMessage(msg) {
     updatePlayerCount(msg.count);
   } else if (msg.type === 'room_joined') {
     currentRoomId = msg.roomId;
+    currentRoomMapId = typeof msg.mapId === 'number' ? msg.mapId : null;
     if (msg.rejoinToken) try { localStorage.setItem('slime_rejoinToken', msg.rejoinToken); } catch(e) {}
     if (msg.ranked) try { localStorage.setItem('slime_inRanked', '1'); } catch(e) {}
     else try { localStorage.removeItem('slime_inRanked'); } catch(e) {}
@@ -148,6 +149,7 @@ function handleServerMessage(msg) {
     hideReconnectOverlay();
     mySide = msg.side;
     currentRoomId = msg.roomId;
+    currentRoomMapId = typeof msg.mapId === 'number' ? msg.mapId : null;
     playerNameLeft  = msg.nameLeft  || 'Player 1';
     playerNameRight = msg.nameRight || 'Player 2';
     if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }

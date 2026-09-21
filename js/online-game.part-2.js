@@ -53,7 +53,7 @@ function launchWaitingMode(side) {
   var myRLimit = side === 'left' ? 445 : 950;
 
   function waitRender() {
-    if (currentRoomId !== null) drawMapBackground(currentRoomId);
+    if (currentRoomId !== null) drawMapBackground(currentRoomMapId !== null ? currentRoomMapId : currentRoomId);
     else { ctx.fillStyle = '#88ccff'; ctx.fillRect(0, 0, viewWidth, courtYPix); ctx.fillStyle = '#ca6'; ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix); }
     ctx.fillStyle = '#fff'; ctx.fillRect(viewWidth/2 - 2, 7*viewHeight/10, 4, viewHeight/10 + 5);
     ball.render(); mySlime.render();

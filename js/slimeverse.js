@@ -124,7 +124,7 @@ function startSlimeverse() {
   svStoreInside     = false;
   svStoreTransition = 0;
   mvLastTime = 0; mvAccum = 0;
-  onlineMode = false; isSpectator = false; currentRoomId = null;
+  onlineMode = false; isSpectator = false; currentRoomId = null; currentRoomMapId = null;
   hideSpecBadge(); showLeaveBtn(true); hideBottomBar();
   canvas.style.display = 'block';
   menuDiv.style.display = 'none';

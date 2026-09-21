@@ -77,7 +77,7 @@ function handleDisconnect(side) {
       const other    = room.players.find(p => p.ws !== newWs);
       const nameLeft  = side === 'left'  ? newInfo.name : (other ? other.info.name : 'Player 1');
       const nameRight = side === 'right' ? newInfo.name : (other ? other.info.name : 'Player 2');
-      send(newWs, { type: 'reconnected', side, roomId: room.id, nameLeft, nameRight });
+      send(newWs, { type: 'reconnected', side, roomId: room.id, mapId: room.mapId, nameLeft, nameRight });
       if (room.state) send(newWs, buildStateMsg(room.state));
       if (other) send(newWs, { type: 'customize', side: other.info.gameSide,
         hat: other.info.hat, hatAnim: other.info.hatAnim,

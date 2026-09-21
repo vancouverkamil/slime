@@ -29,7 +29,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
     info.rejoinToken = joinToken;
     room.phase       = room.players.length === 1 ? 'waiting' : 'playing';
 
-    send(ws, { type: 'room_joined', roomId: room.id, role: 'player', side, rejoinToken: joinToken });
+    send(ws, { type: 'room_joined', roomId: room.id, mapId: room.mapId, role: 'player', side, rejoinToken: joinToken });
 
     if (room.players.length === 2) startRoomGame(room);
   } else {
@@ -39,7 +39,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
     info.role  = 'spectator';
     info.state = 'spectating';
 
-    send(ws, { type: 'room_joined', roomId: room.id, role: 'spectator', side: null });
+    send(ws, { type: 'room_joined', roomId: room.id, mapId: room.mapId, role: 'spectator', side: null });
 
     if (room.state) {
       send(ws, buildStateMsg(room.state));
@@ -131,7 +131,7 @@ function tryMatchRanked() {
     room.players.push({ ws: p.ws, info: p.info });
     p.info.room = room; p.info.role = 'player'; p.info.state = 'in_room'; p.info.rejoinToken = tok;
     const tier = progression.getRankedTier(p.info.ranked ? p.info.ranked.rating : 1000, p.info.ranked ? p.info.ranked.placementsLeft : 5);
-    send(p.ws, { type: 'room_joined', roomId: room.id, role: 'player', side, ranked: true, rejoinToken: tok, opponentTier: tier.label });
+    send(p.ws, { type: 'room_joined', roomId: room.id, mapId: room.mapId, role: 'player', side, ranked: true, rejoinToken: tok, opponentTier: tier.label });
   });
   room.phase = 'playing';
   startRoomGame(room);

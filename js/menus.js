@@ -14,7 +14,7 @@ function spaceKeyDown() {
 
 // ── local game start ──────────────────────────────────────
 function start(startAsOnePlayer) {
-  currentRoomId = null; localMapId = null;
+  currentRoomId = null; currentRoomMapId = null; localMapId = null;
   tournamentMode = false; tournamentState = null; tournamentWinPending = false;
   final4Mode = false; final4WinPending = false;
   onePlayer = startAsOnePlayer;
@@ -46,7 +46,7 @@ function start(startAsOnePlayer) {
 
 function toInitialMenu() {
   onlineMode = false; isSpectator = false; showingLobbySelect = false;
-  currentRoomId = null; localMapId = null;
+  currentRoomId = null; currentRoomMapId = null; localMapId = null;
   final4Mode = false; final4WinPending = false;
   tournamentMode = false; tournamentState = null; tournamentWinPending = false;
   hideSpecBadge(); showLeaveBtn(false); particles = [];

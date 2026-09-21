@@ -25,7 +25,7 @@ function renderBackground() {
     ctx.fillStyle = legacyGroundColor;
     ctx.fillRect(0, courtYPix, viewWidth, viewHeight - courtYPix);
   } else if (currentRoomId !== null) {
-    drawMapBackground(currentRoomId);
+    drawMapBackground(currentRoomMapId !== null ? currentRoomMapId : currentRoomId);
   } else if (localMapId !== null) {
     drawMapBackground(localMapId);
   } else if (backImage) {

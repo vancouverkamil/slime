@@ -52,6 +52,7 @@ var onlineInputInterval = null;
 var onlinePointText     = null;
 var showingLobbySelect  = false;
 var currentRoomId       = null;
+var currentRoomMapId    = null;
 var onlinePregameState  = null;
 
 // ── online player info ────────────────────────────────────

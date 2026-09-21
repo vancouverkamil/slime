@@ -72,7 +72,7 @@ function startTournamentMatch() {
 
 function launchTournamentSet(match) {
   var opponent = getMatchOpponent(match);
-  currentRoomId = null;
+  currentRoomId = null; currentRoomMapId = null;
   localMapId = 2 + Math.min(7, (opponent.level || 1) * 2);
   final4Mode = false;
   onePlayer = true;

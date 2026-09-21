@@ -47,7 +47,7 @@ function startFinal4() {
 }
 function startFinal4Round() {
   var boss = final4AIs[final4Index];
-  currentRoomId = null;
+  currentRoomId = null; currentRoomMapId = null;
   localMapId          = boss.mapId;
   newGroundColor      = boss.newGroundColor;
   backTextColor       = boss.backTextColor;
