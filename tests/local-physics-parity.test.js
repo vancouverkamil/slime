@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
+const { readComponent } = require('./component-source');
 const { newBall, newSlime, initRound, tick } = require('../physics');
 
 function test(name, fn) {
@@ -47,7 +48,7 @@ function makeClientContext(mapId) {
     endPoint() {},
   };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync('js/client-state.js', 'utf8'), context);
+  vm.runInContext(readComponent('js/client-state.js'), context);
   context.onePlayer = false;
   context.localMapId = mapId;
   context.ball = { x: 200, y: 356, velocityX: 0, velocityY: 0, radius: 25 };

@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
+const { readComponent } = require('./component-source');
 
 function test(name, fn) {
   try {
@@ -30,7 +31,7 @@ function loadTournament() {
     escHtml: String,
   };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync('js/tournament-mode.js', 'utf8'), context);
+  vm.runInContext(readComponent('js/tournament-mode.js'), context);
   return context;
 }
 

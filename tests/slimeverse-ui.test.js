@@ -1,5 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
+const { readComponent, readStylesheet } = require('./component-source');
 
 function test(name, fn) {
   try {
@@ -11,8 +12,8 @@ function test(name, fn) {
   }
 }
 
-const source = fs.readFileSync('js/slimeverse.js', 'utf8');
-const css = fs.readFileSync('css/slime.css', 'utf8');
+const source = readComponent('js/slimeverse.js');
+const css = readStylesheet('css/slime.css');
 
 test('slimeverse includes a leaderboard coliseum and lantern paths', () => {
   assert.match(source, /var SV_COLISEUM_X\s*=\s*620/);

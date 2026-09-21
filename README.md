@@ -37,6 +37,8 @@ npm run check
 
 The local Express server hosts the frontend, account API, and realtime WebSocket rooms at `http://localhost:3000`.
 
+`npm run check` enforces the project architecture: every first-party HTML, CSS, and JavaScript source file must remain at or below 200 lines, and every JavaScript component is syntax-checked.
+
 Run `npm run supabase:bundle` after frontend changes when preparing the ignored Supabase Edge Function asset bundle.
 
 ## Files

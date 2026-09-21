@@ -6,13 +6,21 @@ const out = path.join(root, 'supabase', 'functions', 'slime', 'public');
 const functionDir = path.join(root, 'supabase', 'functions', 'slime');
 const assetsFile = path.join(functionDir, 'assets.ts');
 
-const files = [
+function filesUnder(relativeDirectory, extension) {
+  const directory = path.join(root, relativeDirectory);
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const relative = path.join(relativeDirectory, entry.name).replaceAll('\\', '/');
+    if (entry.isDirectory()) return filesUnder(relative, extension);
+    return !extension || entry.name.endsWith(extension) ? [relative] : [];
+  });
+}
+
+const files = [...new Set([
   'slime_volleyball.html',
   'ws-config.js',
   'progression.js',
   'Input.js',
-  'SlimeAI.js',
-  'MentalSlimeAI.js',
+  ...fs.readdirSync(root).filter((file) => /^(?:SlimeAI|MentalSlimeAI)(?:\.part-\d+)?\.js$/.test(file)),
   'physics.js',
   'vball.png',
   'slime175green.png',
@@ -20,31 +28,9 @@ const files = [
   'sky2.jpg',
   'cave.jpg',
   'sunset.jpg',
-  'css/slime.css',
-  'js/client-state.js',
-  'js/accounts.js',
-  'js/inventory-ui.js',
-  'js/render-maps.js',
-  'js/render-game.js',
-  'js/local-game.js',
-  'js/online-state.js',
-  'js/feature-cards.js',
-  'js/calling-cards.js',
-  'js/tournament-mode.js',
-  'js/online-effects.js',
-  'js/lobby-ui.js',
-  'js/online-game.js',
-  'js/multiverse-physics.js',
-  'js/slimeverse.js',
-  'js/menus.js',
-  'js/replay.js',
-  'js/customization-hats.js',
-  'js/hat-studio.js',
-  'js/options-ui.js',
-  'js/audio.js',
-  'js/perf-overlay.js',
-  'js/bootstrap.js',
-];
+  ...filesUnder('css', '.css'),
+  ...filesUnder('js', '.js'),
+])];
 
 function supabaseAssetHtml(html) {
   return html
@@ -69,6 +55,12 @@ for (const file of files) {
   if (file === 'slime_volleyball.html') {
     const html = supabaseAssetHtml(bytes.toString('utf8'));
     bytes = Buffer.from(html, 'utf8');
+  } else if (file === 'css/slime.css') {
+    const css = bytes.toString('utf8').replace(
+      /@import url\("components\/([^\"]+)"\);/g,
+      '@import url("?file=css/components/$1");'
+    );
+    bytes = Buffer.from(css, 'utf8');
   }
   assets[file.replaceAll('\\', '/')] = bytes.toString('base64');
 }

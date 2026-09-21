@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
+const { readComponent } = require('./component-source');
 
 function test(name, fn) {
   try {
@@ -14,7 +15,7 @@ function test(name, fn) {
 
 const context = {};
 vm.createContext(context);
-vm.runInContext(fs.readFileSync('js/menus.js', 'utf8'), context);
+vm.runInContext(readComponent('js/menus.js'), context);
 
 test('overlay bounds remain inside a short game viewport', () => {
   assert.deepStrictEqual(
