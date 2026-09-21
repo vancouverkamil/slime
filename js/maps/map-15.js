@@ -1,67 +1,71 @@
 function drawMap15(w, h, gy, cx) {
       var mx = w / 2;
-      // Blinding white-hot arena sky, no darkness anywhere
+
+      // Dark night arena — no white sky anymore, light comes only from the rig
       var sg = cx.createLinearGradient(0, 0, 0, gy);
-      sg.addColorStop(0,    '#fffdfa'); sg.addColorStop(0.4,  '#fbeaf6');
-      sg.addColorStop(0.72, '#f8d8ee'); sg.addColorStop(1,    '#ffc7ea');
+      sg.addColorStop(0,    '#050108'); sg.addColorStop(0.45, '#180a20');
+      sg.addColorStop(0.8,  '#2a0f2c'); sg.addColorStop(1,    '#3a1230');
       cx.fillStyle = sg; cx.fillRect(0, 0, w, gy);
 
-      // Hot-pink rim glow bleeding in from both edges
-      var lrim = cx.createLinearGradient(0, 0, w * 0.35, 0);
-      lrim.addColorStop(0, 'rgba(255,0,160,0.28)'); lrim.addColorStop(1, 'transparent');
-      cx.fillStyle = lrim; cx.fillRect(0, 0, w * 0.35, gy);
-      var rrim = cx.createLinearGradient(w, 0, w * 0.65, 0);
-      rrim.addColorStop(0, 'rgba(255,0,160,0.28)'); rrim.addColorStop(1, 'transparent');
-      cx.fillStyle = rrim; cx.fillRect(w * 0.65, 0, w * 0.35, gy);
-
-      // Distant coliseum skyline silhouette, backlit by the white sky
-      cx.fillStyle = 'rgba(120,20,90,0.55)';
-      var towers = [[0.06,0.30],[0.16,0.42],[0.27,0.34],[0.5,0.5],[0.73,0.34],[0.84,0.42],[0.94,0.30]];
+      // Distant coliseum skyline, barely lit
+      cx.fillStyle = 'rgba(60,10,45,0.6)';
+      var towers = [[0.06,0.30],[0.16,0.42],[0.27,0.34],[0.5,0.46],[0.73,0.34],[0.84,0.42],[0.94,0.30]];
       towers.forEach(function(t, i) {
         var tx = t[0] * w, th = t[1] * gy, tw = w * 0.09;
         cx.fillRect(tx - tw/2, gy - th, tw, th);
-        cx.fillStyle = 'rgba(255,235,250,0.85)';
+        cx.fillStyle = 'rgba(255,140,220,0.4)';
         for (var wi = 0; wi < 4; wi++) {
-          if (_sr(i * 7 + wi) > 0.4) {
-            cx.fillRect(tx - tw/2 + 4 + (wi % 2) * (tw - 12), gy - th + 6 + wi * (th / 4.2), 6, 6);
-          }
+          if (_sr(i * 7 + wi) > 0.5) cx.fillRect(tx - tw/2 + 4 + (wi % 2) * (tw - 12), gy - th + 6 + wi * (th / 4.2), 4, 4);
         }
-        cx.fillStyle = 'rgba(120,20,90,0.55)';
+        cx.fillStyle = 'rgba(60,10,45,0.6)';
       });
 
-      // Tiered crowd stands, packed with cheering silhouettes
-      var crowdColors = ['#ff2fb0','#ffffff','#ff9de0','#c400ff','#ff5fd0'];
-      for (var row = 0; row < 3; row++) {
-        var ry = gy * (0.58 + row * 0.11);
-        cx.fillStyle = 'rgba(90,10,70,' + (0.4 + row * 0.08) + ')';
-        cx.beginPath();
-        cx.moveTo(0, ry + 14);
-        cx.quadraticCurveTo(mx, ry - 10 - row * 4, w, ry + 14);
-        cx.lineTo(w, ry + 30); cx.lineTo(0, ry + 30);
-        cx.closePath(); cx.fill();
-        for (var p = 0; p < 46; p++) {
-          var px = (p / 46) * w + _sr(row * 100 + p) * 10 - 5;
-          var curve = Math.sin((px / w) * Math.PI) * (10 + row * 4);
-          var py = ry + 16 - curve + _sr(row * 100 + p + 50) * 6;
-          cx.fillStyle = crowdColors[(p + row) % crowdColors.length];
-          cx.beginPath(); cx.arc(px, py, 2.6, 0, TWO_PI); cx.fill();
-        }
+      // Tier riser bands — the seating structure, drawn behind the crowd
+      for (var band = 0; band < 6; band++) {
+        var by = gy * (0.40 + band * 0.10);
+        cx.fillStyle = 'rgba(35,8,30,' + (0.5 + band * 0.07) + ')';
+        cx.fillRect(0, by, w, gy * 0.1 + 2);
       }
 
-      // Lighting truss with three fixtures beaming down on center court
-      var rigY = gy * 0.06;
-      cx.strokeStyle = 'rgba(80,20,60,0.7)'; cx.lineWidth = 4;
+      // ~300-strong crowd, packed into dense wavy tiers — a stadium mid-cheer,
+      // bright enough to read clearly against the dark bowl behind it
+      function crowdTier(y0, count, amp, freq, phase, dim) {
+        for (var i = 0; i < count; i++) {
+          var t = i / count;
+          var x = t * w;
+          var wave = Math.sin(t * Math.PI * freq + phase) * amp;
+          var armUp = Math.sin(t * Math.PI * freq * 2.3 + phase) > 0;
+          var y = y0 - Math.abs(wave);
+          var seed = phase * 1000 + i;
+          var accent = _sr(seed) > 0.85;
+          cx.globalAlpha = dim;
+          cx.fillStyle = accent ? '#ff6fe0' : (_sr(seed + 1) > 0.5 ? '#e888c8' : '#b855a0');
+          cx.beginPath(); cx.arc(x, y, 2.6, 0, TWO_PI); cx.fill();
+          cx.strokeStyle = cx.fillStyle; cx.lineWidth = 1.8;
+          cx.beginPath(); cx.moveTo(x, y - 1); cx.lineTo(x + (i % 2 ? 2.5 : -2.5), armUp ? y - 7 : y + 2); cx.stroke();
+        }
+        cx.globalAlpha = 1;
+      }
+      crowdTier(gy * 0.42, 50, 5,  9, 0.4, 0.75);
+      crowdTier(gy * 0.52, 50, 6,  9, 1.1, 0.8);
+      crowdTier(gy * 0.62, 50, 6,  8, 0.7, 0.85);
+      crowdTier(gy * 0.72, 50, 7,  8, 1.6, 0.9);
+      crowdTier(gy * 0.82, 50, 7,  7, 0.3, 0.95);
+      crowdTier(gy * 0.92, 50, 8,  7, 1.3, 1);
+
+      // Lighting truss — the one bright, sharply separated foreground element
+      var rigY = gy * 0.05;
+      cx.strokeStyle = 'rgba(120,30,90,0.8)'; cx.lineWidth = 4;
       cx.beginPath(); cx.moveTo(mx - w * 0.22, rigY); cx.lineTo(mx + w * 0.22, rigY); cx.stroke();
       [-0.16, 0, 0.16].forEach(function(off) {
         var fx = mx + off * w;
-        var glow = cx.createRadialGradient(fx, rigY, 1, fx, rigY, 22);
-        glow.addColorStop(0, 'rgba(255,255,255,0.95)'); glow.addColorStop(1, 'transparent');
-        cx.fillStyle = glow; cx.beginPath(); cx.arc(fx, rigY, 22, 0, TWO_PI); cx.fill();
-        cx.fillStyle = '#3a1030';
+        var glow = cx.createRadialGradient(fx, rigY, 1, fx, rigY, 26);
+        glow.addColorStop(0, 'rgba(255,255,255,1)'); glow.addColorStop(1, 'transparent');
+        cx.fillStyle = glow; cx.beginPath(); cx.arc(fx, rigY, 26, 0, TWO_PI); cx.fill();
+        cx.fillStyle = '#1a0614';
         cx.beginPath(); cx.arc(fx, rigY, 5, 0, TWO_PI); cx.fill();
       });
 
-      // Three converging spotlight beams onto center stage
       cx.save(); cx.globalCompositeOperation = 'lighter';
       function beam(fromX, fromY, targetX, halfWidth, color) {
         var g = cx.createLinearGradient(0, fromY, 0, gy);
@@ -72,16 +76,16 @@ function drawMap15(w, h, gy, cx) {
         cx.lineTo(targetX + halfWidth, gy); cx.lineTo(targetX - halfWidth, gy);
         cx.closePath(); cx.fill();
       }
-      beam(mx - w * 0.16, rigY, mx - w * 0.05, w * 0.12, 'rgba(255,225,250,0.55)');
-      beam(mx,            rigY, mx,            w * 0.16, 'rgba(255,255,255,0.85)');
-      beam(mx + w * 0.16, rigY, mx + w * 0.05, w * 0.12, 'rgba(255,225,250,0.55)');
+      beam(mx - w * 0.16, rigY, mx - w * 0.05, w * 0.12, 'rgba(255,210,245,0.6)');
+      beam(mx,            rigY, mx,            w * 0.16, 'rgba(255,255,255,0.95)');
+      beam(mx + w * 0.16, rigY, mx + w * 0.05, w * 0.12, 'rgba(255,210,245,0.6)');
       cx.restore();
 
-      // Stage floor: glossy white with a receding neon-pink grid
+      // Stage floor: dim magenta, lit only where the spotlight actually lands
       var fg = cx.createLinearGradient(0, gy, 0, h);
-      fg.addColorStop(0, '#fdf3fa'); fg.addColorStop(0.4, '#f6d9ee'); fg.addColorStop(1, '#e8b8dd');
+      fg.addColorStop(0, '#1c0618'); fg.addColorStop(0.5, '#26081f'); fg.addColorStop(1, '#150512');
       cx.fillStyle = fg; cx.fillRect(0, gy, w, h - gy);
-      cx.strokeStyle = 'rgba(255,0,150,0.35)'; cx.lineWidth = 1;
+      cx.strokeStyle = 'rgba(255,0,150,0.3)'; cx.lineWidth = 1;
       for (var gx = 0; gx <= 10; gx++) {
         var fx0 = mx + (gx / 10 - 0.5) * w * 2.2, fx1 = mx + (gx / 10 - 0.5) * w * 0.4;
         cx.beginPath(); cx.moveTo(fx0, h); cx.lineTo(fx1, gy); cx.stroke();
@@ -91,12 +95,13 @@ function drawMap15(w, h, gy, cx) {
         cx.beginPath(); cx.moveTo(0, ly); cx.lineTo(w, ly); cx.stroke();
       }
 
-      // Spotlight pool where the slimes are playing
+      cx.save(); cx.globalCompositeOperation = 'lighter';
       var pool = cx.createRadialGradient(mx, gy, 4, mx, gy, w * 0.34);
-      pool.addColorStop(0, 'rgba(255,255,255,0.75)');
-      pool.addColorStop(0.5, 'rgba(255,190,240,0.3)');
+      pool.addColorStop(0, 'rgba(255,255,255,0.9)');
+      pool.addColorStop(0.5, 'rgba(255,120,220,0.35)');
       pool.addColorStop(1, 'transparent');
       cx.fillStyle = pool; cx.fillRect(0, gy - h * 0.05, w, h * 0.4);
+      cx.restore();
 
-      backTextColor = '#4a0030'; return;
+      backTextColor = '#ff6fd0'; return;
 }
