@@ -121,6 +121,7 @@ const rooms = QUICKPLAY_MAP_IDS.flatMap((mapId) =>
 
 const runtime = {
   app, accounts, wss, allClients, slimeverseClients, rooms, progression, crypto,
+  normalizeUsername,
   WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, SLIMEVERSE_WORLD, RPS_CHOICES,
   newBall, newSlime, initRound, tick,
 };
