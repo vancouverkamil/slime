@@ -132,6 +132,7 @@ require('./server/slimeverse')(runtime);
 require('./server/game')(runtime);
 require('./server/rooms')(runtime);
 require('./server/tournaments')(runtime);
+require('./server/tournament-spectate')(runtime);
 require('./server/connection')(runtime);
 
 const PORT = process.env.PORT || 3000;

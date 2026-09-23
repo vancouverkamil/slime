@@ -88,6 +88,13 @@ function handleServerMessage(msg) {
     playerNameRight = msg.nameRight || 'Player 2';
     leftStreak = 0; rightStreak = 0; rallyCount = 0;
     launchSpectatorMode();
+  } else if (msg.type === 'tournament_spectating') {
+    tournamentSpectateMatchId = msg.matchId;
+    playerNameLeft = msg.nameLeft || 'Player 1';
+    playerNameRight = msg.nameRight || 'Player 2';
+    currentRoomId = null; currentRoomMapId = 15;
+    isSpectator = true; onlineMode = false; launchSpectatorMode();
+    if (msg.state) handleServerMessage(Object.assign({ type:'tournament_state', matchId:msg.matchId }, msg.state));
   } else if (msg.type === 'spectator_waiting') {
   } else if (msg.type === 'rps_start') {
     showRpsOverlay(msg);
@@ -105,6 +112,9 @@ function handleServerMessage(msg) {
     }
     applyServerState(msg);
     if (msg.phase === 'playing') hidePregameOverlay();
+  } else if (msg.type === 'tournament_state') {
+    if (msg.matchId !== tournamentSpectateMatchId) return;
+    applyServerState({ ball:msg.ball, slimeLeft:msg.slimeLeft, slimeRight:msg.slimeRight, scoreLeft:msg.scoreLeft, scoreRight:msg.scoreRight, phase:msg.phase || 'playing' });
   } else if (msg.type === 'point') {
     rallyCount = 0;
     playSfx('score');

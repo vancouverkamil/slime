@@ -131,19 +131,12 @@ function showTournamentAccept(data) {
 function spectateTournamentMatch(matchId) {
   var match = tournamentMatchById(matchId);
   if (!match) return;
-  canvas.style.display = 'none';
-  menuDiv.style.display = 'block';
-  showBottomBar();
-  menuDiv.innerHTML =
-    '<div class="match-intro">' +
-      '<div class="match-intro-eyebrow">Tournament live feed</div>' +
-      '<div class="match-intro-cards">' +
-        '<div>' + playerCardHtml({ name: match.a ? match.a.name : 'TBD' }) + '</div>' +
-        '<div class="versus-stamp">LIVE</div>' +
-        '<div>' + playerCardHtml({ name: match.b ? match.b.name : 'TBD' }) + '</div>' +
-      '</div>' +
-      '<div class="result-copy">Best of 3 (current score: ' + (match.winsA || 0) + '-' + (match.winsB || 0) + ')</div>' +
-      '<div class="result-copy">Current game: ' + (match.scoreA || 0) + '-' + (match.scoreB || 0) + '</div>' +
-      '<button class="feature-primary" onclick="showTournamentHub()">BACK TO BRACKET</button>' +
-    '</div>';
+  tournamentSpectateMatchId = matchId;
+  playerNameLeft = match.a ? match.a.name : 'TBD';
+  playerNameRight = match.b ? match.b.name : 'TBD';
+  currentRoomId = null; currentRoomMapId = 15;
+  isSpectator = true; onlineMode = false;
+  launchSpectatorMode();
+  if (lobbySocket && lobbySocket.readyState === 1)
+    lobbySocket.send(JSON.stringify({ type:'tournament_spectate', matchId:matchId }));
 }

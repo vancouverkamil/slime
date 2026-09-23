@@ -1,5 +1,5 @@
 module.exports = function install(ctx) {
-  const { app, accounts, wss, allClients, slimeverseClients, rooms, progression, crypto, WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, SLIMEVERSE_WORLD, RPS_CHOICES, newBall, newSlime, initRound, tick, send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, getPublicPlayer, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat, broadcastSlimeverse, leaveSlimeverse, enterSlimeverse, slimeverseSnapshot, chatAllowed, parseCookies, getReqToken, handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, startRoomGame, handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult, handleTournamentScore, rankedQueue } = ctx;
+  const { app, accounts, wss, allClients, slimeverseClients, rooms, progression, crypto, WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, SLIMEVERSE_WORLD, RPS_CHOICES, newBall, newSlime, initRound, tick, send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, getPublicPlayer, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat, broadcastSlimeverse, leaveSlimeverse, enterSlimeverse, slimeverseSnapshot, chatAllowed, parseCookies, getReqToken, handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, startRoomGame, handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult, handleTournamentScore, handleTournamentSpectate, handleTournamentState, rankedQueue } = ctx;
 wss.on('connection', async (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const sessionToken = url.searchParams.get('session') || parseCookies(req.headers.cookie).slime_session;
@@ -144,6 +144,10 @@ async function handleMsg(ws, info, msg) {
     handleTournamentResult(ws, info, msg);
   } else if (msg.type === 'tournament_score') {
     handleTournamentScore(ws, info, msg);
+  } else if (msg.type === 'tournament_spectate') {
+    handleTournamentSpectate(ws, info, msg);
+  } else if (msg.type === 'tournament_state') {
+    handleTournamentState(ws, info, msg);
   }
 }
 

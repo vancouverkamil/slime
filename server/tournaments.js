@@ -14,6 +14,7 @@ const TOURN_BOT_ROSTER = [
 
 const tournamentLobbies = new Map();
 const activeTournaments = new Map();
+ctx.activeTournaments = activeTournaments;
 
 function xpToBotLevel(xp) {
   if (xp < 1000)  return 1;

@@ -69,6 +69,7 @@ function updateFrame() {
   }
   updateSlime(slimeLeft, 50, 445); updateSlime(slimeRight, 555, 950);
   updateBall();
+  if (typeof sendTournamentStateUpdate === 'function') sendTournamentStateUpdate();
 }
 
 // ── rendering ─────────────────────────────────────────────

@@ -1,6 +1,7 @@
 function finishTournamentSet(playerWon) {
-  var match = tournamentState && tournamentState.currentSeries;
+  var match = tournamentState && (tournamentState.currentSeries || tournamentMatchById(onlineTournamentMatchId));
   if (!match || match.status === 'final') return false;
+  tournamentState.currentSeries = match;
   if (tournamentState.kind === 'online') {
     if (lobbySocket && lobbySocket.readyState === 1)
       lobbySocket.send(JSON.stringify({ type:'tournament_result', matchId:match.id, won:!!playerWon }));

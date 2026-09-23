@@ -173,7 +173,23 @@ function tournamentRoundName(round) {
 }
 
 function sendTournamentScoreUpdate() {
-  var match = tournamentState && tournamentState.currentSeries;
+  var match = tournamentState && (tournamentState.currentSeries || tournamentMatchById(onlineTournamentMatchId));
   if (!match || tournamentState.kind !== 'online' || !lobbySocket || lobbySocket.readyState !== 1) return;
   lobbySocket.send(JSON.stringify({ type:'tournament_score', matchId:match.id, scoreFor:slimeLeftScore, scoreAgainst:slimeRightScore }));
+}
+
+var lastTournamentStateSent = 0;
+function sendTournamentStateUpdate() {
+  var match = tournamentState && (tournamentState.currentSeries || tournamentMatchById(onlineTournamentMatchId));
+  if (!match || tournamentState.kind !== 'online' || !lobbySocket || lobbySocket.readyState !== 1) return;
+  var now = Date.now();
+  if (now - lastTournamentStateSent < 90 || !ball || !slimeLeft || !slimeRight) return;
+  lastTournamentStateSent = now;
+  lobbySocket.send(JSON.stringify({
+    type:'tournament_state', matchId:match.id,
+    ball:{ x:ball.x, y:ball.y, velocityX:ball.velocityX },
+    slimeLeft:{ x:slimeLeft.x, y:slimeLeft.y },
+    slimeRight:{ x:slimeRight.x, y:slimeRight.y },
+    scoreLeft:slimeLeftScore, scoreRight:slimeRightScore
+  }));
 }

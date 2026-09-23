@@ -4,6 +4,7 @@ var tournamentWinPending = false;
 var onlineTournamentBracketId = null;
 var onlineTournamentMatchId = null;
 var onlineTournamentAcceptedMatchId = null;
+var tournamentSpectateMatchId = null;
 var TOURNAMENT_STORAGE_KEY = 'slime_soloTournament';
 
 var TOURNAMENT_FIELD = [
