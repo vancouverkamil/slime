@@ -97,10 +97,14 @@ function loadLazyScript(src) {
   return _lazyScriptPromises[src];
 }
 
+// Slimeverse is split into part files; every one must load, in order, before it starts.
+var SLIMEVERSE_SCRIPTS = ['js/multiverse-physics.js', 'js/slimeverse.js'];
+for (var _svp = 2; _svp <= 14; _svp++) SLIMEVERSE_SCRIPTS.push('js/slimeverse.part-' + _svp + '.js');
 function ensureSlimeverseLoaded() {
-  if (typeof startSlimeverse === 'function') return Promise.resolve();
-  return loadLazyScript('js/multiverse-physics.js')
-    .then(function() { return loadLazyScript('js/slimeverse.js'); });
+  if (typeof startSlimeverse === 'function' && typeof startSlimeverseInput === 'function') return Promise.resolve();
+  return SLIMEVERSE_SCRIPTS.reduce(function(chain, src) {
+    return chain.then(function() { return loadLazyScript(src); });
+  }, Promise.resolve());
 }
 
 function enterSlimeverseEye(btn) {

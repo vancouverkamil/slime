@@ -59,11 +59,29 @@ function advanceTournamentWinner(match) {
   saveSoloTournament();
 }
 
+// Two real players: the server runs the game in a real room, never a local CPU game.
+function isHeadToHeadMatch(match) {
+  return !!(tournamentState && tournamentState.kind === 'online' && match && match.a && match.b && match.a.username && match.b.username);
+}
+
+function myTournamentAccepted(match) {
+  var mine = currentAccount && currentAccount.username;
+  return !!(match && ((match.a && match.a.username === mine && match.acceptedA) || (match.b && match.b.username === mine && match.acceptedB)));
+}
+
 function startTournamentMatch() {
   if (pendingMatchIntro && document.querySelector('.match-intro')) return;
   pendingMatchIntro = null;
   var match = activePlayerMatch();
   if (!match) {
+    showTournamentHub();
+    return;
+  }
+  if (isHeadToHeadMatch(match)) {
+    var h2hPop = document.getElementById('TournamentAccept');
+    if (h2hPop) h2hPop.style.display = 'none';
+    if (match.status === 'awaiting' && lobbySocket && lobbySocket.readyState === 1)
+      lobbySocket.send(JSON.stringify({ type:'tournament_accept', matchId:match.id }));
     showTournamentHub();
     return;
   }

@@ -69,21 +69,21 @@ function endMatch() {
       if (final4Index >= final4AIs.length) {
         final4Mode = false; final4WinPending = true; localMapId = null;
         msg = '<div style="font-size:44px;font-weight:bold;color:#ff3300;text-shadow:0 0 32px rgba(255,60,0,.9),0 0 70px rgba(255,80,0,.4);letter-spacing:5px;margin-bottom:12px;">CHAMPION</div>' +
-              '<div style="font-size:13px;color:#ffaa44;letter-spacing:4px;margin-bottom:6px;">THE FINAL 4 CONQUERED</div>' +
-              '<div style="font-size:9px;color:rgba(0,255,200,.3);letter-spacing:2px;margin-top:22px;">PRESS SPACE to return to menu</div>';
+              '<div style="font-size:var(--fs-sm);color:#ffaa44;letter-spacing:4px;margin-bottom:6px;">THE FINAL 4 CONQUERED</div>' +
+              '<div style="font-size:var(--fs-2xs);color:rgba(var(--accent-rgb),.3);letter-spacing:2px;margin-top:22px;">PRESS SPACE to return to menu</div>';
       } else {
         var nb = final4AIs[final4Index];
-        msg = '<div style="font-size:11px;color:#555;letter-spacing:4px;margin-bottom:16px;margin-top:8px;">BOSS DEFEATED</div>' +
-              '<div style="font-size:9px;color:#444;letter-spacing:3px;margin-bottom:14px;">NEXT CHALLENGER</div>' +
+        msg = '<div style="font-size:var(--fs-xs);color:var(--text-faint);letter-spacing:4px;margin-bottom:16px;margin-top:8px;">BOSS DEFEATED</div>' +
+              '<div style="font-size:var(--fs-2xs);color:#444;letter-spacing:2px;margin-bottom:14px;">NEXT CHALLENGER</div>' +
               '<div style="font-size:22px;font-weight:bold;letter-spacing:3px;color:' + nb.color + ';text-shadow:0 0 14px ' + nb.color + ';margin-bottom:22px;">' + nb.name + '</div>' +
-              '<div style="font-size:9px;color:#444;letter-spacing:2px;">PRESS SPACE to face them</div>';
+              '<div style="font-size:var(--fs-2xs);color:#444;letter-spacing:2px;">PRESS SPACE to face them</div>';
       }
     } else {
       sessionLosses++;
       final4Index = 0;
       msg = '<div style="font-size:32px;font-weight:bold;color:#ff3366;text-shadow:0 0 22px rgba(255,51,102,.8);letter-spacing:3px;margin-bottom:12px;">ELIMINATED</div>' +
-            '<div style="font-size:12px;color:#aa4455;letter-spacing:2px;margin-bottom:6px;">by ' + slimeAI.name + '</div>' +
-            '<div style="font-size:9px;color:#444;letter-spacing:2px;margin-top:22px;">PRESS SPACE to try again from the start</div>';
+            '<div style="font-size:var(--fs-sm);color:#aa4455;letter-spacing:2px;margin-bottom:6px;">by ' + slimeAI.name + '</div>' +
+            '<div style="font-size:var(--fs-2xs);color:#444;letter-spacing:2px;margin-top:22px;">PRESS SPACE to try again from the start</div>';
     }
     menuDiv.innerHTML = '<div style="text-align:center;padding:52px 20px 20px;">' + msg + '</div>';
     menuDiv.style.display = 'block'; canvas.style.display = 'none'; showBottomBar();

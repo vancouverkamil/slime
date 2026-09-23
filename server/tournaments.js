@@ -119,7 +119,9 @@ function tickTourn(lobby) {
   for (const round of lobby.rounds) for (const match of round) {
     if (match.status === 'awaiting' && match.acceptDeadline && now > match.acceptDeadline) {
       const aOk = !match.a.username || match.acceptedA, bOk = !match.b.username || match.acceptedB;
-      resolveMatch(lobby, match, aOk && !bOk ? match.a : match.b, aOk && !bOk ? match.b : match.a); changed = true; continue;
+      // Whoever accepted advances. If neither did, the series leader does, then the higher seed.
+      const aWins = aOk !== bOk ? aOk : match.winsA !== match.winsB ? match.winsA > match.winsB : (match.a.seed || 99) <= (match.b.seed || 99);
+      resolveMatch(lobby, match, aWins ? match.a : match.b, aWins ? match.b : match.a); changed = true; continue;
     }
     if (match.status === 'bot_live' && now > match.resolveAt) { resolveMatch(lobby, match, scoreBot(match), null); changed = true; continue; }
     if (match.status !== 'upcoming' || !match.a || !match.b) continue;
@@ -188,5 +190,5 @@ function handleTournamentLeave(ws, info) {
   info.tournamentBracket = null;
 }
 
-  Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, tournamentHelpers: { findMatch, resolveMatch, broadcastTournState, tickTourn } });
+  Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, sendTournamentAccepts: sendAccepts, tournamentHelpers: { findMatch, resolveMatch, broadcastTournState, tickTourn } });
 };

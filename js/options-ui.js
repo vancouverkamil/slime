@@ -21,6 +21,7 @@ function showOptSection(sec) {
   });
   if (sec === 'slime') initColorPicker();
   if (sec === 'controls') renderKeybindControls();
+  if (sec === 'display' && typeof renderThemePicker === 'function') renderThemePicker();
   if (sec === 'studio') {
     var dc = document.getElementById('HatDrawCanvas');
     initHatDrawCanvas(dc);

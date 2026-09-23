@@ -4,6 +4,7 @@
 var TOURN_SPEC_DELAY_MS = 100;
 var tournSpecSnaps = [];
 var tournSpecRaf = null;
+var tournamentSpectateRoomId = null;
 
 function spectateTournamentMatch(matchId) {
   var match = tournamentMatchById(matchId);
@@ -11,8 +12,15 @@ function spectateTournamentMatch(matchId) {
   tournamentSpectateMatchId = matchId;
   playerNameLeft = match.a ? match.a.name : 'TBD';
   playerNameRight = match.b ? match.b.name : 'TBD';
-  currentRoomId = null; currentRoomMapId = 15;
   isSpectator = true; onlineMode = false;
+  if (match.roomId != null) {
+    // Real players: watch the actual server room, same smooth path as Quick Play spectating.
+    tournamentSpectateRoomId = match.roomId;
+    if (lobbySocket && lobbySocket.readyState === 1)
+      lobbySocket.send(JSON.stringify({ type:'join_room', roomId:match.roomId }));
+    return;
+  }
+  currentRoomId = null; currentRoomMapId = 15;
   startTournamentSpectateView();
   if (lobbySocket && lobbySocket.readyState === 1)
     lobbySocket.send(JSON.stringify({ type:'tournament_spectate', matchId:matchId }));
@@ -58,9 +66,12 @@ function exitTournamentSpectate() {
   tournamentSpectateMatchId = null;
   tournSpecSnaps = [];
   if (tournSpecRaf) { cancelAnimationFrame(tournSpecRaf); tournSpecRaf = null; }
-  isSpectator = false; currentRoomMapId = null;
-  hideSpecBadge();
-  if (lobbySocket && lobbySocket.readyState === 1)
-    lobbySocket.send(JSON.stringify({ type:'tournament_spectate', matchId:null }));
+  isSpectator = false; currentRoomMapId = null; currentRoomId = null;
+  hideSpecBadge(); showLeaveBtn(false); hidePregameOverlay();
+  if (lobbySocket && lobbySocket.readyState === 1) {
+    if (tournamentSpectateRoomId != null) lobbySocket.send(JSON.stringify({ type:'leave_room' }));
+    else lobbySocket.send(JSON.stringify({ type:'tournament_spectate', matchId:null }));
+  }
+  tournamentSpectateRoomId = null;
   if (tournamentState) showTournamentHub(); else toInitialMenu();
 }

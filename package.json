@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/physics.test.js && node tests/local-physics-parity.test.js && node tests/progression.test.js && node tests/account-store.test.js && node tests/feature-cards.test.js && node tests/tournament-mode.test.js && node tests/ui-layout.test.js && node tests/inventory-ui.test.js && node tests/html-shell.test.js && node tests/slimeverse-ui.test.js && node tests/multiverse-physics.test.js",
+    "test": "node tests/physics.test.js && node tests/local-physics-parity.test.js && node tests/progression.test.js && node tests/account-store.test.js && node tests/feature-cards.test.js && node tests/tournament-mode.test.js && node tests/ui-layout.test.js && node tests/inventory-ui.test.js && node tests/html-shell.test.js && node tests/slimeverse-ui.test.js && node tests/multiverse-physics.test.js && node tests/script-loading.test.js && node tests/tournament-server.test.js",
     "check": "node scripts/check-component-size.js && node scripts/check-js-syntax.js",
     "db:init": "node scripts/init-db.js",
     "db:migrate-data": "node scripts/migrate-postgres-data.js",

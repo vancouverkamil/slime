@@ -5,6 +5,7 @@ var onlineTournamentBracketId = null;
 var onlineTournamentMatchId = null;
 var onlineTournamentAcceptedMatchId = null;
 var tournamentSpectateMatchId = null;
+var onlineTournamentRoom = null; // set while playing a head-to-head tournament game in a server room
 var TOURNAMENT_STORAGE_KEY = 'slime_soloTournament';
 
 var TOURNAMENT_FIELD = [

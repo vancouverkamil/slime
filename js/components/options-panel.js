@@ -104,7 +104,9 @@ document.getElementById('OptionsDiv').innerHTML = `
 
               <!-- ── DISPLAY ── -->
               <div id="OptSection_display" style="display:none">
-                <div class="opt-section-title" style="margin-top:0">Game Size</div>
+                <div class="opt-section-title" style="margin-top:0">Site Theme</div>
+                <div id="ThemePicker" class="theme-picker"></div>
+                <div class="opt-section-title">Game Size</div>
                 <div class="opt-chip-row" style="margin-bottom:20px">
                   <button id="ScaleFull"    onclick="setGameScale('full')"    class="hat-opt">Fullscreen</button>
                   <button id="ScaleCompact" onclick="setGameScale('compact')" class="hat-opt active">Compact</button>

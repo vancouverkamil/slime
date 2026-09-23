@@ -144,30 +144,34 @@ function finishOnlineGame(winner) {
   var col   = iWon ? '#66ffcc' : '#ff66aa';
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
-    '<div style="text-align:center;padding-top:42px;background:#05000f;height:100%;position:relative;">' +
-    '<div style="font-size:11px;color:#444;letter-spacing:3px;margin-bottom:10px;">MATCH OVER</div>' +
+    '<div style="text-align:center;padding-top:42px;background:var(--bg);height:100%;position:relative;">' +
+    '<div style="font-size:var(--fs-xs);color:#444;letter-spacing:3px;margin-bottom:10px;">MATCH OVER</div>' +
     '<div style="font-size:44px;font-weight:bold;color:' + col + ';letter-spacing:3px;' +
     'text-shadow:0 0 24px ' + col + ';margin-bottom:6px;">' + (iWon ? 'VICTORY' : 'DEFEAT') + '</div>' +
-    '<div style="font-size:11px;color:#555;letter-spacing:2px;margin-bottom:20px;">' + escHtml(wName) + ' defeats ' + escHtml(lName) + '</div>' +
-    '<div style="font-size:10px;color:#333;letter-spacing:2px;margin-bottom:22px;">' +
-    'SESSION &nbsp; <span style="color:#66ffcc;">' + sessionWins + 'W</span> / <span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>' +
-    '<span onclick="showLobbySelect()" class="btn" style="margin:6px 10px;">PLAY AGAIN</span>' +
-    '<span onclick="toInitialMenu()" class="btn pink" style="margin:6px 10px;">MENU</span>' +
+    '<div style="font-size:var(--fs-xs);color:var(--text-faint);letter-spacing:2px;margin-bottom:20px;">' + escHtml(wName) + ' defeats ' + escHtml(lName) + '</div>' +
+    '<div style="font-size:var(--fs-2xs);color:#333;letter-spacing:2px;margin-bottom:22px;">' +
+    'SESSION &nbsp; <span style="color:var(--accent-soft);">' + sessionWins + 'W</span> / <span style="color:var(--danger);">' + sessionLosses + 'L</span></div>' +
+    (onlineTournamentRoom && tournamentState
+      ? '<span onclick="showTournamentHub()" class="btn" style="margin:6px 10px;">BACK TO BRACKET</span>'
+      : '<span onclick="showLobbySelect()" class="btn" style="margin:6px 10px;">PLAY AGAIN</span>' +
+        '<span onclick="toInitialMenu()" class="btn pink" style="margin:6px 10px;">MENU</span>') +
     '</div>';
   showBottomBar();
+  onlineTournamentRoom = null;
 }
 
 function finishSpectating(winner) {
+  if (tournamentSpectateMatchId && typeof exitTournamentSpectate === 'function') { exitTournamentSpectate(); return; }
   hidePregameOverlay();
   isSpectator = false; hideSpecBadge(); showLeaveBtn(false); particles = [];
   var wName = winner === 'left' ? playerNameLeft : playerNameRight;
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
-    '<div style="text-align:center;padding-top:60px;background:#05000f;height:100%;">' +
-    '<div style="font-size:10px;color:#444;letter-spacing:3px;margin-bottom:10px;">MATCH OVER</div>' +
-    '<div style="font-size:36px;font-weight:bold;color:#00ffcc;letter-spacing:2px;' +
-    'text-shadow:0 0 20px rgba(0,255,200,.7);margin-bottom:8px;">' + escHtml(wName) + '</div>' +
-    '<div style="font-size:11px;color:#555;letter-spacing:3px;margin-bottom:28px;">WINS THE MATCH</div>' +
+    '<div style="text-align:center;padding-top:60px;background:var(--bg);height:100%;">' +
+    '<div style="font-size:var(--fs-2xs);color:#444;letter-spacing:2px;margin-bottom:10px;">MATCH OVER</div>' +
+    '<div style="font-size:36px;font-weight:bold;color:var(--accent);letter-spacing:2px;' +
+    'text-shadow:0 0 20px rgba(var(--accent-rgb),.7);margin-bottom:8px;">' + escHtml(wName) + '</div>' +
+    '<div style="font-size:var(--fs-xs);color:var(--text-faint);letter-spacing:3px;margin-bottom:28px;">WINS THE MATCH</div>' +
     '<span onclick="showLobbySelect()" class="btn" style="margin:6px 10px;">BACK TO LOBBIES</span>' +
     '</div>';
   showBottomBar();

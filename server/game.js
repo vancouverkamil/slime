@@ -36,6 +36,8 @@ function startRoomGame(room) {
     room.interval = null;
     room.state    = null;
     room.phase    = 'empty';
+    room.ranked   = false; // otherwise later Quick Play games in this room count as ranked
+    room.tournament = null;
     [...room.players, ...room.spectators].forEach(({ info }) => {
       info.room = null; info.role = null; info.state = 'lobby'; info.gameHandler = null;
     });
@@ -78,11 +80,14 @@ function startRoomGame(room) {
           send(right.ws, { type: 'ranked_result', ranked: right.info.ranked || progression.defaultRanked() });
         }
         bcast({ type: 'game_over', winner });
+        const tourn = room.tournament, winnerName = (winner === 'left' ? left : right).info.username;
         endRoomGame();
+        if (tourn && ctx.onTournamentGameOver) ctx.onTournamentGameOver(tourn, winnerName);
         return;
       }
       room.state.phase = 'point_pause';
       bcast({ type: 'point', scorer: result === 1 ? 'left' : 'right' });
+      if (room.tournament && ctx.onTournamentPoint) ctx.onTournamentPoint(room.tournament, room.state.scoreLeft, room.state.scoreRight);
       setTimeout(() => { if (room.state) { startNextPoint(); broadcastState(); } }, 700);
       return;
     }
@@ -122,6 +127,11 @@ function startRoomGame(room) {
   const handleDisconnect = createDisconnectHandler({
     room, bcast, handleInput, pushLobbyState, TICK_MS, buildStateMsg,
     gameTick, send, crypto, RECONNECT_TIMEOUT_MS,
+    onAbandon(remainingUsername) {
+      if (!room.tournament || !ctx.onTournamentRoomAbandoned) return;
+      const t = room.tournament; room.tournament = null;
+      ctx.onTournamentRoomAbandoned(t, remainingUsername);
+    },
   });
 
   left.ws.on('close',  () => handleDisconnect('left'));

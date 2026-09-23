@@ -59,17 +59,17 @@ function rpsLabel(choice) {
 function rpsStatusLine() {
   var left = onlinePregameState && onlinePregameState.locked && onlinePregameState.locked.left;
   var right = onlinePregameState && onlinePregameState.locked && onlinePregameState.locked.right;
-  return '<div style="display:flex;justify-content:center;gap:18px;margin-top:16px;color:#777;font-size:10px;letter-spacing:2px;">' +
-    '<span>' + escHtml(playerNameLeft || 'Player 1') + ': ' + (left ? '<b style="color:#00ffcc;">LOCKED</b>' : 'CHOOSING') + '</span>' +
-    '<span>' + escHtml(playerNameRight || 'Player 2') + ': ' + (right ? '<b style="color:#ff66aa;">LOCKED</b>' : 'CHOOSING') + '</span>' +
+  return '<div style="display:flex;justify-content:center;gap:18px;margin-top:16px;color:var(--text-mute);font-size:var(--fs-2xs);letter-spacing:2px;">' +
+    '<span>' + escHtml(playerNameLeft || 'Player 1') + ': ' + (left ? '<b style="color:var(--accent);">LOCKED</b>' : 'CHOOSING') + '</span>' +
+    '<span>' + escHtml(playerNameRight || 'Player 2') + ': ' + (right ? '<b style="color:var(--danger);">LOCKED</b>' : 'CHOOSING') + '</span>' +
   '</div>';
 }
 
 function renderRpsOverlay(body) {
   var el = ensurePregameOverlay();
   el.innerHTML =
-    '<div style="width:min(560px,90vw);border:1px solid rgba(0,255,200,.34);background:rgba(3,0,18,.92);box-shadow:0 0 40px rgba(0,255,200,.14);padding:28px 30px;text-align:center;font-family:Courier New,monospace;">' +
-      '<div style="color:#00ffcc;font-size:12px;letter-spacing:4px;margin-bottom:8px;">FIRST SERVE</div>' +
+    '<div style="width:min(560px,90vw);border:1px solid rgba(var(--accent-rgb),.34);background:rgba(3,0,18,.92);box-shadow:0 0 40px rgba(var(--accent-rgb),.14);padding:28px 30px;text-align:center;font-family:Courier New,monospace;">' +
+      '<div style="color:var(--accent);font-size:var(--fs-sm);letter-spacing:4px;margin-bottom:8px;">FIRST SERVE</div>' +
       '<div style="color:#fff;font-size:28px;font-weight:bold;letter-spacing:3px;margin-bottom:8px;">ROCK PAPER SCISSORS</div>' +
       body +
     '</div>';
@@ -78,15 +78,15 @@ function renderRpsOverlay(body) {
 function showRpsOverlay(msg) {
   onlinePregameState = { locked: {}, choice: null, reason: msg && msg.reason };
   var note = msg && msg.reason === 'tie'
-    ? '<div style="color:#ffd966;font-size:11px;letter-spacing:2px;margin-bottom:18px;">TIE - PICK AGAIN</div>'
-    : '<div style="color:#666;font-size:11px;letter-spacing:1px;margin-bottom:18px;">Choices are hidden until both players lock in.</div>';
+    ? '<div style="color:var(--gold);font-size:var(--fs-xs);letter-spacing:2px;margin-bottom:18px;">TIE - PICK AGAIN</div>'
+    : '<div style="color:#666;font-size:var(--fs-xs);letter-spacing:1px;margin-bottom:18px;">Choices are hidden until both players lock in.</div>';
   var body = note;
   if (isSpectator) {
-    body += '<div style="color:#aaa;font-size:13px;letter-spacing:2px;">PLAYERS ARE CHOOSING...</div>' + rpsStatusLine();
+    body += '<div style="color:#aaa;font-size:var(--fs-sm);letter-spacing:2px;">PLAYERS ARE CHOOSING...</div>' + rpsStatusLine();
   } else {
     body += '<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">' +
       ['rock','paper','scissors'].map(function(choice) {
-        return '<button class="hat-opt" style="font-size:13px;padding:11px 16px;min-width:120px;" onclick="sendRpsChoice(\'' + choice + '\')">' + rpsLabel(choice) + '</button>';
+        return '<button class="hat-opt" style="font-size:var(--fs-sm);padding:11px 16px;min-width:120px;" onclick="sendRpsChoice(\'' + choice + '\')">' + rpsLabel(choice) + '</button>';
       }).join('') +
     '</div>' + rpsStatusLine();
   }
@@ -102,8 +102,8 @@ function sendRpsChoice(choice) {
     lobbySocket.send(JSON.stringify({ type: 'rps_choice', choice: choice }));
   }
   renderRpsOverlay(
-    '<div style="color:#ffd966;font-size:14px;letter-spacing:2px;margin:12px 0;">YOU CHOSE ' + rpsLabel(choice) + '</div>' +
-    '<div style="color:#666;font-size:11px;letter-spacing:1px;">Waiting for opponent...</div>' +
+    '<div style="color:var(--gold);font-size:var(--fs-md);letter-spacing:2px;margin:12px 0;">YOU CHOSE ' + rpsLabel(choice) + '</div>' +
+    '<div style="color:#666;font-size:var(--fs-xs);letter-spacing:1px;">Waiting for opponent...</div>' +
     rpsStatusLine()
   );
 }
@@ -113,8 +113,8 @@ function updateRpsLocked(side) {
   onlinePregameState.locked[side] = true;
   if (!onlinePregameState.choice && !isSpectator) return;
   var choiceText = onlinePregameState.choice
-    ? '<div style="color:#ffd966;font-size:14px;letter-spacing:2px;margin:12px 0;">YOU CHOSE ' + rpsLabel(onlinePregameState.choice) + '</div>'
-    : '<div style="color:#aaa;font-size:13px;letter-spacing:2px;">PLAYERS ARE CHOOSING...</div>';
+    ? '<div style="color:var(--gold);font-size:var(--fs-md);letter-spacing:2px;margin:12px 0;">YOU CHOSE ' + rpsLabel(onlinePregameState.choice) + '</div>'
+    : '<div style="color:#aaa;font-size:var(--fs-sm);letter-spacing:2px;">PLAYERS ARE CHOOSING...</div>';
   renderRpsOverlay(choiceText + rpsStatusLine());
 }
 
@@ -123,21 +123,21 @@ function showRpsResult(msg) {
   var leftChoice = msg.choices ? msg.choices.left : null;
   var rightChoice = msg.choices ? msg.choices.right : null;
   var result = msg.tie
-    ? '<div style="color:#ffd966;font-size:20px;font-weight:bold;letter-spacing:3px;margin:12px 0;">TIE</div>'
-    : '<div style="color:#00ffcc;font-size:20px;font-weight:bold;letter-spacing:3px;margin:12px 0;">' + escHtml(msg.winner === 'left' ? playerNameLeft : playerNameRight) + ' SERVES</div>';
+    ? '<div style="color:var(--gold);font-size:20px;font-weight:bold;letter-spacing:3px;margin:12px 0;">TIE</div>'
+    : '<div style="color:var(--accent);font-size:20px;font-weight:bold;letter-spacing:3px;margin:12px 0;">' + escHtml(msg.winner === 'left' ? playerNameLeft : playerNameRight) + ' SERVES</div>';
   renderRpsOverlay(
-    '<div style="display:flex;justify-content:center;gap:24px;color:#aaa;font-size:12px;letter-spacing:2px;margin:12px 0;">' +
-      '<span>' + escHtml(playerNameLeft || 'Player 1') + ': <b style="color:#00ffcc;">' + rpsLabel(leftChoice) + '</b></span>' +
-      '<span>' + escHtml(playerNameRight || 'Player 2') + ': <b style="color:#ff66aa;">' + rpsLabel(rightChoice) + '</b></span>' +
+    '<div style="display:flex;justify-content:center;gap:24px;color:#aaa;font-size:var(--fs-sm);letter-spacing:2px;margin:12px 0;">' +
+      '<span>' + escHtml(playerNameLeft || 'Player 1') + ': <b style="color:var(--accent);">' + rpsLabel(leftChoice) + '</b></span>' +
+      '<span>' + escHtml(playerNameRight || 'Player 2') + ': <b style="color:var(--danger);">' + rpsLabel(rightChoice) + '</b></span>' +
     '</div>' +
     result +
-    '<div style="color:#666;font-size:11px;letter-spacing:1px;">' + (msg.tie ? 'Choose again...' : 'Get ready...') + '</div>'
+    '<div style="color:#666;font-size:var(--fs-xs);letter-spacing:1px;">' + (msg.tie ? 'Choose again...' : 'Get ready...') + '</div>'
   );
 }
 
 function showPregameCountdown(n) {
   renderRpsOverlay(
-    '<div style="color:#666;font-size:11px;letter-spacing:2px;margin-bottom:12px;">BALL DROPS IN</div>' +
-    '<div style="color:#fff;font-size:72px;font-weight:bold;line-height:1;text-shadow:0 0 24px rgba(0,255,200,.45);">' + escHtml(n) + '</div>'
+    '<div style="color:#666;font-size:var(--fs-xs);letter-spacing:2px;margin-bottom:12px;">BALL DROPS IN</div>' +
+    '<div style="color:#fff;font-size:72px;font-weight:bold;line-height:1;text-shadow:0 0 24px rgba(var(--accent-rgb),.45);">' + escHtml(n) + '</div>'
   );
 }

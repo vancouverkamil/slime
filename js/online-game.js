@@ -60,6 +60,12 @@ function handleServerMessage(msg) {
     currentRoomId = msg.roomId;
     currentRoomMapId = typeof msg.mapId === 'number' ? msg.mapId : null;
     if (msg.rejoinToken) try { localStorage.setItem('slime_rejoinToken', msg.rejoinToken); } catch(e) {}
+    onlineTournamentRoom = msg.tournament || null;
+    if (onlineTournamentRoom) {
+      var tPop = document.getElementById('TournamentAccept');
+      if (tPop) tPop.style.display = 'none';
+      pendingMatchIntro = null;
+    }
     if (msg.ranked) try { localStorage.setItem('slime_inRanked', '1'); } catch(e) {}
     else try { localStorage.removeItem('slime_inRanked'); } catch(e) {}
     showLeaveBtn(true);
@@ -69,8 +75,9 @@ function handleServerMessage(msg) {
       menuDiv.innerHTML =
         '<div style="text-align:center;padding-top:80px;">' +
         '<div style="font-size:32px;margin-bottom:12px;">👁</div>' +
-        '<div style="color:#00ffcc;letter-spacing:4px;font-size:13px;margin-bottom:8px;">SPECTATING</div>' +
-        '<div style="color:#444;font-size:11px;letter-spacing:1px;">Waiting for game to start...</div>' +
+        '<div style="color:var(--accent);letter-spacing:4px;font-size:var(--fs-sm);margin-bottom:8px;">SPECTATING</div>' +
+        '<div style="color:#444;font-size:var(--fs-xs);letter-spacing:1px;">Waiting for game to start...</div>' +
+        (tournamentSpectateMatchId ? '<button class="feature-back" style="margin-top:22px;" onclick="exitTournamentSpectate()">EXIT SPECTATING</button>' : '') +
         '</div>';
     } else {
       isSpectator = false; onlinePointText = null;
@@ -79,6 +86,7 @@ function handleServerMessage(msg) {
     }
   } else if (msg.type === 'start') {
     mySide = msg.side;
+    slimeLeftScore = 0; slimeRightScore = 0; // don't show a previous local game's score before the first state
     playerNameLeft  = msg.nameLeft  || 'Player 1';
     playerNameRight = msg.nameRight || 'Player 2';
     leftStreak = 0; rightStreak = 0; rallyCount = 0;

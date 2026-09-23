@@ -41,7 +41,7 @@ function tournamentEntrantHtml(e, winner) {
   if (!e) return '<div class="bracket-player empty">TBD</div>';
   return '<div class="bracket-player' + (winner ? ' winner' : '') + (e.player ? ' mine' : '') + '">' +
     '<span class="seed">' + escHtml(e.seed || '-') + '</span>' +
-    '<span class="swab" style="background:' + escHtml(e.color || '#777') + ';"></span>' +
+    '<span class="swab" style="background:' + escHtml(e.color || 'var(--text-mute)') + ';"></span>' +
     '<b>' + escHtml(e.name) + '</b>' +
   '</div>';
 }
@@ -50,14 +50,12 @@ function tournamentMatchHtml(match) {
   var aWin = match.winner && match.a && match.winner.id === match.a.id;
   var bWin = match.winner && match.b && match.winner.id === match.b.id;
   var active = match === activePlayerMatch();
-  var status = match.status || 'waiting';
-  if (status === 'bot_live') status = 'spectating bots';
-  if (status === 'awaiting') status = 'awaiting accept';
-  if (status === 'reported') status = 'syncing result';
+  var STATUS_LABELS = { final:'complete', upcoming:'up next', waiting:'waiting', bot_live:'cpu match live', live:'live', awaiting:'awaiting accept', reported:'syncing result', bye:'bye' };
+  var status = STATUS_LABELS[match.status || 'waiting'] || match.status;
   var accept = match.status === 'awaiting'
-    ? '<div class="series-accept">Accept: ' + (match.acceptedA ? 'A ready' : 'A waiting') + ' / ' + (match.acceptedB ? 'B ready' : 'B waiting') + '</div>'
+    ? '<div class="series-accept">' + escHtml(match.a ? match.a.name : 'A') + (match.acceptedA ? ' ready' : ' waiting') + ' &middot; ' + escHtml(match.b ? match.b.name : 'B') + (match.acceptedB ? ' ready' : ' waiting') + '</div>'
     : '';
-  var watch = (match.status === 'bot_live' || match.status === 'live')
+  var watch = (match.status === 'bot_live' || match.status === 'live') && match !== activePlayerMatch()
     ? '<button class="tourn-spectate-btn" onclick="event.stopPropagation();spectateTournamentMatch(\'' + escHtml(match.id) + '\')">Spectate</button>'
     : '';
   return '<div class="bracket-match' + (active ? ' active' : '') + '">' +
@@ -65,8 +63,10 @@ function tournamentMatchHtml(match) {
     '<div class="bracket-status">' + escHtml(status) + '</div>' +
     tournamentEntrantHtml(match.a, aWin) +
     tournamentEntrantHtml(match.b, bWin) +
-    '<div class="series-score">Best of 3 (current score: ' + (match.winsA || 0) + '-' + (match.winsB || 0) + ')</div>' +
-    '<div class="series-score">Current game: ' + (match.scoreA || 0) + '-' + (match.scoreB || 0) + '</div>' +
+    (match.a && match.b
+      ? '<div class="series-score">Series <b>' + (match.winsA || 0) + '-' + (match.winsB || 0) + '</b>' +
+        (match.status === 'live' || match.status === 'awaiting' || match.status === 'reported' ? ' &middot; Game <b>' + (match.scoreA || 0) + '-' + (match.scoreB || 0) + '</b>' : '') + '</div>'
+      : '') +
     accept +
   '</div>';
 }
@@ -89,22 +89,23 @@ function showTournamentHub() {
         '<div><span>Tournament</span><b>' + escHtml(tournamentState.bracketName || 'Slime Cup Bracket') + '</b></div>' +
         '<button class="feature-back" onclick="exitTournamentToMenu()">' + (tournamentState.kind === 'online' ? 'BACK TO SITE' : 'SAVE &amp; EXIT') + '</button>' +
       '</div>' +
-      '<div class="tourn-progress" role="status" aria-live="polite"><b>' + escHtml(roundLabel) + '</b><span>' + (champion ? escHtml(champion.name) + ' claims the cup' : 'Best of 3 / first to 2 wins') + '</span></div>' +
+      '<div class="tournament-action" role="status" aria-live="polite">' +
+        (champion
+          ? '<div class="champion-line">' + escHtml(champion.name) + ' CLAIMS THE CUP</div>'
+          : '<div class="tourn-next"><b>' + escHtml(roundLabel) + '</b><span>Next opponent: <em>' + escHtml(opponent ? opponent.name : 'TBD') + '</em> &middot; best of 3</span></div>') +
+        (champion ? '<button class="feature-primary" onclick="clearSoloTournament();startTournament()">NEW TOURNAMENT</button>'
+          : match && isHeadToHeadMatch(match) && match.status === 'live' ? '<button class="feature-primary" disabled>MATCH STARTING...</button>'
+          : match && isHeadToHeadMatch(match) && myTournamentAccepted(match) ? '<button class="feature-primary" disabled>WAITING FOR ' + escHtml(opponent ? opponent.name : 'OPPONENT').toUpperCase() + '</button>'
+          : match ? '<button class="feature-primary" onclick="startTournamentMatch()">' + (tournamentState.kind === 'online' ? 'ACCEPT / PLAY' : 'START SERIES') + '</button>'
+          : '<button class="feature-primary" disabled>BRACKET UPDATING</button>') +
+      '</div>' +
       '<div class="bracket-board">' +
         tournamentState.rounds.map(function(round, i) {
           return '<div class="bracket-round">' +
             '<div class="round-title">' + escHtml(tournamentRoundName(i)) + '</div>' +
-            round.map(tournamentMatchHtml).join('') +
+            '<div class="bracket-col">' + round.map(tournamentMatchHtml).join('') + '</div>' +
           '</div>';
         }).join('') +
-      '</div>' +
-      '<div class="tournament-action">' +
-        (champion
-          ? '<div class="champion-line">' + escHtml(champion.name) + ' CLAIMS THE CUP</div>'
-          : '<div><b>Next target:</b> ' + escHtml(opponent ? opponent.name : 'TBD') + '</div>') +
-        (champion ? '<button class="feature-primary" onclick="clearSoloTournament();startTournament()">NEW TOURNAMENT</button>'
-          : match ? '<button class="feature-primary" onclick="startTournamentMatch()">' + (tournamentState.kind === 'online' ? 'ACCEPT / PLAY' : 'START SERIES') + '</button>'
-          : '<button class="feature-primary" disabled>BRACKET UPDATING</button>') +
       '</div>' +
     '</div>';
 }
@@ -163,7 +164,7 @@ function joinTournamentLobby(bracketId) {
         '<div><span>Tournament</span><b>Joining...</b></div>' +
         '<button class="feature-back" onclick="leaveTournamentLobby()">LEAVE</button>' +
       '</div>' +
-      '<div style="text-align:center;padding-top:60px;color:#555;font-size:10px;letter-spacing:3px;">CONNECTING TO LOBBY...</div>' +
+      '<div style="text-align:center;padding-top:60px;color:var(--text-faint);font-size:var(--fs-2xs);letter-spacing:2px;">CONNECTING TO LOBBY...</div>' +
     '</div>';
 }
 

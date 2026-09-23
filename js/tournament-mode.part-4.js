@@ -84,6 +84,7 @@ function loadOnlineTournament(data) {
         acceptDeadline: match.acceptDeadline || 0, resolveAt: match.resolveAt || 0,
         acceptedA: !!match.acceptedA, acceptedB: !!match.acceptedB,
         scoreA: match.scoreA || 0, scoreB: match.scoreB || 0,
+        roomId: match.roomId != null ? match.roomId : null,
       };
     });
   });
@@ -95,7 +96,7 @@ function loadOnlineTournament(data) {
   var active = onlineTournamentMatchId && tournamentMatchById(onlineTournamentMatchId);
   if (active && active.status !== 'final') tournamentState.currentSeries = active;
   var ready = onlineTournamentAcceptedMatchId && tournamentMatchById(onlineTournamentAcceptedMatchId);
-  if (ready && ready.status === 'live' && !pendingMatchIntro && gameState !== GAME_STATE_RUNNING) {
+  if (ready && ready.status === 'live' && !isHeadToHeadMatch(ready) && !pendingMatchIntro && gameState !== GAME_STATE_RUNNING) {
     onlineTournamentAcceptedMatchId = null;
     var pop = document.getElementById('TournamentAccept');
     if (pop) pop.style.display = 'none';

@@ -54,7 +54,8 @@ function toInitialMenu() {
   currentRoomId = null; currentRoomMapId = null; localMapId = null;
   final4Mode = false; final4WinPending = false;
   tournamentMode = false; tournamentState = null; tournamentWinPending = false;
-  tournamentSpectateMatchId = null; hideSpecBadge(); showLeaveBtn(false); particles = [];
+  tournamentSpectateMatchId = null; hideSpecBadge();
+  if (typeof hideEscMenu === 'function') hideEscMenu(); showLeaveBtn(false); particles = [];
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
     '<div class="home-screen">' +
@@ -70,7 +71,7 @@ function toInitialMenu() {
     '<div class="home-subtitle">VOLLEYBALL</div>' +
     '<div id="HomeRankRow" class="home-rank-row"></div>' +
     (sessionWins + sessionLosses > 0
-      ? '<div class="home-session">SESSION: <span style="color:#66ffcc;">' + sessionWins + 'W</span> / <span style="color:#ff66aa;">' + sessionLosses + 'L</span></div>'
+      ? '<div class="home-session">SESSION: <span style="color:var(--accent-soft);">' + sessionWins + 'W</span> / <span style="color:var(--danger);">' + sessionLosses + 'L</span></div>'
       : '') +
     '<div class="home-hint">Quick Play to start</div>' +
     '</div>';

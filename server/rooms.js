@@ -22,6 +22,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
   if (spotFree) {
     const side      = room.players.length === 0 ? 'left' : 'right';
     const joinToken = crypto.randomBytes(16).toString('hex');
+    if (room.players.length === 0) { room.ranked = false; room.tournament = null; }
     room.players.push({ ws, info });
     info.room        = room;
     info.role        = 'player';
@@ -72,6 +73,11 @@ function leaveRoom(ws, info, disconnecting) {
       clearInterval(room.interval);
       room.interval = null;
       room.state    = null;
+      if (room.tournament && ctx.onTournamentRoomAbandoned) {
+        const t = room.tournament, stayed = room.players[0];
+        room.tournament = null;
+        ctx.onTournamentRoomAbandoned(t, stayed ? stayed.info.username : null);
+      }
       if (!disconnecting) {
         broadcastRoom(room, { type: 'opponent_disconnected' });
       }
@@ -118,8 +124,12 @@ function tryMatchRanked() {
   if (rankedQueue.length < 2) return;
   const p1 = rankedQueue.shift();
   const p2 = rankedQueue.shift();
-  // Find a free room (prefer higher-numbered rooms for ranked)
-  const room = [...rooms].reverse().find(r => r.phase === 'empty') || null;
+  // Random free room on a standard arena, so ranked looks and plays like Quick Play
+  // (it used to always take the last room, which is the Championship stage).
+  const free = rooms.filter(r => r.phase === 'empty' && r.players.length === 0 && r.spectators.length === 0);
+  const standard = free.filter(r => r.mapId !== 15);
+  const pool = standard.length ? standard : free;
+  const room = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
   if (!room) {
     rankedQueue.unshift(p1, p2);
     return;

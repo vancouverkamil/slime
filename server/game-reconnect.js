@@ -1,6 +1,7 @@
 module.exports = function createDisconnectHandler(options) {
   const { room, bcast, handleInput, pushLobbyState, TICK_MS, buildStateMsg,
     gameTick, send, crypto, RECONNECT_TIMEOUT_MS } = options;
+  const onAbandon = options.onAbandon || function() {};
 function handleDisconnect(side) {
   // Both players dropped → immediate full cleanup
   if (room.pendingReconnect) {
@@ -13,6 +14,7 @@ function handleDisconnect(side) {
       i.room = null; i.role = null; i.state = 'lobby'; i.gameHandler = null;
     });
     room.players = []; room.spectators = [];
+    onAbandon(null);
     pushLobbyState();
     return;
   }
@@ -30,6 +32,8 @@ function handleDisconnect(side) {
 
   function finalCleanup() {
     room.pendingReconnect = null;
+    const stayed = room.players[0];
+    onAbandon(stayed ? stayed.info.username : null);
     room.state = null; room.phase = 'empty';
     bcast({ type: 'opponent_disconnected' });
     [...room.players, ...room.spectators].forEach(({ info: i }) => {

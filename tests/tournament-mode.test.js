@@ -133,7 +133,7 @@ test('starting solo mode resumes saved progress instead of clearing it', () => {
 test('tournament hub exposes progress status and protects saved-run discard', () => {
   const t = loadTournament();
   t.startSoloTournament();
-  assert.match(t.menuDiv.innerHTML, /class="tourn-progress" role="status" aria-live="polite"/);
+  assert.match(t.menuDiv.innerHTML, /class="tournament-action" role="status" aria-live="polite"/);
   assert.match(t.menuDiv.innerHTML, /SAVE &amp; EXIT/);
   t.window = { confirm: () => false };
   t.discardSoloTournament();

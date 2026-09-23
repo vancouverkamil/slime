@@ -1,0 +1,139 @@
+/* ── Design tokens ─────────────────────────────────────────
+   Every component stylesheet reads its colors and small text sizes
+   from these variables. A theme is just a different set of values,
+   applied with <html data-theme="...">. */
+:root {
+  /* type scale: nothing on the site renders below --fs-2xs */
+  --fs-2xs: 12px;
+  --fs-xs: 13px;
+  --fs-sm: 14px;
+  --fs-md: 15px;
+
+  /* original: neon cyan on violet-black, gold trim */
+  --accent: #00ffcc;        --accent-rgb: 0,255,200;
+  --accent-soft: #66ffcc;
+  --accent-2: #ff00cc;      --accent-2-rgb: 255,0,204;
+  --gold: #f1d37a;          --gold-rgb: 197,154,58;
+  --gold-deep: #d7ae4b;
+  --gold-mute: #8f856b;
+  --danger: #ff6699;        --danger-rgb: 255,80,130;
+  --inv: #cc88ff;           --inv-rgb: 180,100,255;
+  --text: #d8d5c7;
+  --text-mute: #8e8a9a;
+  --name: #b7a6d8;
+  --text-faint: #6f6a7c;
+  --bg: #05000f;
+  --bg-deep: #020008;
+  --panel: #040010;
+  --surface-rgb: 24,22,18;
+  --surface-2-rgb: 3,4,7;
+  --bar-1: #050504;
+  --bar-2: #18140d;
+  --grid-rgb: 0,255,200;
+  --glow-a-rgb: 125,108,62;
+  --glow-b-rgb: 95,12,12;
+}
+
+/* GoldenEye 007: gunmetal black, signal red, white highlights */
+:root[data-theme="goldeneye"] {
+  --accent: #ff2b2b;        --accent-rgb: 255,43,43;
+  --accent-soft: #ff6b6b;
+  --accent-2: #f2f2f2;      --accent-2-rgb: 242,242,242;
+  --gold: #eeeeee;          --gold-rgb: 170,170,170;
+  --gold-deep: #c9c9c9;
+  --gold-mute: #8c8c8c;
+  --danger: #ff5a5a;        --danger-rgb: 255,90,90;
+  --inv: #ff5555;           --inv-rgb: 220,40,40;
+  --text: #e2e2e2;
+  --text-mute: #8a8a8a;
+  --name: #cfcfcf;
+  --text-faint: #666;
+  --bg: #060606;
+  --bg-deep: #000;
+  --panel: #0b0b0b;
+  --surface-rgb: 20,20,20;
+  --surface-2-rgb: 2,2,2;
+  --bar-1: #050505;
+  --bar-2: #1c0707;
+  --grid-rgb: 255,43,43;
+  --glow-a-rgb: 150,20,20;
+  --glow-b-rgb: 60,60,60;
+}
+
+/* Arctic: ice blue and frost white on deep navy */
+:root[data-theme="arctic"] {
+  --accent: #7fd8ff;        --accent-rgb: 127,216,255;
+  --accent-soft: #b5e9ff;
+  --accent-2: #a9b8ff;      --accent-2-rgb: 169,184,255;
+  --gold: #e4f3ff;          --gold-rgb: 120,170,210;
+  --gold-deep: #bcdcf2;
+  --gold-mute: #6f8aa0;
+  --danger: #ff8fb1;        --danger-rgb: 255,143,177;
+  --inv: #a9b8ff;           --inv-rgb: 140,160,255;
+  --text: #d6e6f2;
+  --text-mute: #7f95a8;
+  --name: #bcd4ea;
+  --text-faint: #56687a;
+  --bg: #030a14;
+  --bg-deep: #01060d;
+  --panel: #06101d;
+  --surface-rgb: 12,24,38;
+  --surface-2-rgb: 2,7,13;
+  --bar-1: #030b15;
+  --bar-2: #0b1b2c;
+  --grid-rgb: 127,216,255;
+  --glow-a-rgb: 60,120,180;
+  --glow-b-rgb: 40,60,140;
+}
+
+/* Nebula: soft violet with a cyan counter-accent */
+:root[data-theme="nebula"] {
+  --accent: #b69aff;        --accent-rgb: 182,154,255;
+  --accent-soft: #d3c2ff;
+  --accent-2: #5ee7ff;      --accent-2-rgb: 94,231,255;
+  --gold: #e3d8ff;          --gold-rgb: 140,110,210;
+  --gold-deep: #c2afff;
+  --gold-mute: #8676a8;
+  --danger: #ff7eb6;        --danger-rgb: 255,126,182;
+  --inv: #5ee7ff;           --inv-rgb: 94,200,255;
+  --text: #ddd6f0;
+  --text-mute: #8a82a6;
+  --name: #c8b8ee;
+  --text-faint: #5f587a;
+  --bg: #07031a;
+  --bg-deep: #040112;
+  --panel: #0b0624;
+  --surface-rgb: 22,14,44;
+  --surface-2-rgb: 5,3,14;
+  --bar-1: #060318;
+  --bar-2: #150c30;
+  --grid-rgb: 182,154,255;
+  --glow-a-rgb: 110,70,200;
+  --glow-b-rgb: 30,90,140;
+}
+
+/* Graphite: quiet steel blues and slate */
+:root[data-theme="graphite"] {
+  --accent: #8fb8de;        --accent-rgb: 143,184,222;
+  --accent-soft: #b9d3ea;
+  --accent-2: #d7dee7;      --accent-2-rgb: 215,222,231;
+  --gold: #dfe6ee;          --gold-rgb: 120,138,158;
+  --gold-deep: #b8c4d0;
+  --gold-mute: #7a8796;
+  --danger: #f08a9a;        --danger-rgb: 240,138,154;
+  --inv: #9fb4cc;           --inv-rgb: 120,150,190;
+  --text: #d4d9df;
+  --text-mute: #858e98;
+  --name: #c2cad4;
+  --text-faint: #5d6570;
+  --bg: #0a0c10;
+  --bg-deep: #06070a;
+  --panel: #0e1116;
+  --surface-rgb: 22,26,32;
+  --surface-2-rgb: 7,8,11;
+  --bar-1: #0a0c10;
+  --bar-2: #171c24;
+  --grid-rgb: 143,184,222;
+  --glow-a-rgb: 70,90,120;
+  --glow-b-rgb: 40,50,70;
+}

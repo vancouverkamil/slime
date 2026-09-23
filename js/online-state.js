@@ -163,7 +163,7 @@ function connectLobby() {
       onlineMode = false; isSpectator = false;
       canvas.style.display = 'none';
       menuDiv.style.display = 'block';
-      menuDiv.innerHTML = '<div style="text-align:center;padding:80px 20px"><div style="color:#ff6666;font-size:clamp(14px,1.4vw,22px);letter-spacing:4px;margin-bottom:10px;">CONNECTION LOST</div><div style="color:#444;font-size:clamp(11px,1vw,15px);letter-spacing:2px;">Reconnecting&hellip;</div></div>';
+      menuDiv.innerHTML = '<div style="text-align:center;padding:80px 20px"><div style="color:#ff6666;font-size:clamp(14px,1.4vw,22px);letter-spacing:4px;margin-bottom:10px;">CONNECTION LOST</div><div style="color:#444;font-size:clamp(13px,1vw,15px);letter-spacing:2px;">Reconnecting&hellip;</div></div>';
       hideSpecBadge(); showBottomBar();
       setTimeout(connectLobby, 2000);
     } else {

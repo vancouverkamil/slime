@@ -133,6 +133,7 @@ require('./server/game')(runtime);
 require('./server/rooms')(runtime);
 require('./server/tournaments')(runtime);
 require('./server/tournament-matches')(runtime);
+require('./server/tournament-rooms')(runtime);
 require('./server/tournament-spectate')(runtime);
 require('./server/connection')(runtime);
 

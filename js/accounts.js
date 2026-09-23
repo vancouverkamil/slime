@@ -70,10 +70,10 @@ function applyAccount(user) {
   if (user.slime && user.slime.trail) { playerTrail = user.slime.trail; try { localStorage.setItem('slimeTrail', playerTrail); } catch(e) {} }
   if (name) name.textContent = '@' + user.username;
   if (stats) stats.innerHTML =
-    (prog ? '<span style="color:#ffd966;">L' + prog.level + '</span> ' : '') +
+    (prog ? '<span style="color:var(--gold);">L' + prog.level + '</span> ' : '') +
     '<span>' + (user.stats.matches || 0) + 'M</span> ' +
-    '<span style="color:#66ffcc;">' + (user.stats.wins || 0) + 'W</span> ' +
-    '<span style="color:#ff66aa;">' + (user.stats.losses || 0) + 'L</span>';
+    '<span style="color:var(--accent-soft);">' + (user.stats.wins || 0) + 'W</span> ' +
+    '<span style="color:var(--danger);">' + (user.stats.losses || 0) + 'L</span>';
   hatConfigs.left = { hat: playerHat, anim: playerHatAnim, color: playerBodyColor, drawing: playerHatDrawing };
   syncCustomizationUI();
   renderSavedHatDrawings();
