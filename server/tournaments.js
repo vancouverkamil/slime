@@ -180,6 +180,7 @@ function handleTournamentAccept(ws, info, msg) {
   const match = findMatch(lobby, msg.matchId); if (!match || match.status !== 'awaiting') return;
   if (match.a && match.a.username === info.username) match.acceptedA = true;
   if (match.b && match.b.username === info.username) match.acceptedB = true;
+  if (match.acceptedA && match.acceptedB) { match.status = 'live'; match.acceptDeadline = 0; }
   broadcastTournState(lobby);
 }
 function handleTournamentResult(ws, info, msg) {
@@ -190,7 +191,7 @@ function handleTournamentResult(ws, info, msg) {
   if (won === meA) match.winsA++; else match.winsB++;
   match.status = match.winsA >= 2 || match.winsB >= 2 ? 'final' : 'awaiting';
   if (match.status === 'final') resolveMatch(lobby, match, match.winsA >= 2 ? match.a : match.b, null);
-  else { match.acceptDeadline = Date.now() + 60000; match.acceptedA = !match.a.username; match.acceptedB = !match.b.username; broadcastTournState(lobby); sendAccepts(lobby, match); setTimeout(() => tickTourn(lobby), 61000); }
+  else { match.status = 'live'; match.acceptDeadline = 0; broadcastTournState(lobby); }
 }
 
   Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult });
