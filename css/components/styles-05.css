@@ -72,12 +72,19 @@
 
 /* ── spectator overlay ── */
 .spec-overlay {
-  position:absolute; top:8px; left:8px;
+  position:absolute; top:46px; left:8px;
   background:rgba(0,0,16,.8); color:#00ffcc;
   font-size:9px; font-weight:bold; letter-spacing:3px;
   padding:4px 10px; border:1px solid rgba(0,255,200,.35); pointer-events:none;
   text-transform:uppercase;
 }
+.spec-overlay span { vertical-align:middle; }
+.spec-exit-btn {
+  pointer-events:auto; cursor:pointer; margin-left:10px; vertical-align:middle;
+  background:transparent; color:#ff6fa8; border:1px solid rgba(255,111,168,.6);
+  font:inherit; letter-spacing:2px; padding:2px 8px;
+}
+.spec-exit-btn:hover { background:rgba(255,111,168,.15); }
 
 /* ── online player list ── */
 #OnlineListPanel {

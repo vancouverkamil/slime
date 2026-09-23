@@ -54,7 +54,7 @@ function toInitialMenu() {
   currentRoomId = null; currentRoomMapId = null; localMapId = null;
   final4Mode = false; final4WinPending = false;
   tournamentMode = false; tournamentState = null; tournamentWinPending = false;
-  hideSpecBadge(); showLeaveBtn(false); particles = [];
+  tournamentSpectateMatchId = null; hideSpecBadge(); showLeaveBtn(false); particles = [];
   canvas.style.display = 'none'; menuDiv.style.display = 'block';
   menuDiv.innerHTML =
     '<div class="home-screen">' +

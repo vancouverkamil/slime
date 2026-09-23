@@ -145,7 +145,8 @@ function showSpecBadge() {
     el.id = 'SpecBadge'; el.className = 'spec-overlay';
     document.getElementById('ContentDiv').appendChild(el);
   }
-  el.textContent = '👁 WATCHING';
+  el.innerHTML = '<span>👁 WATCHING</span>' + (tournamentSpectateMatchId
+    ? '<button class="spec-exit-btn" onclick="exitTournamentSpectate()">EXIT SPECTATING</button>' : '');
   el.style.display = 'block';
 }
 function hideSpecBadge() {

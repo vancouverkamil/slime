@@ -14,8 +14,8 @@ module.exports = function install(ctx) {
   }
 
   function handleTournamentSpectate(ws, info, msg) {
-    const found = findLobbyAndMatch(info, msg.matchId);
-    if (!found) return;
+    const found = msg.matchId ? findLobbyAndMatch(info, msg.matchId) : null;
+    if (!found) { info.tournamentSpectate = null; return; }
     info.tournamentSpectate = { bracketId: found.lobby.bracketId, matchId: found.match.id };
     send(ws, {
       type: 'tournament_spectating',

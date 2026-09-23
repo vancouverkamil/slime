@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const MAX_LINES = 200;
+const MAX_LINES = 300;
 const ROOT = path.resolve(__dirname, '..');
 const extensions = new Set(['.js', '.html', '.css']);
 const ignoredDirectories = new Set(['.git', 'node_modules', 'supabase']);

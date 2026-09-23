@@ -102,7 +102,10 @@ function loadOnlineTournament(data) {
     setTimeout(startTournamentMatch, 0);
     return;
   }
-  if (menuDiv && menuDiv.style.display !== 'none' && !onlineMode && !isSpectator) showTournamentHub();
+  var spec = tournamentSpectateMatchId && tournamentMatchById(tournamentSpectateMatchId);
+  if (spec && spec.status === 'final' && typeof exitTournamentSpectate === 'function') { exitTournamentSpectate(); return; }
+  // Re-rendering the hub over the VS/DEPLOY intro left pendingMatchIntro set, so PLAY did nothing.
+  if (menuDiv && menuDiv.style.display !== 'none' && !onlineMode && !isSpectator && !pendingMatchIntro) showTournamentHub();
 }
 
 function showTournamentAccept(data) {
@@ -126,17 +129,4 @@ function showTournamentAccept(data) {
     if (t) t.textContent = left + 's to accept';
     if (left <= 0) { clearInterval(el._timer); el.style.display = 'none'; }
   }, 250);
-}
-
-function spectateTournamentMatch(matchId) {
-  var match = tournamentMatchById(matchId);
-  if (!match) return;
-  tournamentSpectateMatchId = matchId;
-  playerNameLeft = match.a ? match.a.name : 'TBD';
-  playerNameRight = match.b ? match.b.name : 'TBD';
-  currentRoomId = null; currentRoomMapId = 15;
-  isSpectator = true; onlineMode = false;
-  launchSpectatorMode();
-  if (lobbySocket && lobbySocket.readyState === 1)
-    lobbySocket.send(JSON.stringify({ type:'tournament_spectate', matchId:matchId }));
 }

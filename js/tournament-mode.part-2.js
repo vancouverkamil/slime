@@ -60,7 +60,8 @@ function advanceTournamentWinner(match) {
 }
 
 function startTournamentMatch() {
-  if (pendingMatchIntro) return;
+  if (pendingMatchIntro && document.querySelector('.match-intro')) return;
+  pendingMatchIntro = null;
   var match = activePlayerMatch();
   if (!match) {
     showTournamentHub();
@@ -186,7 +187,7 @@ function sendTournamentStateUpdate() {
   var match = tournamentState && (tournamentState.currentSeries || tournamentMatchById(onlineTournamentMatchId));
   if (!match || tournamentState.kind !== 'online' || !lobbySocket || lobbySocket.readyState !== 1) return;
   var now = Date.now();
-  if (now - lastTournamentStateSent < 90 || !ball || !slimeLeft || !slimeRight) return;
+  if (now - lastTournamentStateSent < 38 || !ball || !slimeLeft || !slimeRight) return;
   lastTournamentStateSent = now;
   lobbySocket.send(JSON.stringify({
     type:'tournament_state', matchId:match.id,
