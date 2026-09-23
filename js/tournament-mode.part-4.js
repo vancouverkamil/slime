@@ -83,6 +83,7 @@ function loadOnlineTournament(data) {
         status: match.status || (match.a && match.b ? 'upcoming' : 'bye'),
         acceptDeadline: match.acceptDeadline || 0, resolveAt: match.resolveAt || 0,
         acceptedA: !!match.acceptedA, acceptedB: !!match.acceptedB,
+        scoreA: match.scoreA || 0, scoreB: match.scoreB || 0,
       };
     });
   });
@@ -142,6 +143,7 @@ function spectateTournamentMatch(matchId) {
         '<div>' + playerCardHtml({ name: match.b ? match.b.name : 'TBD' }) + '</div>' +
       '</div>' +
       '<div class="result-copy">Best of 3 (current score: ' + (match.winsA || 0) + '-' + (match.winsB || 0) + ')</div>' +
+      '<div class="result-copy">Current game: ' + (match.scoreA || 0) + '-' + (match.scoreB || 0) + '</div>' +
       '<button class="feature-primary" onclick="showTournamentHub()">BACK TO BRACKET</button>' +
     '</div>';
 }

@@ -108,6 +108,11 @@
   position:relative; border:1px solid rgba(255,255,255,.09); background:rgba(0,0,0,.28);
   padding:4px 5px; min-height:55px; box-shadow:inset 2px 0 0 rgba(255,255,255,.04);
 }
+.tourn-spectate-btn {
+  position:absolute; top:5px; right:5px; background:rgba(0,0,0,.45); border:1px solid rgba(0,255,200,.35);
+  color:#00ffcc; font-family:inherit; font-size:7px; letter-spacing:1px; padding:2px 5px; cursor:pointer;
+}
+.tourn-spectate-btn:hover { border-color:#00ffcc; background:rgba(0,255,200,.08); }
 .bracket-match.active { border-color:#f1d37a; box-shadow:inset 3px 0 0 #f1d37a,0 0 18px rgba(197,154,58,.12); }
 .bracket-status { color:#625d52; font-size:7px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px; }
 .bracket-player {

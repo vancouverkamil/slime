@@ -21,6 +21,7 @@ function endMatch() {
   if (tournamentMode && tournamentState) {
     var match = tournamentState.currentSeries;
     var opponent = match ? getMatchOpponent(match) : null;
+    if (typeof sendTournamentScoreUpdate === 'function') sendTournamentScoreUpdate();
     finishTournamentSet(!!leftWon);
     if (leftWon) {
       sessionWins++;

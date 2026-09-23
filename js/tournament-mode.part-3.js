@@ -57,13 +57,15 @@ function tournamentMatchHtml(match) {
     ? '<div class="series-accept">Accept: ' + (match.acceptedA ? 'A ready' : 'A waiting') + ' / ' + (match.acceptedB ? 'B ready' : 'B waiting') + '</div>'
     : '';
   var watch = (match.status === 'bot_live' || match.status === 'live')
-    ? ' onclick="spectateTournamentMatch(\'' + escHtml(match.id) + '\')"'
+    ? '<button class="tourn-spectate-btn" onclick="event.stopPropagation();spectateTournamentMatch(\'' + escHtml(match.id) + '\')">Spectate</button>'
     : '';
-  return '<div class="bracket-match' + (active ? ' active' : '') + '"' + watch + '>' +
+  return '<div class="bracket-match' + (active ? ' active' : '') + '">' +
+    watch +
     '<div class="bracket-status">' + escHtml(status) + '</div>' +
     tournamentEntrantHtml(match.a, aWin) +
     tournamentEntrantHtml(match.b, bWin) +
     '<div class="series-score">Best of 3 (current score: ' + (match.winsA || 0) + '-' + (match.winsB || 0) + ')</div>' +
+    '<div class="series-score">Current game: ' + (match.scoreA || 0) + '-' + (match.scoreB || 0) + '</div>' +
     accept +
   '</div>';
 }

@@ -32,12 +32,7 @@ function getTournLobby(bracketId) {
 }
 
 function broadcastTournLobby(lobby) {
-  const msg = JSON.stringify({
-    type: 'tournament_lobby',
-    bracketId: lobby.bracketId,
-    bracketName: lobby.name,
-    minLevel: lobby.minLevel,
-    maxLevel: lobby.maxLevel,
+  const msg = JSON.stringify({ type: 'tournament_lobby', bracketId: lobby.bracketId, bracketName: lobby.name, minLevel: lobby.minLevel, maxLevel: lobby.maxLevel,
     players: lobby.players.map(p => ({ username: p.info.username, name: p.info.name, level: p.info.progression ? p.info.progression.level : 1, xp: p.xp, ready: p.ready, color: p.info.bodyColor || '#00ff00' })),
     totalSlots: TOURN_SIZE,
     readyCount: lobby.players.filter(p => p.ready).length,
@@ -193,6 +188,11 @@ function handleTournamentResult(ws, info, msg) {
   if (match.status === 'final') resolveMatch(lobby, match, match.winsA >= 2 ? match.a : match.b, null);
   else { match.status = 'live'; match.acceptDeadline = 0; broadcastTournState(lobby); }
 }
+function handleTournamentScore(ws, info, msg) {
+  const lobby = activeTournaments.get(info.tournamentBracket); if (!lobby) return; const match = findMatch(lobby, msg.matchId);
+  const meA = match && match.a && match.a.username === info.username, meB = match && match.b && match.b.username === info.username; if (!match || match.status === 'final' || (!meA && !meB)) return;
+  match.scoreA = Math.max(0, Math.min(WIN_AMOUNT, Number(meA ? msg.scoreFor : msg.scoreAgainst) || 0)); match.scoreB = Math.max(0, Math.min(WIN_AMOUNT, Number(meA ? msg.scoreAgainst : msg.scoreFor) || 0)); broadcastTournState(lobby);
+}
 
-  Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult });
+  Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult, handleTournamentScore });
 };

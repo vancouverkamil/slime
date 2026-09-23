@@ -53,6 +53,7 @@ function updateBall() {
     localPointFlashEnd = Date.now() + 700;
     localRallyCount = 0; localLastBallSide = null;
     playSfx('score');
+    if (typeof sendTournamentScoreUpdate === 'function') sendTournamentScoreUpdate();
     endPoint(); return true;
   }
   return false;

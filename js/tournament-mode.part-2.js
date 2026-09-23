@@ -171,3 +171,9 @@ function cancelMatchIntro() {
 function tournamentRoundName(round) {
   return round === 0 ? 'Quarterfinal' : round === 1 ? 'Semifinal' : 'Final';
 }
+
+function sendTournamentScoreUpdate() {
+  var match = tournamentState && tournamentState.currentSeries;
+  if (!match || tournamentState.kind !== 'online' || !lobbySocket || lobbySocket.readyState !== 1) return;
+  lobbySocket.send(JSON.stringify({ type:'tournament_score', matchId:match.id, scoreFor:slimeLeftScore, scoreAgainst:slimeRightScore }));
+}
