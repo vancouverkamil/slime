@@ -82,6 +82,7 @@ function loadOnlineTournament(data) {
         winsA: match.winsA || 0, winsB: match.winsB || 0, winner: winner,
         status: match.status || (match.a && match.b ? 'upcoming' : 'bye'),
         acceptDeadline: match.acceptDeadline || 0, resolveAt: match.resolveAt || 0,
+        acceptedA: !!match.acceptedA, acceptedB: !!match.acceptedB,
       };
     });
   });
@@ -92,6 +93,14 @@ function loadOnlineTournament(data) {
   tournamentState = { rounds: rounds, currentRound: 0, currentSeries: null, champion: data.champion ? data.champion : null, bracketName: data.bracketName, phase: 'bracket', kind: 'online' };
   var active = onlineTournamentMatchId && tournamentMatchById(onlineTournamentMatchId);
   if (active && active.status !== 'final') tournamentState.currentSeries = active;
+  var ready = onlineTournamentAcceptedMatchId && tournamentMatchById(onlineTournamentAcceptedMatchId);
+  if (ready && ready.status === 'live' && !pendingMatchIntro && gameState !== GAME_STATE_RUNNING) {
+    onlineTournamentAcceptedMatchId = null;
+    var pop = document.getElementById('TournamentAccept');
+    if (pop) pop.style.display = 'none';
+    setTimeout(startTournamentMatch, 0);
+    return;
+  }
   if (menuDiv && menuDiv.style.display !== 'none' && !onlineMode && !isSpectator) showTournamentHub();
 }
 
@@ -116,4 +125,23 @@ function showTournamentAccept(data) {
     if (t) t.textContent = left + 's to accept';
     if (left <= 0) { clearInterval(el._timer); el.style.display = 'none'; }
   }, 250);
+}
+
+function spectateTournamentMatch(matchId) {
+  var match = tournamentMatchById(matchId);
+  if (!match) return;
+  canvas.style.display = 'none';
+  menuDiv.style.display = 'block';
+  showBottomBar();
+  menuDiv.innerHTML =
+    '<div class="match-intro">' +
+      '<div class="match-intro-eyebrow">Tournament live feed</div>' +
+      '<div class="match-intro-cards">' +
+        '<div>' + playerCardHtml({ name: match.a ? match.a.name : 'TBD' }) + '</div>' +
+        '<div class="versus-stamp">LIVE</div>' +
+        '<div>' + playerCardHtml({ name: match.b ? match.b.name : 'TBD' }) + '</div>' +
+      '</div>' +
+      '<div class="result-copy">Best of 3 (current score: ' + (match.winsA || 0) + '-' + (match.winsB || 0) + ')</div>' +
+      '<button class="feature-primary" onclick="showTournamentHub()">BACK TO BRACKET</button>' +
+    '</div>';
 }

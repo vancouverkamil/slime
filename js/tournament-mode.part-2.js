@@ -63,9 +63,15 @@ function startTournamentMatch() {
     showTournamentHub();
     return;
   }
+  if (tournamentState.kind === 'online' && match.status === 'awaiting') {
+    onlineTournamentAcceptedMatchId = match.id;
+    if (lobbySocket && lobbySocket.readyState === 1) {
+      lobbySocket.send(JSON.stringify({ type:'tournament_accept', matchId:match.id }));
+    }
+    showTournamentHub();
+    return;
+  }
   match.status = 'live';
-  if (tournamentState.kind === 'online' && lobbySocket && lobbySocket.readyState === 1)
-    lobbySocket.send(JSON.stringify({ type:'tournament_accept', matchId:match.id }));
   var pop = document.getElementById('TournamentAccept');
   if (pop) pop.style.display = 'none';
   onlineTournamentMatchId = tournamentState.kind === 'online' ? match.id : null;

@@ -89,11 +89,11 @@
   .tourn-progress { align-items:start; flex-direction:column; gap:4px; }
   .bracket-board { gap:5px; }
   .bracket-match { padding:4px; }
-  .bracket-player { grid-template-columns:14px 8px minmax(0,1fr) 22px; gap:3px; font-size:8px; }
+  .bracket-player { grid-template-columns:14px 8px minmax(0,1fr); gap:3px; font-size:8px; }
   .bracket-player i { font-size:8px; }
   .bracket-player .swab { width:8px; height:8px; }
   .round-title { font-size:8px; letter-spacing:1px; }
-  .series-score,.bracket-status { font-size:7px; }
+  .series-score,.series-accept,.bracket-status { font-size:7px; }
   .home-title { font-size:clamp(64px,19vw,120px); letter-spacing:2px; }
   .home-subtitle { font-size:clamp(18px,5.5vw,34px); letter-spacing:6px; }
   .home-hint { font-size:clamp(13px,3.8vw,20px); }

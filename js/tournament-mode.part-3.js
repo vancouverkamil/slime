@@ -42,7 +42,6 @@ function tournamentEntrantHtml(e, winner) {
     '<span class="seed">' + escHtml(e.seed || '-') + '</span>' +
     '<span class="swab" style="background:' + escHtml(e.color || '#777') + ';"></span>' +
     '<b>' + escHtml(e.name) + '</b>' +
-    '<i>L' + escHtml(e.level || 1) + '</i>' +
   '</div>';
 }
 
@@ -54,11 +53,18 @@ function tournamentMatchHtml(match) {
   if (status === 'bot_live') status = 'spectating bots';
   if (status === 'awaiting') status = 'awaiting accept';
   if (status === 'reported') status = 'syncing result';
-  return '<div class="bracket-match' + (active ? ' active' : '') + '">' +
+  var accept = match.status === 'awaiting'
+    ? '<div class="series-accept">Accept: ' + (match.acceptedA ? 'A ready' : 'A waiting') + ' / ' + (match.acceptedB ? 'B ready' : 'B waiting') + '</div>'
+    : '';
+  var watch = (match.status === 'bot_live' || match.status === 'live')
+    ? ' onclick="spectateTournamentMatch(\'' + escHtml(match.id) + '\')"'
+    : '';
+  return '<div class="bracket-match' + (active ? ' active' : '') + '"' + watch + '>' +
     '<div class="bracket-status">' + escHtml(status) + '</div>' +
     tournamentEntrantHtml(match.a, aWin) +
     tournamentEntrantHtml(match.b, bWin) +
-    '<div class="series-score">BO3 ' + (match.winsA || 0) + '-' + (match.winsB || 0) + '</div>' +
+    '<div class="series-score">Best of 3 (current score: ' + (match.winsA || 0) + '-' + (match.winsB || 0) + ')</div>' +
+    accept +
   '</div>';
 }
 

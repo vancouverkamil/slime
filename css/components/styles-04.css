@@ -111,7 +111,7 @@
 .bracket-match.active { border-color:#f1d37a; box-shadow:inset 3px 0 0 #f1d37a,0 0 18px rgba(197,154,58,.12); }
 .bracket-status { color:#625d52; font-size:7px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px; }
 .bracket-player {
-  display:grid; grid-template-columns:16px 9px 1fr 24px; gap:5px; align-items:center;
+  display:grid; grid-template-columns:16px 9px 1fr; gap:5px; align-items:center;
   color:#9d9788; font-size:8px; min-height:15px;
 }
 .bracket-player b { color:#ddd; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -122,6 +122,7 @@
 .bracket-player.mine b { color:#66ffcc; }
 .bracket-player.empty { color:#4d493f; display:block; padding:2px 0; }
 .series-score { color:#5e594d; font-size:7px; text-align:right; letter-spacing:1px; margin-top:1px; }
+.series-accept { color:#8f856b; font-size:7px; text-align:right; letter-spacing:1px; margin-top:1px; }
 .tournament-action {
   position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between;
   margin-top:10px; border-top:1px solid rgba(197,154,58,.16); padding-top:10px;
@@ -162,12 +163,13 @@
 .bracket-match { padding:clamp(7px,.8vw,12px); min-height:clamp(72px,8vh,108px); }
 .bracket-status { font-size:clamp(9px,.8vw,12px); margin-bottom:5px; }
 .bracket-player {
-  grid-template-columns:22px 12px 1fr 34px;
+  grid-template-columns:22px 12px 1fr;
   gap:7px; font-size:clamp(10px,.95vw,14px); min-height:22px;
 }
 .bracket-player i { font-size:clamp(10px,.9vw,13px); }
 .bracket-player .swab { width:12px; height:12px; }
 .series-score { font-size:clamp(9px,.8vw,12px); margin-top:2px; }
+.series-accept { font-size:clamp(8px,.75vw,11px); }
 .tournament-action { font-size:clamp(12px,1vw,16px); }
 .champion-line { font-size:clamp(14px,1.2vw,20px); }
 .match-intro-eyebrow,.result-kicker { font-size:clamp(12px,1.1vw,16px); }
