@@ -7,7 +7,7 @@ module.exports = function install(ctx) {
   }
 
   function findLobbyAndMatch(info, id) {
-    const lobby = activeTournaments && activeTournaments.get(info.tournamentBracket);
+    const lobby = ctx.tournamentLobbyFor ? ctx.tournamentLobbyFor(info) : activeTournaments.get(info.tournamentBracket);
     if (!lobby) return null;
     const match = findMatch(lobby, id);
     return match ? { lobby, match } : null;

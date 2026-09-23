@@ -30,6 +30,7 @@ wss.on('connection', async (ws, req) => {
     tournamentBracket: null,
   };
   allClients.set(ws, info);
+  if (ctx.reattachTournament) ctx.reattachTournament(ws, info);
 
   send(ws, { type: 'connected', name: info.name, profile, totalPlayers: allClients.size, lobbies: getLobbySnapshot(), playerList: getPlayerList() });
   pushLobbyState();

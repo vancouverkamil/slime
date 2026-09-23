@@ -1,9 +1,12 @@
 function activePlayerMatch() {
   if (!tournamentState) return null;
+  var mine = currentAccount && currentAccount.username;
   for (var r = 0; r < tournamentState.rounds.length; r++) {
     for (var m = 0; m < tournamentState.rounds[r].length; m++) {
       var match = tournamentState.rounds[r][m];
-      if (match.status !== 'final' && match.a && match.b && (match.a.player || match.b.player)) return match;
+      var aMe = match.a && (match.a.player || (mine && match.a.username === mine));
+      var bMe = match.b && (match.b.player || (mine && match.b.username === mine));
+      if (match.status !== 'final' && match.a && match.b && (aMe || bMe)) return match;
     }
   }
   return null;

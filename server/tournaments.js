@@ -75,8 +75,8 @@ function buildTournBracket(lobby) {
   const m = (a, b, round, slot) => ({ id:'r'+round+'m'+slot, round, slot, a, b, winsA: 0, winsB: 0, winner: null, status: 'upcoming' });
   return [
     [m(ordered[0], ordered[1], 0, 0), m(ordered[2], ordered[3], 0, 1), m(ordered[4], ordered[5], 0, 2), m(ordered[6], ordered[7], 0, 3)],
-    [{ round:1, slot:0, a:null, b:null, winsA:0, winsB:0, winner:null, status:'waiting' }, { round:1, slot:1, a:null, b:null, winsA:0, winsB:0, winner:null, status:'waiting' }],
-    [{ round:2, slot:0, a:null, b:null, winsA:0, winsB:0, winner:null, status:'waiting' }],
+    [Object.assign(m(null, null, 1, 0), { status: 'waiting' }), Object.assign(m(null, null, 1, 1), { status: 'waiting' })],
+    [Object.assign(m(null, null, 2, 0), { status: 'waiting' })],
   ];
 }
 
@@ -94,7 +94,12 @@ function broadcastTournState(lobby) {
 }
 function advance(lobby, match) {
   const nextRound = lobby.rounds[match.round + 1];
-  if (!nextRound) { lobby.champion = match.winner; broadcastTournState(lobby); return; }
+  if (!nextRound) {
+    lobby.champion = match.winner; broadcastTournState(lobby); clearTimeout(lobby.tickTimer);
+    // Free the bracket for new sign-ups; the finished lobby stays viewable until the next one starts.
+    setTimeout(() => { if (tournamentLobbies.get(lobby.bracketId) === lobby) tournamentLobbies.delete(lobby.bracketId); }, 60000);
+    return;
+  }
   const next = nextRound[Math.floor(match.slot / 2)];
   if (match.slot % 2 === 0) next.a = match.winner; else next.b = match.winner;
   next.status = next.a && next.b ? 'upcoming' : 'waiting';
@@ -102,7 +107,7 @@ function advance(lobby, match) {
 function resolveMatch(lobby, match, winner, loser) {
   if (!match || match.status === 'final') return;
   match.winner = winner; match.status = 'final'; match.winsA = winner === match.a ? 2 : Math.max(match.winsA || 0, 0); match.winsB = winner === match.b ? 2 : Math.max(match.winsB || 0, 0);
-  if (loser) loser.disqualified = !!loser.username; advance(lobby, match); broadcastTournState(lobby); setTimeout(() => tickTourn(lobby), 800);
+  if (loser) loser.disqualified = !!loser.username; advance(lobby, match);
 }
 function scoreBot(match) {
   const ax = (match.a.xp || 0) + (match.a.botLevel || match.a.level || 1) * 700, bx = (match.b.xp || 0) + (match.b.botLevel || match.b.level || 1) * 700;
@@ -110,17 +115,28 @@ function scoreBot(match) {
   return ax + (salt % 900) >= bx + ((salt * 7) % 900) ? match.a : match.b;
 }
 function tickTourn(lobby) {
-  if (!lobby || lobby.champion) return; const now = Date.now();
+  if (!lobby || lobby.champion) return; const now = Date.now(); let changed = false;
   for (const round of lobby.rounds) for (const match of round) {
     if (match.status === 'awaiting' && match.acceptDeadline && now > match.acceptDeadline) {
       const aOk = !match.a.username || match.acceptedA, bOk = !match.b.username || match.acceptedB;
-      return resolveMatch(lobby, match, aOk && !bOk ? match.a : match.b, aOk && !bOk ? match.b : match.a);
+      resolveMatch(lobby, match, aOk && !bOk ? match.a : match.b, aOk && !bOk ? match.b : match.a); changed = true; continue;
     }
-    if (match.status === 'bot_live' && now > match.resolveAt) return resolveMatch(lobby, match, scoreBot(match), null);
+    if (match.status === 'bot_live' && now > match.resolveAt) { resolveMatch(lobby, match, scoreBot(match), null); changed = true; continue; }
     if (match.status !== 'upcoming' || !match.a || !match.b) continue;
-    if (!match.a.username && !match.b.username) { match.status = 'bot_live'; match.resolveAt = now + 8000; broadcastTournState(lobby); return setTimeout(() => tickTourn(lobby), 8200); }
-    match.status = 'awaiting'; match.acceptDeadline = now + 60000; match.acceptedA = !match.a.username; match.acceptedB = !match.b.username; broadcastTournState(lobby); sendAccepts(lobby, match); return setTimeout(() => tickTourn(lobby), 61000);
+    if (!match.a.username && !match.b.username) { match.status = 'bot_live'; match.resolveAt = now + 8000; changed = true; continue; }
+    match.status = 'awaiting'; match.acceptDeadline = now + 60000; match.acceptedA = !match.a.username; match.acceptedB = !match.b.username; changed = true; sendAccepts(lobby, match);
   }
+  if (changed) broadcastTournState(lobby);
+  scheduleTick(lobby);
+}
+// One timer per lobby, aimed at the next accept deadline or bot-match finish.
+function scheduleTick(lobby) {
+  clearTimeout(lobby.tickTimer); if (lobby.champion) return; let next = Infinity;
+  for (const r of lobby.rounds) for (const m of r) {
+    if (m.status === 'awaiting' && m.acceptDeadline) next = Math.min(next, m.acceptDeadline);
+    if (m.status === 'bot_live') next = Math.min(next, m.resolveAt);
+  }
+  if (next < Infinity) lobby.tickTimer = setTimeout(() => tickTourn(lobby), Math.max(50, next - Date.now() + 50));
 }
 function sendAccepts(lobby, match) {
   tournClients(lobby).forEach(([ws, info]) => {
@@ -171,29 +187,6 @@ function handleTournamentLeave(ws, info) {
   }
   info.tournamentBracket = null;
 }
-function handleTournamentAccept(ws, info, msg) {
-  const lobby = activeTournaments.get(info.tournamentBracket); if (!lobby) return;
-  const match = findMatch(lobby, msg.matchId); if (!match || match.status !== 'awaiting') return;
-  if (match.a && match.a.username === info.username) match.acceptedA = true;
-  if (match.b && match.b.username === info.username) match.acceptedB = true;
-  if (match.acceptedA && match.acceptedB) { match.status = 'live'; match.acceptDeadline = 0; }
-  broadcastTournState(lobby);
-}
-function handleTournamentResult(ws, info, msg) {
-  const lobby = activeTournaments.get(info.tournamentBracket); if (!lobby) return;
-  const match = findMatch(lobby, msg.matchId); if (!match || match.status === 'final') return;
-  if (!match.a || !match.b || (match.a.username !== info.username && match.b.username !== info.username)) return;
-  const won = !!msg.won, meA = match.a.username === info.username;
-  if (won === meA) match.winsA++; else match.winsB++;
-  match.status = match.winsA >= 2 || match.winsB >= 2 ? 'final' : 'awaiting';
-  if (match.status === 'final') resolveMatch(lobby, match, match.winsA >= 2 ? match.a : match.b, null);
-  else { match.status = 'live'; match.acceptDeadline = 0; broadcastTournState(lobby); }
-}
-function handleTournamentScore(ws, info, msg) {
-  const lobby = activeTournaments.get(info.tournamentBracket); if (!lobby) return; const match = findMatch(lobby, msg.matchId);
-  const meA = match && match.a && match.a.username === info.username, meB = match && match.b && match.b.username === info.username; if (!match || match.status === 'final' || (!meA && !meB)) return;
-  match.scoreA = Math.max(0, Math.min(WIN_AMOUNT, Number(meA ? msg.scoreFor : msg.scoreAgainst) || 0)); match.scoreB = Math.max(0, Math.min(WIN_AMOUNT, Number(meA ? msg.scoreAgainst : msg.scoreFor) || 0)); broadcastTournState(lobby);
-}
 
-  Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult, handleTournamentScore });
+  Object.assign(ctx, { handleTournamentJoin, handleTournamentReady, handleTournamentLeave, tournamentHelpers: { findMatch, resolveMatch, broadcastTournState, tickTourn } });
 };
