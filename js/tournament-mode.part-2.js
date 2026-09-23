@@ -64,6 +64,11 @@ function startTournamentMatch() {
     return;
   }
   match.status = 'live';
+  if (tournamentState.kind === 'online' && lobbySocket && lobbySocket.readyState === 1)
+    lobbySocket.send(JSON.stringify({ type:'tournament_accept', matchId:match.id }));
+  var pop = document.getElementById('TournamentAccept');
+  if (pop) pop.style.display = 'none';
+  onlineTournamentMatchId = tournamentState.kind === 'online' ? match.id : null;
   tournamentState.currentSeries = match;
   tournamentState.phase = 'active_match';
   saveSoloTournament();

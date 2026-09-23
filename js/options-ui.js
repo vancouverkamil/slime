@@ -20,6 +20,7 @@ function showOptSection(sec) {
     if (nav)     nav.classList.toggle('opt-nav-active', s === sec);
   });
   if (sec === 'slime') initColorPicker();
+  if (sec === 'controls') renderKeybindControls();
   if (sec === 'studio') {
     var dc = document.getElementById('HatDrawCanvas');
     initHatDrawCanvas(dc);

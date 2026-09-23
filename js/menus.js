@@ -15,7 +15,9 @@ function spaceKeyDown() {
 // ── local game start ──────────────────────────────────────
 function start(startAsOnePlayer) {
   currentRoomId = null; currentRoomMapId = null; localMapId = null;
-  tournamentMode = false; tournamentState = null; tournamentWinPending = false;
+  if (!tournamentState || tournamentState.kind !== 'online') {
+    tournamentMode = false; tournamentState = null; tournamentWinPending = false;
+  }
   final4Mode = false; final4WinPending = false;
   onePlayer = startAsOnePlayer;
   slimeLeftScore = 0; slimeRightScore = 0;

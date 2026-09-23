@@ -1,6 +1,14 @@
 function finishTournamentSet(playerWon) {
   var match = tournamentState && tournamentState.currentSeries;
   if (!match || match.status === 'final') return false;
+  if (tournamentState.kind === 'online') {
+    if (lobbySocket && lobbySocket.readyState === 1)
+      lobbySocket.send(JSON.stringify({ type:'tournament_result', matchId:match.id, won:!!playerWon }));
+    match.status = 'reported';
+    tournamentState.currentSeries = null;
+    tournamentState.phase = 'bracket';
+    return true;
+  }
   if (match.a.player) {
     if (playerWon) match.winsA++;
     else match.winsB++;
@@ -42,8 +50,12 @@ function tournamentMatchHtml(match) {
   var aWin = match.winner && match.a && match.winner.id === match.a.id;
   var bWin = match.winner && match.b && match.winner.id === match.b.id;
   var active = match === activePlayerMatch();
+  var status = match.status || 'waiting';
+  if (status === 'bot_live') status = 'spectating bots';
+  if (status === 'awaiting') status = 'awaiting accept';
+  if (status === 'reported') status = 'syncing result';
   return '<div class="bracket-match' + (active ? ' active' : '') + '">' +
-    '<div class="bracket-status">' + escHtml(match.status || 'waiting') + '</div>' +
+    '<div class="bracket-status">' + escHtml(status) + '</div>' +
     tournamentEntrantHtml(match.a, aWin) +
     tournamentEntrantHtml(match.b, bWin) +
     '<div class="series-score">BO3 ' + (match.winsA || 0) + '-' + (match.winsB || 0) + '</div>' +
@@ -66,7 +78,7 @@ function showTournamentHub() {
     '<div class="feature-screen tournament-screen">' +
       '<div class="feature-header">' +
         '<div><span>Tournament</span><b>' + escHtml(tournamentState.bracketName || 'Slime Cup Bracket') + '</b></div>' +
-        '<button class="feature-back" onclick="exitTournamentToMenu()">SAVE &amp; EXIT</button>' +
+        '<button class="feature-back" onclick="exitTournamentToMenu()">' + (tournamentState.kind === 'online' ? 'BACK TO SITE' : 'SAVE &amp; EXIT') + '</button>' +
       '</div>' +
       '<div class="tourn-progress" role="status" aria-live="polite"><b>' + escHtml(roundLabel) + '</b><span>' + (champion ? escHtml(champion.name) + ' claims the cup' : 'Best of 3 / first to 2 wins') + '</span></div>' +
       '<div class="bracket-board">' +
@@ -82,7 +94,7 @@ function showTournamentHub() {
           ? '<div class="champion-line">' + escHtml(champion.name) + ' CLAIMS THE CUP</div>'
           : '<div><b>Next target:</b> ' + escHtml(opponent ? opponent.name : 'TBD') + '</div>') +
         (champion ? '<button class="feature-primary" onclick="clearSoloTournament();startTournament()">NEW TOURNAMENT</button>'
-          : match ? '<button class="feature-primary" onclick="startTournamentMatch()">START SERIES</button>'
+          : match ? '<button class="feature-primary" onclick="startTournamentMatch()">' + (tournamentState.kind === 'online' ? 'ACCEPT / PLAY' : 'START SERIES') + '</button>'
           : '<button class="feature-primary" disabled>BRACKET UPDATING</button>') +
       '</div>' +
     '</div>';

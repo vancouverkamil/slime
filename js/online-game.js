@@ -169,8 +169,10 @@ function handleServerMessage(msg) {
     if (typeof onlineTournamentBracketId !== 'undefined' && onlineTournamentBracketId === msg.bracketId) {
       if (typeof showOnlineTournamentLobby === 'function') showOnlineTournamentLobby(msg);
     }
-  } else if (msg.type === 'tournament_start') {
+  } else if (msg.type === 'tournament_start' || msg.type === 'tournament_update') {
     if (typeof loadOnlineTournament === 'function') loadOnlineTournament(msg);
+  } else if (msg.type === 'tournament_match_ready') {
+    if (typeof showTournamentAccept === 'function') showTournamentAccept(msg);
   } else if (msg.type === 'tournament_error') {
     addChatMessage(null, 'Tournament: ' + (msg.error || 'Unknown error'));
     if (typeof onlineTournamentBracketId !== 'undefined' && onlineTournamentBracketId) {

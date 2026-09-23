@@ -4,7 +4,7 @@ document.getElementById('OptionsDiv').innerHTML = `
           <!-- header -->
           <div class="opt-hdr">
             <span class="opt-hdr-title">&#9881; SETTINGS</span>
-            <span class="SmallButton" onclick="hideOptions()">[ CLOSE ]</span>
+            <button class="opt-close-btn" onclick="hideOptions()" type="button">[ CLOSE ]</button>
           </div>
 
           <!-- body -->
@@ -136,29 +136,38 @@ document.getElementById('OptionsDiv').innerHTML = `
 
               <!-- ── CONTROLS ── -->
               <div id="OptSection_controls" style="display:none">
-                <div class="opt-section-title" style="margin-top:0">Player 1</div>
-                <table class="opt-keys">
-                  <tr><td>Move Left / Right</td><td class="opt-key">A &nbsp;/&nbsp; D</td></tr>
-                  <tr><td>Jump</td><td class="opt-key">W</td></tr>
-                </table>
-                <div class="opt-section-title">Player 2</div>
-                <table class="opt-keys">
-                  <tr><td>Move Left / Right</td><td class="opt-key">&#8592; &nbsp;/&nbsp; &#8594;</td></tr>
-                  <tr><td>Jump</td><td class="opt-key">&#8593;</td></tr>
-                </table>
+                <div class="opt-controls-head">
+                  <div>
+                    <div class="opt-section-title" style="margin-top:0">Player Controls</div>
+                    <div class="opt-label-dim">Click a control, then press the key you want.</div>
+                  </div>
+                  <button onclick="resetSlimeKeybinds()" class="hat-opt" type="button">Reset</button>
+                </div>
+                <div id="KeybindGrid" class="opt-keybind-grid"></div>
                 <div class="opt-section-title">General</div>
-                <table class="opt-keys">
-                  <tr><td>Pause / Menu</td><td class="opt-key">ESC</td></tr>
-                  <tr><td>Advance / Rematch</td><td class="opt-key">SPACE</td></tr>
-                  <tr><td>Options</td><td class="opt-key">O</td></tr>
-                </table>
-                <div class="opt-section-title">Emotes (in-game)</div>
-                <table class="opt-keys">
-                  <tr><td>Emote 1 &ndash; 4</td><td class="opt-key">1 &ndash; 4</td></tr>
-                </table>
+                <div class="opt-static-keys">
+                  <div><span>Pause / Menu</span><b>ESC</b></div>
+                  <div><span>Advance / Rematch</span><b>SPACE</b></div>
+                  <div><span>Emotes</span><b>1 - 4</b></div>
+                </div>
               </div>
 
             </div><!-- /opt-content -->
           </div><!-- /opt-body -->
         </div><!-- /opt-panel -->
 `;
+
+function renderKeybindControls() {
+  var grid = document.getElementById('KeybindGrid');
+  if (!grid || typeof slimeKeybinds === 'undefined') return;
+  var rows = [
+    ['Player 1', 'p1Left', 'Move Left'], ['Player 1', 'p1Right', 'Move Right'], ['Player 1', 'p1Jump', 'Jump'],
+    ['Player 2', 'p2Left', 'Move Left'], ['Player 2', 'p2Right', 'Move Right'], ['Player 2', 'p2Jump', 'Jump']
+  ];
+  grid.innerHTML = rows.map(function(row) {
+    var waiting = _listeningForKeybind === row[1];
+    var label = waiting ? 'PRESS KEY' : keyCodeLabel(slimeKeybinds[row[1]]);
+    return '<button class="opt-keybind' + (waiting ? ' listening' : '') + '" onclick="startKeybindListen(\'' + row[1] + '\')" type="button">' +
+      '<span>' + row[0] + '</span><em>' + row[2] + '</em><b>' + label + '</b></button>';
+  }).join('');
+}

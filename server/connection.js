@@ -1,5 +1,5 @@
 module.exports = function install(ctx) {
-  const { app, accounts, wss, allClients, slimeverseClients, rooms, progression, crypto, WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, SLIMEVERSE_WORLD, RPS_CHOICES, newBall, newSlime, initRound, tick, send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, getPublicPlayer, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat, broadcastSlimeverse, leaveSlimeverse, enterSlimeverse, slimeverseSnapshot, chatAllowed, parseCookies, getReqToken, handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, startRoomGame, handleTournamentJoin, handleTournamentReady, handleTournamentLeave, rankedQueue } = ctx;
+  const { app, accounts, wss, allClients, slimeverseClients, rooms, progression, crypto, WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, SLIMEVERSE_WORLD, RPS_CHOICES, newBall, newSlime, initRound, tick, send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, getPublicPlayer, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat, broadcastSlimeverse, leaveSlimeverse, enterSlimeverse, slimeverseSnapshot, chatAllowed, parseCookies, getReqToken, handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, startRoomGame, handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult, rankedQueue } = ctx;
 wss.on('connection', async (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const sessionToken = url.searchParams.get('session') || parseCookies(req.headers.cookie).slime_session;
@@ -138,6 +138,10 @@ async function handleMsg(ws, info, msg) {
     handleTournamentReady(ws, info);
   } else if (msg.type === 'tournament_leave') {
     handleTournamentLeave(ws, info);
+  } else if (msg.type === 'tournament_accept') {
+    handleTournamentAccept(ws, info, msg);
+  } else if (msg.type === 'tournament_result') {
+    handleTournamentResult(ws, info, msg);
   }
 }
 

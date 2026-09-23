@@ -75,19 +75,45 @@ function loadOnlineTournament(data) {
           player: isMe, bot: !!e.bot, username: e.username || null,
         };
       }
+      var winner = conv(match.winner);
       return {
         id: 'r' + ri + 'm' + match.slot, round: ri, slot: match.slot,
         a: conv(match.a), b: conv(match.b),
-        winsA: 0, winsB: 0, winner: null,
-        status: match.a && match.b ? 'upcoming' : 'bye',
+        winsA: match.winsA || 0, winsB: match.winsB || 0, winner: winner,
+        status: match.status || (match.a && match.b ? 'upcoming' : 'bye'),
+        acceptDeadline: match.acceptDeadline || 0, resolveAt: match.resolveAt || 0,
       };
     });
   });
 
-  onlineTournamentBracketId = null;
+  onlineTournamentBracketId = data.bracketId || onlineTournamentBracketId;
   tournamentMode = true;
   tournamentWinPending = false;
-  tournamentState = { rounds: rounds, currentRound: 0, currentSeries: null, champion: null, bracketName: data.bracketName, phase: 'bracket', kind: 'online' };
-  autoResolveTournamentRound(0);
-  showTournamentHub();
+  tournamentState = { rounds: rounds, currentRound: 0, currentSeries: null, champion: data.champion ? data.champion : null, bracketName: data.bracketName, phase: 'bracket', kind: 'online' };
+  var active = onlineTournamentMatchId && tournamentMatchById(onlineTournamentMatchId);
+  if (active && active.status !== 'final') tournamentState.currentSeries = active;
+  if (menuDiv && menuDiv.style.display !== 'none' && !onlineMode && !isSpectator) showTournamentHub();
+}
+
+function showTournamentAccept(data) {
+  loadOnlineTournament(data);
+  var match = activePlayerMatch();
+  if (!match) return;
+  var el = document.getElementById('TournamentAccept');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'TournamentAccept';
+    document.body.appendChild(el);
+  }
+  var end = data.deadline || Date.now() + 60000;
+  el.innerHTML = '<b>TOURNAMENT MATCH READY</b><span id="TournamentAcceptTimer"></span>' +
+    '<button onclick="startTournamentMatch()">ACCEPT</button><button onclick="showTournamentHub()">VIEW BRACKET</button>';
+  el.style.display = 'block';
+  clearInterval(el._timer);
+  el._timer = setInterval(function() {
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    var t = document.getElementById('TournamentAcceptTimer');
+    if (t) t.textContent = left + 's to accept';
+    if (left <= 0) { clearInterval(el._timer); el.style.display = 'none'; }
+  }, 250);
 }

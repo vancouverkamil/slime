@@ -2,6 +2,7 @@ var tournamentMode = false;
 var tournamentState = null;
 var tournamentWinPending = false;
 var onlineTournamentBracketId = null;
+var onlineTournamentMatchId = null;
 var TOURNAMENT_STORAGE_KEY = 'slime_soloTournament';
 
 var TOURNAMENT_FIELD = [
@@ -124,6 +125,7 @@ function resumeSoloTournament() {
 
 function exitTournamentToMenu() {
   pendingMatchIntro = null;
+  if (tournamentState && tournamentState.kind === 'online') { toInitialMenu(); return; }
   tournamentMode = false;
   tournamentState = null;
   tournamentWinPending = false;
