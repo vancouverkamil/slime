@@ -80,7 +80,7 @@ input[type='checkbox'] { margin-right:1em; accent-color:var(--accent); }
   body { overflow:auto; }
   #LobbyWrapper { min-height:100vh; height:auto; }
   #TopBar { font-size:var(--fs-md); padding:9px 12px; }
-  #TopBar > span:last-child { display:none; }
+  #TopWalletBtn { display:none; }
   #MiddleRow { flex-direction:column; min-height:720px; }
   #ContentDiv { min-height:520px; }
   #Sidebar {
@@ -92,18 +92,18 @@ input[type='checkbox'] { margin-right:1em; accent-color:var(--accent); }
   #ChatInput { font-size:var(--fs-md); padding:9px 10px; }
   #EscMenu .esc-title { font-size:32px; }
   #EscMenu .eBtn { font-size:20px; width:min(460px,82vw); }
-  #BottomBar { position:static; padding:10px 12px; gap:8px; }
+  #BottomBar { position:static; padding:10px 12px; gap:8px; overflow-x:auto; justify-content:flex-start; }
   .lobby-select-head { align-items:flex-start; flex-direction:column; gap:8px; }
   .lobby-map-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .lobby-map-art { height:150px; }
   .bigBtn {
-    flex:1 1 170px; min-width:150px;
-    font-size:var(--fs-sm); padding:12px 10px 12px 48px; letter-spacing:1px;
+    flex:1 1 213px; min-width:188px;
+    font-size:clamp(16px,4vw,20px); padding:15px 13px 15px 60px; letter-spacing:1px;
   }
   .bigBtn::before {
-    left:9px; width:30px; height:30px; font-size:var(--fs-xs);
+    left:11px; width:38px; height:38px; font-size:clamp(12px,3vw,16px);
   }
-  .verseBtn { width:54px; height:54px; font-size:27px; }
+  .verseBtn { width:68px; height:68px; font-size:34px; }
   .barDivider { display:none; }
   .feature-grid.two { grid-template-columns:1fr; }
 }

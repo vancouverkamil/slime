@@ -4,10 +4,10 @@
     linear-gradient(var(--grain),rgba(var(--gold-rgb),.12),rgba(var(--accent-rgb),.035) 42%,rgba(0,0,0,.08)),
     repeating-linear-gradient(135deg,rgba(255,255,255,.028) 0 1px,transparent 1px 9px);
   border:1px solid rgba(var(--gold-rgb),.46);
-  color:var(--text); padding:clamp(12px,1.05vw,18px) clamp(18px,1.6vw,30px) clamp(12px,1.05vw,18px) clamp(60px,4.4vw,80px);
-  font-size:clamp(15px,1.12vw,20px); font-weight:bold; letter-spacing:2px;
+  color:var(--text); padding:clamp(15px,1.31vw,23px) clamp(23px,2vw,38px) clamp(15px,1.31vw,23px) clamp(75px,5.5vw,100px);
+  font-size:clamp(19px,1.4vw,25px); font-weight:bold; letter-spacing:2px;
   cursor:pointer; text-transform:uppercase;
-  user-select:none; display:inline-block;
+  user-select:none; display:inline-block; white-space:nowrap; flex:0 1 auto;
   font-family:'Courier New',monospace; transition:all .15s;
   position:relative; overflow:hidden;
   clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%,0 10px);
@@ -15,7 +15,7 @@
 }
 .verseBtn {
   --sigil:'?'; --ring:rgba(var(--gold-rgb),.55); --mark:var(--text);
-  width:clamp(56px,4.2vw,72px); height:clamp(56px,4.2vw,72px); border-radius:50%;
+  width:clamp(70px,5.25vw,90px); height:clamp(70px,5.25vw,90px); border-radius:50%;
   border:1px solid var(--ring); color:var(--text);
   display:inline-flex; align-items:center; justify-content:center;
   font-size:0; font-weight:bold; line-height:1; cursor:pointer;
@@ -38,17 +38,17 @@
   outline-offset:4px;
 }
 .barDivider {
-  width:1px; height:clamp(44px,3.6vw,60px); flex:0 0 auto; margin:0 clamp(10px,1vw,18px);
+  width:1px; height:clamp(55px,4.5vw,75px); flex:0 0 auto; margin:0 clamp(13px,1.25vw,23px);
   background:linear-gradient(180deg,transparent,rgba(var(--gold-rgb),.55),rgba(var(--accent-rgb),.35),transparent);
   box-shadow:0 0 12px rgba(var(--gold-rgb),.2);
 }
 .bigBtn::before {
   content:attr(data-sigil); position:absolute; left:clamp(10px,.9vw,16px); top:50%; transform:translateY(-50%);
-  width:clamp(32px,2.4vw,42px); height:clamp(32px,2.4vw,42px);
+  width:clamp(40px,3vw,53px); height:clamp(40px,3vw,53px);
   display:flex; align-items:center; justify-content:center;
   color:var(--mark); border:1px solid rgba(var(--gold-rgb),.42);
   background:rgba(0,0,0,.25);
-  font-size:clamp(12px,.9vw,15px); letter-spacing:1px;
+  font-size:clamp(15px,1.13vw,19px); letter-spacing:1px;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.42),0 0 12px rgba(var(--gold-rgb),.08);
 }
 .bigBtn::after {
@@ -85,7 +85,7 @@
 }
 .verseIcon {
   position:relative; z-index:1; display:block;
-  width:clamp(28px,2.35vw,38px); height:clamp(28px,2.35vw,38px);
+  width:clamp(35px,2.94vw,48px); height:clamp(35px,2.94vw,48px);
   color:var(--mark);
   filter:drop-shadow(0 0 8px rgba(var(--accent-rgb),.22));
   pointer-events:none;
@@ -117,7 +117,7 @@
 }
 .homeBtn { --sigil:'HOME'; --ring:rgba(var(--accent-rgb),.5); --mark:#9ffff0; overflow:hidden; }
 .homeBtn .verseIcon {
-  width:clamp(36px,2.9vw,46px); height:clamp(23px,1.9vw,30px);
+  width:clamp(45px,3.63vw,58px); height:clamp(29px,2.38vw,38px);
   border:2px solid rgba(var(--accent-rgb),.82); border-radius:50%;
   background:
     radial-gradient(circle at 50% 50%,var(--bg) 0 13%,var(--accent) 14% 22%,#061b18 23% 34%,transparent 35%),
@@ -167,7 +167,7 @@
   animation:fireLick 1.05s ease-in-out infinite;
 }
 .infernoBtn .verseIcon {
-  width:clamp(44px,3.5vw,58px); height:clamp(44px,3.5vw,58px);
+  width:clamp(55px,4.38vw,73px); height:clamp(55px,4.38vw,73px);
   border-radius:50%;
   background:
     linear-gradient(90deg,transparent 0 19%,rgba(35,35,35,.98) 20% 25%,transparent 26% 43%,rgba(25,25,25,.98) 44% 50%,transparent 51% 74%,rgba(35,35,35,.98) 75% 80%,transparent 81%),
@@ -179,4 +179,28 @@
     linear-gradient(180deg,transparent 0 18%,#ff4a24 19%,#7a0000 68%,#120000 100%);
   box-shadow:0 0 24px rgba(255,0,0,.82), inset 0 0 0 1px rgba(255,170,80,.12), inset 0 -10px 0 rgba(0,0,0,.28);
   animation:skullBlaring 1.35s ease-in-out infinite;
+}
+
+@media (max-width: 1800px) {
+  .bigBtn {
+    padding:clamp(14px,1.1vw,20px) clamp(17px,1.55vw,28px) clamp(14px,1.1vw,20px) clamp(64px,4.8vw,86px);
+    font-size:clamp(17px,1.18vw,22px);
+  }
+  .verseBtn { width:clamp(62px,4.7vw,80px); height:clamp(62px,4.7vw,80px); }
+  .bigBtn::before {
+    width:clamp(36px,2.65vw,47px); height:clamp(36px,2.65vw,47px);
+    font-size:clamp(13px,.95vw,17px);
+  }
+  .barDivider { margin:0 clamp(7px,.7vw,13px); }
+}
+
+@media (max-width: 1450px) {
+  .bigBtn {
+    padding:12px 14px 12px 52px;
+    font-size:16px; letter-spacing:1px;
+  }
+  .verseBtn { width:58px; height:58px; }
+  .bigBtn::before { left:9px; width:34px; height:34px; font-size:12px; }
+  .verseIcon { width:30px; height:30px; }
+  .homeBtn .verseIcon { width:40px; height:25px; }
 }

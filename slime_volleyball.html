@@ -60,6 +60,7 @@
 <script type="text/javascript" src="js/options-ui.js" defer></script>
 <script type="text/javascript" src="js/options-ui.part-2.js" defer></script>
 <script type="text/javascript" src="js/options-ui.part-3.js" defer></script>
+<script type="text/javascript" src="js/wallet-panel.js" defer></script>
 <script type="text/javascript" src="js/audio.js" defer></script>
 <script type="text/javascript" src="js/perf-overlay.js" defer></script>
 <script type="text/javascript" src="js/bootstrap.js" defer></script>
@@ -69,7 +70,7 @@
   <div id="TopBar">
     <span id="VersionText">v2.0</span>
     <span id="AnnouncementText">// SLIME VOLLEYBALL // ONLINE MULTIPLAYER //</span>
-    <span class="top-hint">KEYS 1-4 EMOTES</span>
+    <button id="TopWalletBtn" class="top-wallet-btn" type="button" onclick="connectSlimeWallet()">CONNECT WALLET</button>
   </div>
 
   <div id="MiddleRow">

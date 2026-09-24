@@ -2,8 +2,9 @@ function applyGameScale() {
   var wrapper = document.getElementById('LobbyWrapper');
   var mr      = document.getElementById('MiddleRow');
   var cd      = document.getElementById('ContentDiv');
+  var gc      = document.getElementById('GameContentDiv');
   var optDiv  = document.getElementById('OptionsDiv');
-  if (!wrapper || !mr || !cd) return;
+  if (!wrapper || !mr || !cd || !gc) return;
 
   wrapper.style.width = '100vw';
   wrapper.style.height = window.innerWidth <= 960 ? 'auto' : '100vh';
@@ -16,8 +17,21 @@ function applyGameScale() {
   var sidebar = document.getElementById('Sidebar');
   if (sidebar) sidebar.style.display = gameScale === 'full' ? 'none' : '';
 
-  var nw = Math.max(1, Math.round(cd.clientWidth || cd.offsetWidth || MIN_VIEW_W));
-  var nh = Math.max(1, Math.round(cd.clientHeight || cd.offsetHeight || MIN_VIEW_H));
+  var availableW = Math.max(1, Math.round(cd.clientWidth || cd.offsetWidth || MIN_VIEW_W));
+  var availableH = Math.max(1, Math.round(cd.clientHeight || cd.offsetHeight || MIN_VIEW_H));
+  var minAspect = 16 / 9;
+  var stageW = availableW;
+  var stageH = availableW / availableH < minAspect
+    ? Math.round(availableW / minAspect)
+    : availableH;
+  stageW = Math.max(320, stageW);
+  stageH = Math.max(180, stageH);
+  var nw = stageW;
+  var nh = stageH;
+  gc.style.width = stageW + 'px';
+  gc.style.height = stageH + 'px';
+  gc.style.left = Math.max(0, Math.round((availableW - stageW) / 2)) + 'px';
+  gc.style.top = Math.max(0, Math.round((availableH - stageH) / 2)) + 'px';
 
   if (canvas && (canvas.width !== nw || canvas.height !== nh)) {
     canvas.width = nw;

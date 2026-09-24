@@ -97,6 +97,10 @@
   position:relative; width:100%; height:100%; display:flex; flex-direction:column;
   align-items:center; justify-content:center; background:var(--bg); overflow:hidden;
 }
+.home-center-stack {
+  position:relative; z-index:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; width:min(920px,92%); max-height:92%;
+}
 .home-grid {
   position:absolute; inset:0;
   background-image:
@@ -134,16 +138,16 @@
   animation:hwbDrift3 11s ease-in-out infinite;
 }
 .home-title {
-  position:relative; color:var(--accent); font-size:clamp(80px,13vh,170px); font-weight:bold; letter-spacing:8px;
+  position:relative; color:var(--accent); font-size:clamp(62px,9.4vmin,150px); font-weight:bold; letter-spacing:8px;
   text-shadow:0 0 40px rgba(var(--accent-rgb),.8),0 0 80px rgba(var(--accent-rgb),.3);
-  margin-bottom:clamp(2px,.8vh,10px);
+  margin-bottom:clamp(1px,.55vmin,8px); line-height:.94;
 }
 .home-subtitle {
-  position:relative; color:var(--accent-2); font-size:clamp(26px,4.2vh,50px); letter-spacing:14px; text-transform:uppercase;
-  text-shadow:0 0 18px rgba(var(--accent-2-rgb),.6); margin-bottom:clamp(8px,1.4vh,18px);
+  position:relative; color:var(--accent-2); font-size:clamp(22px,3.2vmin,46px); letter-spacing:14px; text-transform:uppercase;
+  text-shadow:0 0 18px rgba(var(--accent-2-rgb),.6); margin-bottom:clamp(7px,1vmin,15px);
 }
-.home-session { position:relative; color:var(--text-faint); font-size:clamp(20px,2.5vh,30px); letter-spacing:2px; margin-bottom:10px; }
-.home-hint { position:relative; bottom:auto; color:var(--text-faint); font-size:clamp(14px,1.6vh,18px); letter-spacing:3px; text-transform:uppercase; margin-top:clamp(10px,1.6vh,20px); }
+.home-session { position:relative; color:var(--text-faint); font-size:clamp(16px,1.8vmin,26px); letter-spacing:2px; margin-bottom:8px; }
+.home-hint { position:relative; bottom:auto; color:var(--text-faint); font-size:clamp(12px,1.35vmin,17px); letter-spacing:3px; text-transform:uppercase; margin-top:clamp(7px,1.1vmin,16px); }
 
 /* home showcase — spinning slime */
 @keyframes slimeSpin360 {
@@ -152,34 +156,34 @@
 }
 .home-showcase {
   position:relative; display:flex; flex-direction:column; align-items:center;
-  margin-bottom:clamp(2px,.5vh,8px); flex-shrink:0;
+  margin-bottom:clamp(1px,.35vmin,7px); flex-shrink:0;
 }
 .home-spin-stage { perspective:580px; display:flex; align-items:center; justify-content:center; }
 .home-slime-canvas {
   display:block;
-  width:clamp(150px,20vw,220px); height:auto; aspect-ratio:220/280;
+  width:clamp(105px,13vmin,200px); height:auto; aspect-ratio:220/280;
   animation:slimeSpin360 3.5s linear infinite;
 }
 .home-pedestal {
-  width:clamp(110px,15vw,168px); height:clamp(10px,1.4vh,16px);
+  width:clamp(90px,11vmin,155px); height:clamp(8px,1vmin,15px);
   border-radius:50%;
-  margin-top:clamp(-10px,-1.5vh,-16px);
+  margin-top:clamp(-8px,-1vmin,-14px);
   background:radial-gradient(ellipse at center,rgba(var(--accent-rgb),.18) 0%,transparent 70%);
   box-shadow:0 0 28px 6px rgba(var(--accent-rgb),.12);
 }
 
 /* rank badges */
 .home-rank-row {
-  position:relative; display:flex; gap:clamp(14px,2.5vw,30px);
-  margin-bottom:clamp(6px,1.1vh,14px); flex-shrink:0;
+  position:relative; display:flex; gap:clamp(10px,2vmin,26px);
+  margin-bottom:clamp(4px,.8vmin,12px); flex-shrink:0;
 }
 .home-rank-badge {
   display:flex; flex-direction:column; align-items:center;
-  padding:clamp(12px,1.6vh,20px) clamp(20px,2.8vw,34px);
+  padding:clamp(8px,1.1vmin,17px) clamp(16px,2.4vmin,30px);
   border:1px solid rgba(var(--accent-rgb),.18); background:rgba(0,5,15,.55);
-  min-width:clamp(140px,17vw,200px); backdrop-filter:blur(4px);
+  min-width:clamp(130px,16vmin,190px); backdrop-filter:blur(4px);
 }
 .home-rank-prestige { border-color:rgba(var(--accent-rgb),.28); }
 .home-rank-comp     { border-color:rgba(255,210,0,.22); }
-.hrb-label { color:rgba(255,255,255,.55); font-size:clamp(13px,1.3vh,15px); letter-spacing:3px; text-transform:uppercase; margin-bottom:5px; }
-.hrb-title { font-size:clamp(18px,2.6vh,28px); letter-spacing:2px; text-transform:uppercase; font-weight:bold; text-shadow:0 0 12px currentColor; line-height:1.2; }
+.hrb-label { color:rgba(255,255,255,.55); font-size:clamp(11px,1.15vmin,14px); letter-spacing:3px; text-transform:uppercase; margin-bottom:4px; }
+.hrb-title { font-size:clamp(17px,2.1vmin,26px); letter-spacing:2px; text-transform:uppercase; font-weight:bold; text-shadow:0 0 12px currentColor; line-height:1.2; }

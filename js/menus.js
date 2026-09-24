@@ -61,6 +61,7 @@ function toInitialMenu() {
     '<div class="home-screen">' +
     '<div class="home-grid"></div>' +
     '<div class="home-water-layer"><div class="hwb hwb1"></div><div class="hwb hwb2"></div><div class="hwb hwb3"></div></div>' +
+    '<div class="home-center-stack">' +
     '<div class="home-showcase">' +
       '<div class="home-spin-stage">' +
         '<canvas id="HomeSlimeCanvas" class="home-slime-canvas" width="220" height="280"></canvas>' +
@@ -74,6 +75,7 @@ function toInitialMenu() {
       ? '<div class="home-session">SESSION: <span style="color:var(--accent-soft);">' + sessionWins + 'W</span> / <span style="color:var(--danger);">' + sessionLosses + 'L</span></div>'
       : '') +
     '<div class="home-hint">Quick Play to start</div>' +
+    '</div>' +
     '</div>';
   showBottomBar();
   setTimeout(initHomeSlimeAnim, 0);
