@@ -55,20 +55,33 @@ The local Express server hosts the frontend, account API, and realtime WebSocket
 
 Run `npm run supabase:bundle` after frontend changes when preparing the ignored Supabase Edge Function asset bundle.
 
-## Files
+## Project Layout
 
-| File | Purpose |
+The frontend is plain browser scripts grouped into one folder per section of the site. `slime_volleyball.html` loads them in order; the Slimeverse loads on demand from the list in `js/slimeverse/loader.js`.
+
+| Folder | Section |
 |---|---|
-| `slime_volleyball.html` | Main game (HTML + embedded JS) |
-| `Input.js` | Keyboard input handling |
-| `SlimeAI.js` | AI opponent logic |
-| `js/tournament-mode.js` | Solo and online tournament bracket flow |
-| `js/inventory-ui.js` | Inventory modal rendering and keyboard behavior |
-| `js/slimeverse.js` | Slimeverse world and hat-shop interior |
-| `css/slime.css` | Shared game, modal, and responsive layout styling |
-| `vball.png` | Volleyball sprite |
-| `slime175green.png` / `slime175red.png` | Slime sprites |
-| `sky2.jpg` / `cave.jpg` / `sunset.jpg` | Background images |
+| `js/core/` | Input, audio, page chrome, boot, and `screen.js` (which mode owns the game canvas) |
+| `js/game/` | Local match engine: state, physics, rendering, courts (`maps/`), Final 4, replays |
+| `js/ai/` | CPU opponents and The Final 4 bosses |
+| `js/online/` | Lobby socket, server message routing, online matches, chat, ranked queue |
+| `js/lobby/` | Room browser and map thumbnails |
+| `js/tournament/` | Solo and online tournament brackets, match flow, spectating |
+| `js/account/` | Accounts, profile, inventory, calling cards, wallet |
+| `js/customization/` | Slime look, hats and the Hat Studio |
+| `js/menus/` | Home, settings, ESC menu, game scale, dev menu |
+| `js/slimeverse/` | The Slimeverse open world and hat shop |
+| `js/components/` | Static markup for the options panel and Hat Studio overlay |
+| `server/core/` | REST API, main WebSocket connection, lobby state |
+| `server/rooms/` | Quick Play / ranked game rooms and the authoritative match loop |
+| `server/tournament/` | Tournament brackets, matches, rooms, spectating |
+| `server/slimeverse/` | The Slimeverse server on its own `/slimeverse` socket |
+
+### Slimeverse vs. the rest of the site
+
+The Slimeverse is a separate game identity. It connects on its own WebSocket (`/slimeverse`) and gets its own avatar id (`sv-...`), so it never appears in rooms, ranked queues or tournaments, and game traffic never reaches it. Your slime's look and your hat inventory still come from your account.
+
+Only one mode owns the game canvas at a time (`js/core/screen.js`). Starting a match, a tournament screen or a local game claims the screen, which stops the Slimeverse's loop, input and socket first. Tournament lobby updates never pull you out of the Slimeverse; accepting a match does.
 
 ## Credits
 

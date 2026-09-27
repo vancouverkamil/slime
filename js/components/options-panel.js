@@ -1,3 +1,4 @@
+// Component markup: the Options / settings panel.
 document.getElementById('OptionsDiv').innerHTML = `
         <div class="opt-panel">
 

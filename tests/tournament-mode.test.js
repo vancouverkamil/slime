@@ -31,7 +31,7 @@ function loadTournament() {
     escHtml: String,
   };
   vm.createContext(context);
-  vm.runInContext(readComponent('js/tournament-mode.js'), context);
+  vm.runInContext(readComponent(['js/core/screen.js', 'js/tournament/bracket.js', 'js/tournament/match-flow.js', 'js/tournament/hub.js', 'js/tournament/online-lobby.js']), context);
   return context;
 }
 

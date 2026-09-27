@@ -15,9 +15,9 @@ function makeServer() {
     leaveRoom() {},
     startRoomGame(room) { room.phase = 'playing'; started.push(room); },
   };
-  require('../server/tournaments')(ctx);
-  require('../server/tournament-matches')(ctx);
-  require('../server/tournament-rooms')(ctx);
+  require('../server/tournament/tournaments')(ctx);
+  require('../server/tournament/matches')(ctx);
+  require('../server/tournament/rooms')(ctx);
   const connect = (username) => {
     const ws = { readyState: 1, send() {} };
     const info = { userId: username, username, name: username, progression: { level: 5, xp: 100 } };

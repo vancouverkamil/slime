@@ -15,7 +15,7 @@ function test(name, fn) {
 
 const context = {};
 vm.createContext(context);
-vm.runInContext(readComponent('js/menus.js'), context);
+vm.runInContext(readComponent('js/menus/game-scale.js'), context);
 
 test('overlay bounds remain inside a short game viewport', () => {
   assert.deepStrictEqual(

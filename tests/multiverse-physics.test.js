@@ -25,7 +25,7 @@ function loadPhysics() {
     KEY_SPACE: 32,
   };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync('js/multiverse-physics.js', 'utf8'), context);
+  vm.runInContext(fs.readFileSync('js/slimeverse/prediction.js', 'utf8'), context);
   return context;
 }
 

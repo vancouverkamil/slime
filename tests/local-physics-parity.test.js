@@ -48,7 +48,7 @@ function makeClientContext(mapId) {
     endPoint() {},
   };
   vm.createContext(context);
-  vm.runInContext(readComponent('js/client-state.js'), context);
+  vm.runInContext(readComponent(['js/game/state.js', 'js/game/entities.js', 'js/game/physics.js']), context);
   context.onePlayer = false;
   context.localMapId = mapId;
   context.ball = { x: 200, y: 356, velocityX: 0, velocityY: 0, radius: 25 };

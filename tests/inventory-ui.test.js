@@ -29,7 +29,7 @@ function loadInventory() {
     },
   };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync('js/inventory-ui.js', 'utf8'), context);
+  vm.runInContext(fs.readFileSync('js/account/inventory.js', 'utf8'), context);
   return { context, grid, coins };
 }
 

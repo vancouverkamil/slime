@@ -12,7 +12,7 @@ function test(name, fn) {
   }
 }
 
-const source = readComponent('js/slimeverse.js');
+const source = readComponent('js/slimeverse');
 const css = readStylesheet('css/slime.css');
 
 test('slimeverse includes a leaderboard coliseum and lantern paths', () => {

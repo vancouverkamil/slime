@@ -5,65 +5,95 @@
 <title>Slime Volleyball</title>
 <script src="slime-config.js"></script>
 <script src="ws-config.js"></script>
-<script src="js/theme.js"></script>
+<script src="js/core/theme.js"></script>
 <script src="progression.js" defer></script>
 <link rel="stylesheet" href="css/slime.css">
 <link rel="stylesheet" href="css/components/touch-controls.css">
+<!-- page components -->
 <script type="text/javascript" src="js/components/options-panel.js" defer></script>
 <script type="text/javascript" src="js/components/hat-fullscreen.js" defer></script>
-<script type="text/javascript" src="Input.js" defer></script>
-<script type="text/javascript" src="js/touch-controls.js" defer></script>
-<script type="text/javascript" src="SlimeAI.js" defer></script>
-<script type="text/javascript" src="SlimeAI.part-2.js" defer></script>
-<script type="text/javascript" src="SlimeAI.part-3.js" defer></script>
-<script type="text/javascript" src="SlimeAI.part-4.js" defer></script>
-<script type="text/javascript" src="SlimeAI.part-5.js" defer></script>
-<script type="text/javascript" src="MentalSlimeAI.js" defer></script>
-<script type="text/javascript" src="MentalSlimeAI.part-2.js" defer></script>
-<script type="text/javascript" src="js/client-state.js" defer></script>
-<script type="text/javascript" src="js/client-state.part-2.js" defer></script>
-<script type="text/javascript" src="js/accounts.js" defer></script>
-<script type="text/javascript" src="js/accounts.part-2.js" defer></script>
-<script type="text/javascript" src="js/inventory-ui.js" defer></script>
-<script type="text/javascript" src="js/maps/map-00.js" defer></script><script type="text/javascript" src="js/maps/map-01.js" defer></script><script type="text/javascript" src="js/maps/map-02.js" defer></script><script type="text/javascript" src="js/maps/map-03.js" defer></script><script type="text/javascript" src="js/maps/map-04.js" defer></script><script type="text/javascript" src="js/maps/map-05.js" defer></script><script type="text/javascript" src="js/maps/map-06.js" defer></script><script type="text/javascript" src="js/maps/map-07.js" defer></script><script type="text/javascript" src="js/maps/map-08.js" defer></script><script type="text/javascript" src="js/maps/map-09.js" defer></script><script type="text/javascript" src="js/maps/map-10.js" defer></script><script type="text/javascript" src="js/maps/map-11.js" defer></script><script type="text/javascript" src="js/maps/map-12.js" defer></script><script type="text/javascript" src="js/maps/map-13.js" defer></script><script type="text/javascript" src="js/maps/map-14.js" defer></script><script type="text/javascript" src="js/maps/map-15.js" defer></script>
-<script type="text/javascript" src="js/render-maps.js" defer></script>
-<script type="text/javascript" src="js/render-game.js" defer></script>
-<script type="text/javascript" src="js/local-game.js" defer></script>
-<script type="text/javascript" src="js/online-state.js" defer></script>
-<script type="text/javascript" src="js/online-state.part-2.js" defer></script>
-<script type="text/javascript" src="js/map-thumbnails.js" defer></script>
-<script type="text/javascript" src="js/map-thumbnails.part-2.js" defer></script>
-<script type="text/javascript" src="js/feature-cards.js" defer></script>
-<script type="text/javascript" src="js/calling-cards.js" defer></script>
-<script type="text/javascript" src="js/tournament-mode.js" defer></script>
-<script type="text/javascript" src="js/tournament-mode.part-2.js" defer></script>
-<script type="text/javascript" src="js/tournament-mode.part-3.js" defer></script>
-<script type="text/javascript" src="js/tournament-mode.part-4.js" defer></script>
-<script type="text/javascript" src="js/tournament-spectate.js" defer></script>
-<script type="text/javascript" src="js/online-effects.js" defer></script>
-<script type="text/javascript" src="js/lobby-ui.js" defer></script>
-<script type="text/javascript" src="js/lobby-ui.part-2.js" defer></script>
-<script type="text/javascript" src="js/lobby-ui.part-3.js" defer></script>
-<script type="text/javascript" src="js/online-game.js" defer></script>
-<script type="text/javascript" src="js/online-game.part-2.js" defer></script>
-<script type="text/javascript" src="js/online-game.part-3.js" defer></script>
-<script type="text/javascript" src="js/menus.js" defer></script>
-<script type="text/javascript" src="js/menus.part-2.js" defer></script>
-<script type="text/javascript" src="js/menus.part-3.js" defer></script>
-<script type="text/javascript" src="js/replay.js" defer></script>
-<script type="text/javascript" src="js/customization-hats.js" defer></script>
-<script type="text/javascript" src="js/customization-hats.part-2.js" defer></script>
-<script type="text/javascript" src="js/customization-hats.part-3.js" defer></script>
-<script type="text/javascript" src="js/hat-studio.js" defer></script>
-<script type="text/javascript" src="js/hat-studio.part-2.js" defer></script>
-<script type="text/javascript" src="js/hat-studio.part-3.js" defer></script>
-<script type="text/javascript" src="js/options-ui.js" defer></script>
-<script type="text/javascript" src="js/options-ui.part-2.js" defer></script>
-<script type="text/javascript" src="js/options-ui.part-3.js" defer></script>
-<script type="text/javascript" src="js/wallet-panel.js" defer></script>
-<script type="text/javascript" src="js/audio.js" defer></script>
-<script type="text/javascript" src="js/perf-overlay.js" defer></script>
-<script type="text/javascript" src="js/bootstrap.js" defer></script>
+<!-- core: input -->
+<script type="text/javascript" src="js/core/input.js" defer></script>
+<script type="text/javascript" src="js/core/touch-controls.js" defer></script>
+<!-- ai: CPU opponents -->
+<script type="text/javascript" src="js/ai/slime-ai.js" defer></script>
+<script type="text/javascript" src="js/ai/pathetic-white.js" defer></script>
+<script type="text/javascript" src="js/ai/angry-red.js" defer></script>
+<script type="text/javascript" src="js/ai/slime-master.js" defer></script>
+<script type="text/javascript" src="js/ai/roster.js" defer></script>
+<script type="text/javascript" src="js/ai/mental-slime.js" defer></script>
+<script type="text/javascript" src="js/ai/final4-roster.js" defer></script>
+<!-- game: local match engine -->
+<script type="text/javascript" src="js/game/state.js" defer></script>
+<script type="text/javascript" src="js/game/entities.js" defer></script>
+<script type="text/javascript" src="js/game/physics.js" defer></script>
+<!-- account -->
+<script type="text/javascript" src="js/account/accounts.js" defer></script>
+<script type="text/javascript" src="js/account/profile.js" defer></script>
+<script type="text/javascript" src="js/account/inventory.js" defer></script>
+<!-- game: courts and rendering -->
+<script type="text/javascript" src="js/game/maps/map-00.js" defer></script><script type="text/javascript" src="js/game/maps/map-01.js" defer></script><script type="text/javascript" src="js/game/maps/map-02.js" defer></script><script type="text/javascript" src="js/game/maps/map-03.js" defer></script><script type="text/javascript" src="js/game/maps/map-04.js" defer></script><script type="text/javascript" src="js/game/maps/map-05.js" defer></script><script type="text/javascript" src="js/game/maps/map-06.js" defer></script><script type="text/javascript" src="js/game/maps/map-07.js" defer></script><script type="text/javascript" src="js/game/maps/map-08.js" defer></script><script type="text/javascript" src="js/game/maps/map-09.js" defer></script><script type="text/javascript" src="js/game/maps/map-10.js" defer></script><script type="text/javascript" src="js/game/maps/map-11.js" defer></script><script type="text/javascript" src="js/game/maps/map-12.js" defer></script><script type="text/javascript" src="js/game/maps/map-13.js" defer></script><script type="text/javascript" src="js/game/maps/map-14.js" defer></script><script type="text/javascript" src="js/game/maps/map-15.js" defer></script><script type="text/javascript" src="js/game/map-backgrounds.js" defer></script><script type="text/javascript" src="js/game/render.js" defer></script><script type="text/javascript" src="js/game/match-flow.js" defer></script>
+<!-- core: page chrome and screen ownership -->
+<script type="text/javascript" src="js/core/page-chrome.js" defer></script>
+<script type="text/javascript" src="js/core/screen.js" defer></script>
+<!-- online: connection, chat, match state -->
+<script type="text/javascript" src="js/online/connection.js" defer></script>
+<script type="text/javascript" src="js/customization/state.js" defer></script>
+<script type="text/javascript" src="js/game/sprites.js" defer></script>
+<script type="text/javascript" src="js/online/chat.js" defer></script>
+<script type="text/javascript" src="js/online/match-state.js" defer></script>
+<script type="text/javascript" src="js/online/players-online.js" defer></script>
+<!-- lobby: map art -->
+<script type="text/javascript" src="js/lobby/map-thumbnails.js" defer></script>
+<script type="text/javascript" src="js/lobby/map-thumbnail-art.js" defer></script>
+<!-- account: cards -->
+<script type="text/javascript" src="js/account/feature-cards.js" defer></script>
+<script type="text/javascript" src="js/account/calling-cards.js" defer></script>
+<!-- tournament -->
+<script type="text/javascript" src="js/tournament/bracket.js" defer></script>
+<script type="text/javascript" src="js/tournament/match-flow.js" defer></script>
+<script type="text/javascript" src="js/tournament/hub.js" defer></script>
+<script type="text/javascript" src="js/tournament/online-lobby.js" defer></script>
+<script type="text/javascript" src="js/tournament/spectate.js" defer></script>
+<!-- online: match effects -->
+<script type="text/javascript" src="js/online/match-effects.js" defer></script>
+<!-- lobby: room browser -->
+<script type="text/javascript" src="js/lobby/lobby-select.js" defer></script>
+<script type="text/javascript" src="js/lobby/map-browser.js" defer></script>
+<script type="text/javascript" src="js/lobby/rooms.js" defer></script>
+<!-- menus: dev tools and shortcuts -->
+<script type="text/javascript" src="js/menus/dev-menu.js" defer></script>
+<script type="text/javascript" src="js/core/shortcuts.js" defer></script>
+<!-- online: matches -->
+<script type="text/javascript" src="js/online/server-messages.js" defer></script>
+<script type="text/javascript" src="js/online/online-match.js" defer></script>
+<script type="text/javascript" src="js/online/pregame-overlay.js" defer></script>
+<!-- menus: home, scaling, final 4, ranked -->
+<script type="text/javascript" src="js/menus/home.js" defer></script>
+<script type="text/javascript" src="js/slimeverse/loader.js" defer></script>
+<script type="text/javascript" src="js/menus/game-scale.js" defer></script>
+<script type="text/javascript" src="js/game/final4.js" defer></script>
+<script type="text/javascript" src="js/online/ranked-queue.js" defer></script>
+<!-- game: replays -->
+<script type="text/javascript" src="js/game/replay.js" defer></script>
+<!-- customization -->
+<script type="text/javascript" src="js/customization/hats.js" defer></script>
+<script type="text/javascript" src="js/customization/hat-art.js" defer></script>
+<script type="text/javascript" src="js/customization/slime-preview.js" defer></script>
+<script type="text/javascript" src="js/customization/hat-studio.js" defer></script>
+<script type="text/javascript" src="js/customization/hat-drawings.js" defer></script>
+<script type="text/javascript" src="js/customization/hat-draw-tools.js" defer></script>
+<!-- menus: settings and esc menu -->
+<script type="text/javascript" src="js/menus/settings.js" defer></script>
+<script type="text/javascript" src="js/customization/customize-panel.js" defer></script>
+<script type="text/javascript" src="js/menus/esc-menu.js" defer></script>
+<!-- account: wallet -->
+<script type="text/javascript" src="js/account/wallet.js" defer></script>
+<!-- core: audio, perf, boot (bootstrap must load last) -->
+<script type="text/javascript" src="js/core/audio.js" defer></script>
+<script type="text/javascript" src="js/core/perf-overlay.js" defer></script>
+<script type="text/javascript" src="js/core/bootstrap.js" defer></script>
+<!-- The Slimeverse loads on demand: see js/slimeverse/loader.js -->
 </head><body onload="bodyload()">
 <div id="LobbyWrapper">
 

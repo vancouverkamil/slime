@@ -19,8 +19,6 @@ const files = [...new Set([
   'slime_volleyball.html',
   'ws-config.js',
   'progression.js',
-  'Input.js',
-  ...fs.readdirSync(root).filter((file) => /^(?:SlimeAI|MentalSlimeAI)(?:\.part-\d+)?\.js$/.test(file)),
   'physics.js',
   'vball.png',
   'slime175green.png',

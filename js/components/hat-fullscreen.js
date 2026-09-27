@@ -1,3 +1,4 @@
+// Component markup: full-screen Hat Studio overlay.
 document.getElementById('HatFullscreenOverlay').innerHTML = `
   <div style="position:relative;padding:18px 22px;background:#040012;border:1px solid rgba(var(--accent-rgb),.3);border-radius:4px;display:flex;flex-direction:column;align-items:center;">
     <div style="display:flex;align-items:center;width:100%;margin-bottom:12px;">

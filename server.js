@@ -7,6 +7,8 @@ const { loadLocalEnv } = require('./local-env');
 const { newBall, newSlime, initRound, tick } = require('./physics');
 const { createAccountStore, normalizeUsername } = require('./account-store');
 const progression = require('./progression');
+const { createRooms } = require('./server/rooms/room-list');
+const { installServer, routeUpgrades } = require('./server/index');
 
 loadLocalEnv();
 
@@ -14,19 +16,7 @@ const crypto = require('crypto');
 const WIN_AMOUNT            = 7;
 const TICK_MS               = 20;
 const RECONNECT_TIMEOUT_MS  = 30_000;
-const SLIMEVERSE_TICK_MS = 16;
-const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
 const RPS_CHOICES = new Set(['rock', 'paper', 'scissors']);
-
-const ROOM_NAMES = [
-  'Sky Court', 'Cave Court', 'Sunset Court', 'Storm Court',
-  'Jungle Court', 'Frozen Court', 'Desert Court', 'Neon Court',
-  'Space Court', 'Volcano Court', 'Ocean Court',
-  'Overpass Court', 'Bunker Court', 'Reactor Court', 'Void Court',
-  'Championship Court',
-];
-const QUICKPLAY_MAP_IDS = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15];
-const LOBBIES_PER_MAP = 10;
 
 const app = express();
 function isBaseAllowedOrigin(origin) {
@@ -97,45 +87,17 @@ app.get('/healthz', async (_req, res) => {
   }
 });
 const server = http.createServer(app);
-const wss    = new WebSocketServer({ server });
+const wss    = new WebSocketServer({ noServer: true });
 
-// All connected clients: ws -> info object
-const allClients = new Map();
-const slimeverseClients = new Map();
+const allClients = new Map(); // main-socket clients: ws -> info
+const rooms = createRooms();
 
-// Ten persistent Quick Play rooms per visible map.
-const rooms = QUICKPLAY_MAP_IDS.flatMap((mapId) =>
-  Array.from({ length: LOBBIES_PER_MAP }, (_, lobbyIndex) => ({
-  id: mapId * LOBBIES_PER_MAP + lobbyIndex,
-  mapId,
-  lobbyIndex,
-  name: ROOM_NAMES[mapId],
-  players:          [], // [{ ws, info }], max 2
-  spectators:       [], // [{ ws, info }], unlimited
-  state:            null,
-  interval:         null,
-  phase:            'empty', // 'empty' | 'waiting' | 'playing'
-  pendingReconnect: null,    // { side, userId, rejoinToken, timer, resumeGame }
-})));
-
-
-const runtime = {
-  app, accounts, wss, allClients, slimeverseClients, rooms, progression, crypto,
-  normalizeUsername,
-  WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, SLIMEVERSE_WORLD, RPS_CHOICES,
+const runtime = installServer({
+  app, accounts, wss, allClients, rooms, progression, crypto, normalizeUsername,
+  WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, RPS_CHOICES,
   newBall, newSlime, initRound, tick,
-};
-
-require('./server/api')(runtime);
-require('./server/lobby-state')(runtime);
-require('./server/slimeverse')(runtime);
-require('./server/game')(runtime);
-require('./server/rooms')(runtime);
-require('./server/tournaments')(runtime);
-require('./server/tournament-matches')(runtime);
-require('./server/tournament-rooms')(runtime);
-require('./server/tournament-spectate')(runtime);
-require('./server/connection')(runtime);
+});
+routeUpgrades(server, runtime);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Slime server on port ${PORT}`));

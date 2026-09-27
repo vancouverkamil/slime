@@ -24,15 +24,20 @@ test('html shell declares a mobile viewport', () => {
   assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1,/);
 });
 
-test('html shell loads the extracted inventory component', () => {
-  assert.match(html, /src="js\/inventory-ui\.js"/);
-  assert.ok(html.indexOf('js/accounts.js') < html.indexOf('js/inventory-ui.js'));
-  assert.ok(html.indexOf('js/inventory-ui.js') < html.indexOf('js/bootstrap.js'));
+test('html shell loads the inventory component after accounts and before boot', () => {
+  assert.match(html, /src="js\/account\/inventory\.js"/);
+  assert.ok(html.indexOf('js/account/accounts.js') < html.indexOf('js/account/inventory.js'));
+  assert.ok(html.indexOf('js/account/inventory.js') < html.indexOf('js/core/bootstrap.js'));
 });
 
 test('html shell loads map thumbnail assets before lobby rendering', () => {
-  assert.match(html, /src="js\/map-thumbnails\.js"/);
-  assert.ok(html.indexOf('js/map-thumbnails.js') < html.indexOf('js/lobby-ui.js'));
+  assert.match(html, /src="js\/lobby\/map-thumbnails\.js"/);
+  assert.ok(html.indexOf('js/lobby/map-thumbnails.js') < html.indexOf('js/lobby/lobby-select.js'));
+});
+
+test('bootstrap is the last script the html shell loads', () => {
+  const srcs = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map((m) => m[1]);
+  assert.strictEqual(srcs[srcs.length - 1], 'js/core/bootstrap.js');
 });
 
 test('profile and inventory overlays expose modal semantics', () => {

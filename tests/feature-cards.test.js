@@ -14,7 +14,7 @@ function test(name, fn) {
 
 const context = {};
 vm.createContext(context);
-vm.runInContext(fs.readFileSync('js/feature-cards.js', 'utf8'), context);
+vm.runInContext(fs.readFileSync('js/account/feature-cards.js', 'utf8'), context);
 const cards = context.SlimeFeatureCards;
 
 test('achievement reward cards remain locked until their achievement is present', () => {

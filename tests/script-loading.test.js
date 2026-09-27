@@ -1,7 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
+const { slimeverseScripts } = require('./component-source');
 
 function test(name, fn) {
   try { fn(); console.log(`ok - ${name}`); } catch (err) { console.error(`not ok - ${name}`); throw err; }
@@ -13,16 +13,32 @@ function listJs(dir) {
 }
 
 const html = fs.readFileSync('slime_volleyball.html', 'utf8');
-const sandbox = {};
-vm.runInNewContext(fs.readFileSync('js/menus.part-2.js', 'utf8').match(/var SLIMEVERSE_SCRIPTS[\s\S]*?\n(?=function ensureSlimeverseLoaded)/)[0], sandbox);
-const lazy = sandbox.SLIMEVERSE_SCRIPTS;
+const htmlScripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map((m) => m[1]);
+const lazy = slimeverseScripts();
 
 test('every browser script is loaded by the html shell or the Slimeverse lazy loader', () => {
-  const missing = listJs('js').filter((f) => !html.includes(`src="${f}"`) && !lazy.includes(f));
+  const missing = listJs('js').filter((f) => !htmlScripts.includes(f) && !lazy.includes(f));
   assert.deepStrictEqual(missing, [], 'scripts never loaded: ' + missing.join(', '));
 });
 
-test('lazy Slimeverse scripts all exist and load base file before its parts', () => {
+test('no script is loaded twice', () => {
+  const all = htmlScripts.concat(lazy);
+  const dupes = all.filter((f, i) => all.indexOf(f) !== i);
+  assert.deepStrictEqual(dupes, []);
+});
+
+test('lazy Slimeverse scripts all exist and live in the slimeverse component', () => {
   lazy.forEach((f) => assert.ok(fs.existsSync(f), f + ' does not exist'));
-  assert.ok(lazy.indexOf('js/slimeverse.js') < lazy.indexOf('js/slimeverse.part-2.js'));
+  lazy.forEach((f) => assert.ok(f.startsWith('js/slimeverse/'), f + ' is outside js/slimeverse'));
+  assert.strictEqual(lazy[0], 'js/slimeverse/state.js');
+});
+
+test('only the Slimeverse loader is loaded eagerly from the slimeverse component', () => {
+  const eager = htmlScripts.filter((f) => f.startsWith('js/slimeverse/'));
+  assert.deepStrictEqual(eager, ['js/slimeverse/loader.js']);
+});
+
+test('no leftover part-N split files remain', () => {
+  const parts = listJs('js').concat(fs.readdirSync('.')).filter((f) => /\.part-\d+\.js$/.test(f));
+  assert.deepStrictEqual(parts, []);
 });
