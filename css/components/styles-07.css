@@ -189,3 +189,4 @@
 .opt-keys { border-collapse:collapse; width:100%; max-width:360px; margin-bottom:6px; }
 .opt-keys td { padding:clamp(6px,.5vw,10px) clamp(4px,.3vw,6px); font-size:clamp(13px,.85vw,15px); border-bottom:1px solid rgba(var(--accent-rgb),.06); }
 .opt-keys td:first-child { color:var(--text-mute); }
+.opt-range { width:100%; max-width:320px; accent-color:var(--accent); margin:6px 0 4px; }

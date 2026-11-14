@@ -92,10 +92,14 @@ document.getElementById('OptionsDiv').innerHTML = `
 
               <!-- ── AUDIO ── -->
               <div id="OptSection_audio" style="display:none">
-                <div class="opt-section-title" style="margin-top:0">Victory Music</div>
-                <div class="opt-label-dim">Plays when you win a match</div>
-                <select id="DropSelect" class="opt-select" onchange="selectedDrop=this.value|0"></select>
-                <button onclick="previewDrop()" class="opt-preview-btn">&#9654; PREVIEW</button>
+                <div class="opt-section-title" style="margin-top:0">Finisher Music</div>
+                <div class="opt-label-dim">Builds up over the Finisher Cam replay and drops on the final point</div>
+                <select id="DropSelect" class="opt-select" onchange="setVictoryTrack(+this.value)"></select>
+                <button onclick="previewVictoryTrack()" class="opt-preview-btn">&#9654; PREVIEW</button>
+                <button onclick="stopMusic(0.3)" class="opt-preview-btn">&#9632; STOP</button>
+                <label class="opt-label-dim" for="MusicVolume" style="display:block;margin-top:10px">Music volume</label>
+                <input id="MusicVolume" type="range" min="0" max="100" step="5" value="80" class="opt-range" oninput="setMusicVolume(+this.value)">
+                <label class="opt-toggle" style="margin-top:8px"><input id="AnnouncerToggle" type="checkbox" checked onchange="setAnnouncerEnabled(this.checked)"><span>Japanese Announcer (Quick Play)</span></label>
                 <div class="opt-section-title">Sound &amp; Effects</div>
                 <div class="opt-toggle-group">
                   <label class="opt-toggle"><input id="GameSfx" type="checkbox" onchange="setGameSfx(this.checked)"><span>Sound Effects</span></label>

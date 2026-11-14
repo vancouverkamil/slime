@@ -1,6 +1,8 @@
 module.exports = function install(ctx) {
-  const { rooms, progression, crypto, RECONNECT_TIMEOUT_MS, send, broadcastRoom, pushLobbyState, startRoomGame } = ctx;
-function handleJoinRoom(ws, info, roomId, rejoinToken) {
+  const { rooms, progression, crypto, RECONNECT_TIMEOUT_MS, send, broadcastRoom, pushLobbyState, startRoomGame, buildStateMsg } = ctx;
+// asSpectator: a WATCH request. It always seats the player as a spectator, even
+// if the match has just ended and a player spot opened up.
+function handleJoinRoom(ws, info, roomId, rejoinToken, asSpectator) {
   const id = parseInt(roomId, 10);
   const room = rooms.find(r => r.id === id) || null;
   if (!room) return;
@@ -8,7 +10,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
   leaveRoom(ws, info, false);
 
   // ── reconnect path ──────────────────────────────────────
-  if (room.pendingReconnect) {
+  if (room.pendingReconnect && !asSpectator) {
     const pr = room.pendingReconnect;
     const tokenMatch = rejoinToken && pr.rejoinToken === rejoinToken;
     const userMatch  = info.userId && pr.userId && info.userId === pr.userId;
@@ -19,7 +21,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
   }
 
   // ── normal join path ────────────────────────────────────
-  const spotFree = room.players.length < 2 && !room.pendingReconnect;
+  const spotFree = !asSpectator && room.players.length < 2 && !room.pendingReconnect;
   if (spotFree) {
     const side      = room.players.length === 0 ? 'left' : 'right';
     const joinToken = crypto.randomBytes(16).toString('hex');
@@ -44,6 +46,11 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
     send(ws, { type: 'room_joined', roomId: room.id, mapId: room.mapId, role: 'spectator', side: null });
 
     if (room.state) {
+      // Joined mid-match: the names first (game_started), then the live state.
+      if (room.players.length === 2) {
+        send(ws, { type: 'game_started', gameId: room.game && room.game.id, roomName: room.name,
+          nameLeft: room.players[0].info.name, nameRight: room.players[1].info.name });
+      }
       send(ws, Object.assign({ gameId: room.game && room.game.id }, buildStateMsg(room.state)));
     } else if (room.pendingReconnect) {
       send(ws, { type: 'opponent_reconnecting', side: room.pendingReconnect.side, timeoutMs: RECONNECT_TIMEOUT_MS });

@@ -30,6 +30,18 @@ function joinRoom(roomId) {
   sendCustomization();
 }
 
+// WATCH: spectate someone's live 1v1 (any lobby). The server always seats a
+// watcher as a spectator, never as a player, even if the match just ended.
+function watchMatch(roomId) {
+  if (!lobbySocket || lobbySocket.readyState !== 1 || roomId === null || roomId === undefined) return;
+  if (onlineMode && !isSpectator) { addChatMessage(null, 'Finish your own match first.'); return; }
+  if (typeof slimeverseActive !== 'undefined' && slimeverseActive) stopSlimeverse();
+  if (typeof closeInbox === 'function') closeInbox();
+  hidePlayerTip();
+  showingLobbySelect = false;
+  lobbySocket.send(JSON.stringify({ type: 'join_room', roomId: roomId, spectate: true }));
+}
+
 function leaveLobby() {
   if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
     leaveSlimeverse();

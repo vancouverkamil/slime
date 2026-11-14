@@ -25,6 +25,11 @@ function getLobbySnapshot() {
     restricted:     r.mapId >= 11,
   }));
 }
+// The room a player is playing a live 1v1 in (anyone can watch it), or null.
+function liveMatchRoom(info) {
+  const room = info && info.room;
+  return room && info.role === 'player' && room.players.length === 2 && room.state ? room.id : null;
+}
 function getPlayerList() {
   const list = [];
   allClients.forEach((info) => {
@@ -40,6 +45,7 @@ function getPlayerList() {
       prestige: !!(info.progression && info.progression.prestige),
       matches: info.matches || 0,
       account: !!info.userId,
+      watchRoom: liveMatchRoom(info),
     });
   });
   return list;
@@ -94,5 +100,5 @@ function canUseHat(info, hat) {
   return hat !== 'goldcrown' || !!(info.progression && info.progression.unlocks.goldCrown);
 }
 
-  Object.assign(ctx, { send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, getPublicPlayer, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat });
+  Object.assign(ctx, { send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, liveMatchRoom, getPublicPlayer, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat });
 };

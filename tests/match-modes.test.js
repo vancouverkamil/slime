@@ -98,4 +98,32 @@ async function finishGame(room) {
     assert.strictEqual(mode, 'ranked');
     clearInterval(room.interval);
   });
+
+  await test('WATCH spectates a live Quick Play 1v1 and the player list offers it', async () => {
+    const s = makeServer();
+    const amy = s.connect('amy'), bob = s.connect('bob'), cat = s.connect('cat');
+    s.ctx.handleJoinRoom(amy.ws, amy.info, 2);
+    s.ctx.handleJoinRoom(bob.ws, bob.info, 2);
+    const room = s.ctx.rooms.find((r) => r.id === 2);
+    assert.ok(room.state, 'the 1v1 started');
+    const list = s.ctx.getPlayerList();
+    assert.strictEqual(list.find((p) => p.username === 'amy').watchRoom, 2);
+    assert.strictEqual(list.find((p) => p.username === 'cat').watchRoom, null);
+    s.ctx.handleJoinRoom(cat.ws, cat.info, 2, null, true);
+    assert.strictEqual(cat.info.role, 'spectator');
+    assert.ok(cat.ws.inbox.some((m) => m.type === 'room_joined' && m.role === 'spectator'));
+    assert.ok(cat.ws.inbox.some((m) => m.type === 'state'), 'the watcher gets the live game state at once');
+    clearInterval(room.interval);
+  });
+
+  await test('WATCH never seats the watcher as a player, even with a free spot', async () => {
+    const s = makeServer();
+    const amy = s.connect('amy'), cat = s.connect('cat');
+    s.ctx.handleJoinRoom(amy.ws, amy.info, 3);
+    s.ctx.handleJoinRoom(cat.ws, cat.info, 3, null, true);
+    const room = s.ctx.rooms.find((r) => r.id === 3);
+    assert.strictEqual(room.players.length, 1);
+    assert.strictEqual(cat.info.role, 'spectator');
+    assert.ok(!room.state, 'no game started with the watcher in it');
+  });
 })().then(() => process.exit(0), (err) => { console.error(err); process.exit(1); });

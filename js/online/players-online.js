@@ -22,7 +22,9 @@ function updateOnlineList(list) {
     return '<div class="opl' + cls + '" style="display:flex;align-items:center;justify-content:space-between;cursor:default;" ' +
       'onmouseover="showPlayerTip(' + i + ',this)" onmouseout="hidePlayerTip()">' +
       '<span>' + nameHtml + badge + '</span>' +
-      '<span style="color:var(--text-faint);font-size:var(--fs-2xs);">' + tag + '</span>' +
+      (p.watchRoom !== null && p.watchRoom !== undefined && p.name !== myPlayerName
+        ? '<button class="opl-watch" onclick="watchMatch(' + (p.watchRoom | 0) + ')" title="Watch this match">WATCH</button>'
+        : '<span style="color:var(--text-faint);font-size:var(--fs-2xs);">' + tag + '</span>') +
       '</div>';
   }).join('');
 }

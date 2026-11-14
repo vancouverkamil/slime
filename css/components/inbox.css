@@ -76,3 +76,10 @@
   #InboxSide { width:auto; max-height:40%; border-right:none; border-bottom:1px solid rgba(var(--accent-rgb),.14); }
   .inbox-msg { max-width:88%; }
 }
+/* WATCH: spectate a friend's live match (friends list + players online list). */
+.inbox-watch, .opl-watch {
+  margin-left: auto; padding: 2px 8px; cursor: pointer;
+  background: rgba(var(--accent-2-rgb), .14); border: 1px solid rgba(var(--accent-2-rgb), .65);
+  color: #fff; font: bold var(--fs-2xs) 'Courier New', monospace; letter-spacing: 1px;
+}
+.inbox-watch:hover, .opl-watch:hover { background: rgba(var(--accent-2-rgb), .3); }

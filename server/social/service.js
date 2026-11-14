@@ -12,7 +12,7 @@ const PAGE_SIZE = 50;
 
 class SocialError extends Error {}
 
-function createSocialService({ accounts, isOnline, notify, normalizeUsername }) {
+function createSocialService({ accounts, isOnline, watchRoomOf, notify, normalizeUsername }) {
   const fail = (msg) => { throw new SocialError(msg); };
 
   async function target(me, username) {
@@ -38,7 +38,7 @@ function createSocialService({ accounts, isOnline, notify, normalizeUsername }) 
       const u = users.get(id);
       if (!u) return;
       if (out[id] === 'blocked') result.blocked.push(summary(u));
-      else if (out[id] === 'friends' && inn[id] === 'friends') result.friends.push({ ...summary(u), online: isOnline(id), unread: unread[id] || 0 });
+      else if (out[id] === 'friends' && inn[id] === 'friends') result.friends.push({ ...summary(u), online: isOnline(id), watchRoom: watchRoomOf ? watchRoomOf(id) : null, unread: unread[id] || 0 });
       else if (inn[id] === 'pending' && out[id] !== 'blocked') result.incoming.push(summary(u));
       else if (out[id] === 'pending') result.outgoing.push(summary(u));
     });

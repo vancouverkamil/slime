@@ -98,7 +98,7 @@ const HANDLERS = {
   chat:                (ws, info, msg) => relayChat(info, msg),
   set_name:            (ws, info, msg) => setGuestName(info, msg),
   customize:           (ws, info, msg) => handleCustomize(ws, info, msg),
-  join_room:           (ws, info, msg) => handleJoinRoom(ws, info, msg.roomId, msg.rejoinToken),
+  join_room:           (ws, info, msg) => handleJoinRoom(ws, info, msg.roomId, msg.rejoinToken, msg.spectate === true),
   leave_room:          leaveRoomRequest,
   cancel_queue:        leaveRoomRequest,
   ranked_queue:        (ws, info) => handleRankedQueue(ws, info),

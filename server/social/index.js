@@ -8,8 +8,13 @@ module.exports = function install(ctx) {
   const { app, accounts, allClients, send, getReqUser, normalizeUsername } = ctx;
 
   const isOnline = (userId) => { for (const info of allClients.values()) if (info.userId === userId) return true; return false; };
+  // The room of a friend's live 1v1 (so the friends list can offer WATCH), or null.
+  const watchRoomOf = (userId) => {
+    for (const info of allClients.values()) if (info.userId === userId && ctx.liveMatchRoom(info) !== null) return ctx.liveMatchRoom(info);
+    return null;
+  };
   const notify = (userId, msg) => { allClients.forEach((info, ws) => { if (info.userId === userId) send(ws, msg); }); };
-  const service = createSocialService({ accounts, isOnline, notify, normalizeUsername });
+  const service = createSocialService({ accounts, isOnline, watchRoomOf, notify, normalizeUsername });
 
   const messageLimit = createRateLimiter({ limit: 8, windowMs: 10 * 1000 });
   const actionLimit = createRateLimiter({ limit: 30, windowMs: 60 * 1000 });

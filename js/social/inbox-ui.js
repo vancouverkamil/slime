@@ -55,6 +55,9 @@ function inboxSideHtml(o) {
     return '<div class="inbox-friend' + active + '" onclick="openConversation(' + jsStr(f.username) + ')">' +
       '<span class="inbox-dot' + (f.online ? ' on' : '') + '" title="' + (f.online ? 'Online' : 'Offline') + '"></span>' +
       '<span class="inbox-name">@' + escHtml(f.username) + '</span>' +
+      (f.watchRoom !== null && f.watchRoom !== undefined
+        ? '<button class="inbox-watch" onclick="event.stopPropagation();watchMatch(' + (f.watchRoom | 0) + ')" title="Watch their match">WATCH</button>'
+        : '') +
       (f.unread ? '<span class="inbox-unread">' + f.unread + '</span>' : '') + '</div>';
   }).join('') : '<div class="inbox-empty">No friends yet. Add someone by username, or from their profile.</div>';
   if (o.outgoing.length) {

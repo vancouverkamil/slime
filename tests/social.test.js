@@ -18,12 +18,14 @@ async function setup() {
   for (const name of ['amy', 'bob', 'cat']) users[name] = await accounts.register(name, 'password1');
   const pushes = [];
   const online = new Set();
+  const playing = new Map();   // userId -> room id of a live 1v1
   const svc = createSocialService({
     accounts, normalizeUsername,
     isOnline: (id) => online.has(id),
+    watchRoomOf: (id) => (playing.has(id) ? playing.get(id) : null),
     notify: (id, msg) => pushes.push({ to: id, msg }),
   });
-  return { accounts, users, svc, pushes, online, file };
+  return { accounts, users, svc, pushes, online, playing, file };
 }
 
 const rejects = async (p, re) => { await assert.rejects(p, (err) => re.test(err.message)); };
@@ -39,6 +41,15 @@ const rejects = async (p, re) => { await assert.rejects(p, (err) => re.test(err.
     const mine = await svc.overview(amy);
     assert.deepStrictEqual(mine.friends.map((f) => [f.username, f.online]), [['bob', true]]);
     assert.strictEqual(mine.incoming.length + mine.outgoing.length, 0);
+  });
+
+  await test('a friend in a live match can be watched from the friends list', async () => {
+    const { svc, users: { amy, bob }, online, playing } = await setup();
+    await svc.request(amy, 'bob'); await svc.accept(bob, 'amy');
+    online.add(bob.id);
+    assert.strictEqual((await svc.overview(amy)).friends[0].watchRoom, null);
+    playing.set(bob.id, 4);
+    assert.strictEqual((await svc.overview(amy)).friends[0].watchRoom, 4);
   });
 
   await test('asking someone who already asked you accepts straight away', async () => {

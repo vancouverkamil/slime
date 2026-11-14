@@ -57,12 +57,8 @@ function bodyload() {
   hatConfigs.left.color = playerBodyColor; hatConfigs.left.hat = playerHat; hatConfigs.left.drawing = playerHatDrawing; hatConfigs.left.anim = playerHatAnim;
   syncCustomizationUI();
 
-  // Populate drop selector
-  var sel = document.getElementById('DropSelect');
-  if (sel) dropNames.forEach(function(name, i) {
-    var opt = document.createElement('option'); opt.value = i; opt.textContent = (i+1) + '. ' + name;
-    sel.appendChild(opt);
-  });
+  // Victory music choices (js/core/music-player.js)
+  fillMusicSettings();
 
   // ESC key handler
   document.addEventListener('keydown', function(e) {

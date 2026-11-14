@@ -22,6 +22,7 @@ function showOptSection(sec) {
   });
   if (sec === 'slime') initColorPicker();
   if (sec === 'controls') renderKeybindControls();
+  if (sec === 'audio' && typeof fillMusicSettings === 'function') fillMusicSettings();
   if (sec === 'display' && typeof renderThemePicker === 'function') renderThemePicker();
   if (sec === 'studio') {
     var dc = document.getElementById('HatDrawCanvas');
