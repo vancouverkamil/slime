@@ -92,6 +92,7 @@ function startRoomGame(room) {
       }
       room.state.phase = 'point_pause';
       bcast({ type: 'point', scorer: result === 1 ? 'left' : 'right' });
+      pushLobbyState();   // LIVE NOW scores and the spectator bar update on every point
       if (room.tournament && ctx.onTournamentPoint) ctx.onTournamentPoint(room.tournament, room.state.scoreLeft, room.state.scoreRight);
       game.later(700, () => { if (room.state) { startNextPoint(); broadcastState(); } });
       return;

@@ -49,6 +49,7 @@ function showLobbySelect() {
   canvas.style.display = 'none';
   menuDiv.style.display = 'block';
   lobbySelectFreshOpen = true;
+  openMapLobbyId = null;
   renderLobbySelect(currentLobbies);
 }
 var lobbySelectFreshOpen = false;

@@ -63,16 +63,19 @@ function renderLobbyRows(mapId, rooms) {
     var idx = (room.lobbyIndex || 0) + 1;
     var count = (room.playerCount || 0) + '/2';
     var phase = room.phase === 'playing' ? 'IN MATCH' : room.phase === 'waiting' ? 'WAITING' : 'EMPTY';
-    var disabled = room.phase === 'playing' && (room.playerCount || 0) >= 2;
-    return '<button class="map-lobby-row' + (disabled ? ' is-full' : '') + '" onclick="' + (disabled ? '' : 'joinRoom(' + room.id + ')') + '">' +
+    var live = room.phase === 'playing' && (room.playerCount || 0) >= 2;
+    if (live && room.match) phase = room.match.left + ' ' + (room.match.scoreLeft | 0) + '–' + (room.match.scoreRight | 0) + ' ' + room.match.right;
+    return '<button class="map-lobby-row' + (live ? ' is-live' : '') + '" onclick="' + (live ? 'watchMatch(' + room.id + ')' : 'joinRoom(' + room.id + ')') + '">' +
       '<span class="map-lobby-name">Lobby ' + idx + '</span>' +
-      '<span class="map-lobby-phase">' + phase + '</span>' +
-      '<span class="map-lobby-count">' + count + '</span>' +
+      '<span class="map-lobby-phase">' + escHtml(phase) + '</span>' +
+      '<span class="map-lobby-count">' + (live ? '👁 WATCH' : count) + '</span>' +
     '</button>';
   }).join('');
 }
 
+var openMapLobbyId = null;   // the room browser stays open across lobby updates
 function showMapLobbyBrowser(mapId) {
+  openMapLobbyId = mapId;
   var groups = getMapLobbyGroups(currentLobbies || []);
   var rooms = groups[mapId] || [];
   var primary = getPrimaryMapRoom(mapId, rooms);
@@ -96,6 +99,7 @@ function showMapLobbyBrowser(mapId) {
 }
 
 function hideMapLobbyBrowser() {
+  openMapLobbyId = null;
   var panel = document.getElementById('MapLobbyBrowser');
   if (panel) panel.className = '';
 }
@@ -118,6 +122,7 @@ function renderLobbySelect(lobbies) {
         '<span class="lobby-select-rank-wins">' + totalWins + ' WIN' + (totalWins !== 1 ? 'S' : '') + '</span>' +
       '</div>' +
     '</div>';
+  if (typeof renderLiveMatchesSection === 'function') html += renderLiveMatchesSection(lobbies);
 
   LOBBY_CATS.forEach(function(cat, ci) {
     html += '<div class="lobby-map-section' + (ci === LOBBY_CATS.length - 1 ? ' is-last' : '') + '">' +
@@ -152,9 +157,17 @@ function renderLobbySelect(lobbies) {
   });
 
   html += '</div>';
+  // Lobby updates arrive on every point now (live scores): keep the scroll
+  // position and an open room browser instead of resetting the screen.
+  var oldScreen = menuDiv.querySelector('.lobby-select-screen');
+  var keepScroll = [menuDiv.scrollTop, oldScreen ? oldScreen.scrollTop : 0];
   menuDiv.innerHTML = html;
+  menuDiv.scrollTop = keepScroll[0];
+  var newScreen = menuDiv.querySelector('.lobby-select-screen');
+  if (newScreen) newScreen.scrollTop = keepScroll[1];
   lobbySelectFreshOpen = false;
   initCardTilt();
+  if (openMapLobbyId !== null) showMapLobbyBrowser(openMapLobbyId);
 }
 
 // ── holographic card tilt (mouse-tracked, foil-card style) ──

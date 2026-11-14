@@ -40,6 +40,7 @@ onServerMessage('lobby_list', function(msg) {
   updatePlayerCount(msg.totalPlayers);
   if (msg.playerList) updateOnlineList(msg.playerList);
   if (showingLobbySelect) renderLobbySelect(currentLobbies);
+  if (isSpectator && typeof renderSpecBadge === 'function') renderSpecBadge();
 });
 
 onServerMessage('chat', function(msg) {

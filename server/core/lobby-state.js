@@ -23,7 +23,19 @@ function getLobbySnapshot() {
     spectatorCount: r.spectators.length,
     phase:          r.phase,
     restricted:     r.mapId >= 11,
+    match:          liveMatchInfo(r),
   }));
+}
+// A live 1v1 in a room, for the LIVE NOW list and the spectator bar, or null.
+function liveMatchInfo(r) {
+  if (!r.state || r.players.length !== 2) return null;
+  const [a, b] = r.players;
+  return {
+    left: a.info.name, right: b.info.name,
+    leftUser: a.info.username || null, rightUser: b.info.username || null,
+    scoreLeft: r.state.scoreLeft || 0, scoreRight: r.state.scoreRight || 0,
+    mode: r.tournament ? 'TOURNAMENT' : r.ranked ? 'RANKED' : 'QUICK PLAY',
+  };
 }
 // The room a player is playing a live 1v1 in (anyone can watch it), or null.
 function liveMatchRoom(info) {

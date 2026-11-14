@@ -28,7 +28,8 @@ function showSpecBadge() {
   }
   el.innerHTML = '<span>👁 WATCHING</span>' + (tournamentSpectateMatchId
     ? '<button class="spec-exit-btn" onclick="exitTournamentSpectate()">EXIT SPECTATING</button>' : '');
-  el.style.display = 'block';
+  el.style.display = 'flex';   // flex: the spectator bar lays its parts out with gaps (css/components/live-matches.css)
+  if (typeof renderSpecBadge === 'function') renderSpecBadge();   // the full spectator bar (js/lobby/live-matches.js)
 }
 function hideSpecBadge() {
   var el = document.getElementById('SpecBadge');

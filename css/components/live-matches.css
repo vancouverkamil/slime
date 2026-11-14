@@ -1,0 +1,49 @@
+/* Spectate mode (js/lobby/live-matches.js): LIVE NOW on the Quick Play screen,
+   WATCH rows in the room browser, and the spectator bar while watching. */
+.live-section { margin: 4px 0 22px; }
+.live-section-title {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  color: var(--accent-2); font-weight: bold; letter-spacing: 3px; font-size: var(--fs-sm); margin-bottom: 10px;
+}
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff2a5f; box-shadow: 0 0 10px #ff2a5f; animation: livePulse 1.6s ease-in-out infinite; }
+@keyframes livePulse { 50% { opacity: .35; } }
+.live-count { color: #fff; background: rgba(var(--accent-2-rgb), .25); padding: 0 7px; letter-spacing: 1px; }
+.live-section-sub { color: var(--text-faint); font-size: var(--fs-xs); letter-spacing: 1px; font-weight: normal; margin-left: auto; }
+.live-empty { color: var(--text-faint); font-size: var(--fs-xs); border: 1px dashed rgba(var(--accent-rgb), .2); padding: 14px; text-align: center; }
+.live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.live-card {
+  border: 1px solid rgba(var(--accent-rgb), .25); background: rgba(var(--accent-rgb), .05);
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 7px;
+}
+.live-card.is-friend { border-color: rgba(var(--gold-rgb), .8); box-shadow: 0 0 14px rgba(var(--gold-rgb), .18); }
+.live-card-top { display: flex; align-items: center; gap: 6px; }
+.live-tag { font-size: var(--fs-2xs); font-weight: bold; letter-spacing: 1px; padding: 1px 6px; }
+.live-tag.friend { color: #000; background: var(--gold); }
+.live-tag.mode { color: var(--accent); border: 1px solid rgba(var(--accent-rgb), .4); }
+.live-watchers { margin-left: auto; color: var(--text-faint); font-size: var(--fs-2xs); }
+.live-vs { display: flex; align-items: center; gap: 8px; font-weight: bold; }
+.live-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); }
+.live-name.left { color: #66ffcc; }
+.live-name.right { color: #ff66aa; text-align: right; }
+.live-score { color: #fff; font-size: 18px; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255,255,255,.4); }
+.live-court { color: var(--text-faint); font-size: var(--fs-2xs); letter-spacing: 1px; }
+.live-watch {
+  cursor: pointer; padding: 7px; background: rgba(var(--accent-2-rgb), .16); border: 1px solid rgba(var(--accent-2-rgb), .75);
+  color: #fff; font: bold var(--fs-xs) 'Courier New', monospace; letter-spacing: 3px;
+}
+.live-watch:hover { background: rgba(var(--accent-2-rgb), .34); }
+.map-lobby-row.is-live { border-color: rgba(var(--accent-2-rgb), .6); }
+.map-lobby-row.is-live .map-lobby-count { color: var(--accent-2); font-weight: bold; }
+/* Spectator bar (#SpecBadge) */
+.spec-overlay { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: calc(100% - 16px); text-transform: none; }
+.spec-overlay .spec-eye { color: var(--accent); letter-spacing: 2px; }
+.spec-overlay .spec-match { color: #fff; letter-spacing: 1px; }
+.spec-overlay .spec-match b { color: var(--gold); margin: 0 4px; }
+.spec-overlay .spec-viewers { color: var(--text-faint); letter-spacing: 1px; }
+.spec-btn {
+  pointer-events: auto; cursor: pointer; background: transparent; color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), .6); font: inherit; letter-spacing: 2px; padding: 2px 8px;
+}
+.spec-btn:hover { background: rgba(var(--accent-rgb), .15); }
+.spec-overlay .spec-exit-btn { margin-left: 0; }
+@media (max-width: 680px) { .live-section-sub { margin-left: 0; width: 100%; } }

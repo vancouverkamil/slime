@@ -116,6 +116,20 @@ async function finishGame(room) {
     clearInterval(room.interval);
   });
 
+  await test('the room list shows each live 1v1 (names, score, mode) for LIVE NOW', async () => {
+    const s = makeServer();
+    const amy = s.connect('amy'), bob = s.connect('bob');
+    s.ctx.handleJoinRoom(amy.ws, amy.info, 5);
+    const before = s.ctx.getLobbySnapshot().find((r) => r.id === 5);
+    assert.strictEqual(before.match, null, 'a half-full room is not a live match');
+    s.ctx.handleJoinRoom(bob.ws, bob.info, 5);
+    const room = s.ctx.rooms.find((r) => r.id === 5);
+    room.state.scoreLeft = 3; room.state.scoreRight = 2;
+    const live = s.ctx.getLobbySnapshot().find((r) => r.id === 5).match;
+    assert.deepStrictEqual(live, { left: 'amy', right: 'bob', leftUser: 'amy', rightUser: 'bob', scoreLeft: 3, scoreRight: 2, mode: 'QUICK PLAY' });
+    clearInterval(room.interval);
+  });
+
   await test('WATCH never seats the watcher as a player, even with a free spot', async () => {
     const s = makeServer();
     const amy = s.connect('amy'), cat = s.connect('cat');
