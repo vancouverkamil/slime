@@ -7,7 +7,7 @@ constructor(file = DATA_FILE) {
     this.load();
   }
 }
-Object.assign(AccountStore.prototype, require('./stores/file-session'), require('./stores/file-profile'));
+Object.assign(AccountStore.prototype, require('./stores/file-session'), require('./stores/file-profile'), require('./stores/file-social'));
 
 class PostgresAccountStore {
 constructor(databaseUrl = process.env.DATABASE_URL) {
@@ -16,7 +16,7 @@ constructor(databaseUrl = process.env.DATABASE_URL) {
     this.ready = this.ensureSchema();
   }
 }
-Object.assign(PostgresAccountStore.prototype, require('./stores/postgres-session'), require('./stores/postgres-profile'));
+Object.assign(PostgresAccountStore.prototype, require('./stores/postgres-session'), require('./stores/postgres-profile'), require('./stores/postgres-social'));
 
 function resolveDatabaseUrl(env = process.env) {
   return env.DATABASE_URL || env.SUPABASE_DATABASE_URL || env.POSTGRES_URL || '';

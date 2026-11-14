@@ -66,7 +66,15 @@ function keyCodeLabel(code) {
 }
 
 var keysDown = {};
+// Typing in a text box (chat, inbox, login...) is text, never game input.
+function isTypingTarget(el) {
+  if (!el) return false;
+  var tag = (el.tagName || '').toUpperCase();
+  return tag === 'TEXTAREA' || tag === 'SELECT' || !!el.isContentEditable ||
+    (tag === 'INPUT' && !/^(button|checkbox|radio|range|color|submit|reset)$/i.test(el.type || 'text'));
+}
 addEventListener("keydown", function(e) {
+  if (e.keyCode !== 27 && isTypingTarget(e.target)) return;
   if (_listeningForKeybind) {
     if (e.keyCode !== 27) {
       slimeKeybinds[_listeningForKeybind] = e.keyCode;

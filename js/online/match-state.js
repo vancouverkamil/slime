@@ -9,6 +9,8 @@ var showingLobbySelect  = false;
 var currentRoomId       = null;
 var currentRoomMapId    = null;
 var onlinePregameState  = null;
+var currentGameId       = null; // server id of the game being played or watched
+var onlineMatchMode     = 'QUICK PLAY'; // what this match counts for: QUICK PLAY, RANKED or TOURNAMENT
 
 // ── online player info ────────────────────────────────────
 var playerNameLeft  = 'Player 1';

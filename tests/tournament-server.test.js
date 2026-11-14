@@ -14,6 +14,7 @@ function makeServer() {
     send() {}, pushLobbyState() {},
     leaveRoom() {},
     startRoomGame(room) { room.phase = 'playing'; started.push(room); },
+    cancelRankedQueue() {},
   };
   require('../server/tournament/tournaments')(ctx);
   require('../server/tournament/matches')(ctx);

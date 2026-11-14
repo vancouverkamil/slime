@@ -4,6 +4,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
   const id = parseInt(roomId, 10);
   const room = rooms.find(r => r.id === id) || null;
   if (!room) return;
+  removeFromRankedQueue(ws); // a player in a room can never be pulled into a ranked match
   leaveRoom(ws, info, false);
 
   // ── reconnect path ──────────────────────────────────────
@@ -43,7 +44,7 @@ function handleJoinRoom(ws, info, roomId, rejoinToken) {
     send(ws, { type: 'room_joined', roomId: room.id, mapId: room.mapId, role: 'spectator', side: null });
 
     if (room.state) {
-      send(ws, buildStateMsg(room.state));
+      send(ws, Object.assign({ gameId: room.game && room.game.id }, buildStateMsg(room.state)));
     } else if (room.pendingReconnect) {
       send(ws, { type: 'opponent_reconnecting', side: room.pendingReconnect.side, timeoutMs: RECONNECT_TIMEOUT_MS });
     } else {
@@ -64,13 +65,10 @@ function leaveRoom(ws, info, disconnecting) {
     room.players = room.players.filter(p => p.ws !== ws);
 
     // Cancel any pending reconnect (explicit leave = no grace period)
-    if (room.pendingReconnect) {
-      clearTimeout(room.pendingReconnect.timer);
-      room.pendingReconnect = null;
-    }
+    if (room.pendingReconnect) room.pendingReconnect = null; // its timer belongs to the game, disposed below
 
-    if (room.interval) {
-      clearInterval(room.interval);
+    if (room.game || room.interval) {
+      if (room.game) room.game.dispose(); // stops the tick loop and every timer/listener of that game
       room.interval = null;
       room.state    = null;
       if (room.tournament && ctx.onTournamentRoomAbandoned) {
@@ -105,6 +103,11 @@ function handleRankedQueue(ws, info) {
     send(ws, { type: 'ranked_error', message: 'Sign in to play ranked.' });
     return;
   }
+  if (info.room && info.role === 'player' && info.room.phase === 'playing') {
+    send(ws, { type: 'ranked_error', message: 'Finish your current match first.' });
+    return;
+  }
+  if (rankedQueue.some(q => q.ws === ws)) { send(ws, { type: 'ranked_queued', position: rankedQueue.length }); return; }
   leaveRoom(ws, info, false);
   rankedQueue.push({ ws, info });
   info.state = 'ranked_queue';
@@ -112,15 +115,25 @@ function handleRankedQueue(ws, info) {
   tryMatchRanked();
 }
 
-function cancelRankedQueue(ws, info) {
+function removeFromRankedQueue(ws) {
   const idx = rankedQueue.findIndex(q => q.ws === ws);
-  if (idx === -1) return;
+  if (idx === -1) return false;
   rankedQueue.splice(idx, 1);
+  return true;
+}
+
+function cancelRankedQueue(ws, info) {
+  if (!removeFromRankedQueue(ws)) return;
   if (info.state === 'ranked_queue') info.state = 'lobby';
   send(ws, { type: 'ranked_queue_left' });
 }
 
 function tryMatchRanked() {
+  // Only players still waiting in the queue can be matched (never someone already in a match).
+  for (let i = rankedQueue.length - 1; i >= 0; i--) {
+    const q = rankedQueue[i];
+    if (q.ws.readyState !== 1 || q.info.state !== 'ranked_queue') rankedQueue.splice(i, 1);
+  }
   if (rankedQueue.length < 2) return;
   const p1 = rankedQueue.shift();
   const p2 = rankedQueue.shift();
@@ -148,5 +161,5 @@ function tryMatchRanked() {
   pushLobbyState();
 }
 
-  Object.assign(ctx, { handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, rankedQueue });
+  Object.assign(ctx, { handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, removeFromRankedQueue, rankedQueue });
 };

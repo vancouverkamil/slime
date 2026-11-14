@@ -29,7 +29,7 @@ updateSlime(userId, slime) {
     return user;
   },
 
-recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked) {
+recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked, mode) {
     const left = leftUserId ? this.findById(leftUserId) : null;
     const right = rightUserId ? this.findById(rightUserId) : null;
     if (!left && !right) return;
@@ -67,7 +67,7 @@ recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked) 
       user.achievements = awardMatchAchievements(user.achievements, { won, scoreFor, scoreAgainst, playedAt });
       user.recentMatches.unshift({
         id: matchId, playedAt, result: won ? 'win' : 'loss',
-        scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked,
+        scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked, mode: mode || (ranked ? 'ranked' : 'quickplay'),
         opponent: opponent ? opponent.username : 'guest',
       });
       user.recentMatches = user.recentMatches.slice(0, 10);

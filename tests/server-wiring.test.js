@@ -96,6 +96,22 @@ const waitFor = (inbox, type) => new Promise((resolve, reject) => {
     main.ws.close(); sv.ws.close();
   });
 
+  await test('malformed messages never crash either socket', async () => {
+    const junk = ['null', '123', '"text"', '[]', '{"type":{}}', '{"type":"join_room","roomId":{}}',
+      '{"type":"input","x":"a"}', '{"type":"appearance","hatDrawing":"x"}', 'not json', '{"type":"tournament_accept"}'];
+    const main = await connect(base + '/');
+    await waitFor(main.inbox, 'connected');
+    const sv = await connect(base + '/slimeverse');
+    await waitFor(sv.inbox, 'welcome');
+    junk.forEach((m) => { main.ws.send(m); sv.ws.send(m); });
+    await new Promise((r) => setTimeout(r, 150));
+    main.ws.send(JSON.stringify({ type: 'perf_ping', t: 7 }));
+    const pong = await waitFor(main.inbox, 'perf_pong');
+    assert.strictEqual(pong.t, 7, 'main socket still answers');
+    assert.strictEqual(sv.ws.readyState, 1, 'slimeverse socket still open');
+    main.ws.close(); sv.ws.close();
+  });
+
   server.close();
   runtime.wss.clients.forEach((c) => c.terminate());
   runtime.slimeverseWss.clients.forEach((c) => c.terminate());

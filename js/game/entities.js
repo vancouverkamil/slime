@@ -65,8 +65,13 @@ function newLegacySlime(onLeft, radius, color) {
       var yPix = courtYPix - (this.y * pixelsPerUnitY);
       var rPix = this.radius * pixelsPerUnitY;
       // Trail: push position, draw before body
-      this._trail.unshift({ x: xPix, y: yPix });
-      if (this._trail.length > 18) this._trail.pop();
+      // At most one trail point per ~game tick, so the trail is the same length at 60 or 144fps.
+      var trailNow = Date.now();
+      if (!this._trailAt || trailNow - this._trailAt >= 12) {
+        this._trailAt = trailNow;
+        this._trail.unshift({ x: xPix, y: yPix });
+        if (this._trail.length > 18) this._trail.pop();
+      }
       if (this._trailType && this._trailType !== 'none')
         drawSlimeTrail(ctx, this._trail, this._trailType, this.tintColor || this.color, rPix);
       if (this.img && !legacyGraphics) {

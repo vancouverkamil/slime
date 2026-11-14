@@ -44,9 +44,11 @@ function renderProfile(user) {
   var p = user.progression || (window.SlimeProgression ? window.SlimeProgression.getProgression(stats.xp || 0) : { level: 1, rankTitle: 'Recruit' });
   var matches = stats.matches || 0;
   var winRate = matches ? Math.round((stats.wins || 0) * 100 / matches) + '%' : '0%';
+  var MODE_LABELS = { quickplay: 'QUICK PLAY', ranked: 'RANKED', tournament: 'TOURNAMENT' };
   var recent = (user.recentMatches || []).map(function(m) {
+    var mode = MODE_LABELS[m.mode || (m.ranked ? 'ranked' : 'quickplay')] || 'QUICK PLAY';
     return '<div class="profile-match ' + (m.result === 'win' ? 'win' : 'loss') + '">' +
-      '<span>' + escHtml(m.result.toUpperCase()) + '</span>' +
+      '<span>' + escHtml(m.result.toUpperCase()) + ' &middot; ' + mode + '</span>' +
       '<span>' + escHtml(m.scoreFor + '-' + m.scoreAgainst) + '</span>' +
       '<span>@' + escHtml(m.opponent || 'guest') + ' / +' + escHtml(m.xpGained || 0) + 'XP' +
         (m.coinsGained ? ' / +' + escHtml(m.coinsGained) + 'SC' : '') + '</span>' +
@@ -57,6 +59,7 @@ function renderProfile(user) {
     '<div><div class="profile-name">@' + escHtml(user.username) + '</div>' +
     '<div class="profile-sub">Joined ' + escHtml(String(user.createdAt || '').slice(0, 10)) + '</div></div>' +
     '</div>' +
+    (typeof socialProfileActionsHtml === 'function' ? socialProfileActionsHtml(user.username) : '') +
     progressionHtml(user) +
     '<div class="profile-tabs"><span class="active">STATS</span><span>ACHIEVEMENTS</span></div>' +
     '<div class="profile-grid">' +
@@ -85,8 +88,10 @@ function showProfile(username) {
   profileReturnFocus = document.activeElement;
   overlay.style.display = 'flex';
   content.innerHTML = '<div class="profile-empty">Loading profile...</div>';
-  accountRequest('/api/profiles/' + encodeURIComponent(username), { method: 'GET', headers: {} })
-    .then(function(body) { content.innerHTML = renderProfile(body.user); })
+  // Friend status is refreshed too, so the profile shows the right social button.
+  var social = currentAccount && typeof refreshSocial === 'function' ? refreshSocial() : Promise.resolve();
+  Promise.all([accountRequest('/api/profiles/' + encodeURIComponent(username), { method: 'GET', headers: {} }), social])
+    .then(function(res) { content.innerHTML = renderProfile(res[0].user); })
     .catch(function(err) { content.innerHTML = '<div class="profile-empty">' + escHtml(err.message) + '</div>'; });
 }
 

@@ -1,3 +1,4 @@
+const { setMatchStatus } = require('./match-status');
 // Head-to-head tournament matches (two real players) are played in a real,
 // server-authoritative game room, exactly like Quick Play / Ranked. Only
 // player-vs-bot matches are simulated on the player's own client.
@@ -26,7 +27,8 @@ module.exports = function install(ctx) {
     const a = socketFor(match.a.username), b = socketFor(match.b.username);
     const room = a && b ? freeRoom() : null;
     if (!room) return false;
-    [a, b].forEach(p => { if (p.info.room) ctx.leaveRoom(p.ws, p.info, false); });
+    // A tournament match is its own mode: never ranked, and it takes both players out of the ranked queue.
+    [a, b].forEach(p => { ctx.cancelRankedQueue(p.ws, p.info); if (p.info.room) ctx.leaveRoom(p.ws, p.info, false); });
     room.ranked = false;
     room.tournament = { bracketId: lobby.bracketId, matchId: match.id };
     // Entrant A always plays on the left so scoreLeft/scoreRight map to scoreA/scoreB.
@@ -51,7 +53,8 @@ module.exports = function install(ctx) {
 
   // Next game of the series: both players accept again, same as the first game.
   function awaitNextGame(lobby, match) {
-    match.status = 'awaiting'; match.acceptedA = false; match.acceptedB = false;
+    if (!setMatchStatus(match, 'awaiting')) return;
+    match.acceptedA = false; match.acceptedB = false;
     match.acceptDeadline = Date.now() + 60000;
     ctx.sendTournamentAccepts(lobby, match);
   }

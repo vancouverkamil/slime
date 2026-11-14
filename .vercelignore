@@ -7,3 +7,23 @@ server-local*.log
 server-local*.err.log
 supabase/functions/slime/public/
 supabase/functions/slime/assets.ts
+
+# The static site only needs the page, js/, css/, config scripts and images.
+# Keep server code, tests, tooling and docs out of the public deployment.
+# Leading "/" anchors to the repo root (js/game/physics.js must still ship).
+/server/
+/server.js
+/stores/
+/account-store.js
+/local-env.js
+/physics.js
+/db/
+/tests/
+/scripts/
+/android/
+/www/
+/supabase/
+/railway.toml
+/capacitor.config.json
+*.md
+*.log

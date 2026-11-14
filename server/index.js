@@ -12,6 +12,7 @@ const MODULES = [
   './tournament/rooms',
   './tournament/spectate',
   './core/connection',
+  './social',
   './slimeverse',
 ];
 

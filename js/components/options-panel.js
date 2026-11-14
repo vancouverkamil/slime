@@ -119,6 +119,13 @@ document.getElementById('OptionsDiv').innerHTML = `
                   <label class="opt-toggle"><input id="ShowFPSToggle"     type="checkbox" onchange="setShowFPSPref(this.checked)"><span>Show FPS</span></label>
                   <label class="opt-toggle"><input id="LegacyGraphics"    type="checkbox"><span>Legacy Graphics</span></label>
                 </div>
+                <div class="opt-section-title">Online Smoothing</div>
+                <div class="opt-chip-row">
+                  <button id="NetSmooth_auto" onclick="setNetSmoothingMode('auto')" class="hat-opt active">Auto</button>
+                  <button id="NetSmooth_max"  onclick="setNetSmoothingMode('max')"  class="hat-opt">Max</button>
+                  <button id="NetSmooth_off"  onclick="setNetSmoothingMode('off')"  class="hat-opt">Off</button>
+                </div>
+                <div class="opt-hint" style="font-size:var(--fs-2xs);color:var(--text-faint);margin:6px 0 20px;line-height:1.5">Auto keeps online matches smooth with the smallest delay your connection allows. Max is for shaky Wi-Fi. Off draws every packet the moment it lands.</div>
               </div>
 
               <!-- ── GAMEPLAY ── -->

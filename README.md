@@ -77,6 +77,8 @@ The frontend is plain browser scripts grouped into one folder per section of the
 | `server/tournament/` | Tournament brackets, matches, rooms, spectating |
 | `server/slimeverse/` | The Slimeverse server on its own `/slimeverse` socket |
 
+**How the pieces are wired together** (scenes, the message router, per-game lifetimes, tournament states) and the rules that keep them working are in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ### Slimeverse vs. the rest of the site
 
 The Slimeverse is a separate game identity. It connects on its own WebSocket (`/slimeverse`) and gets its own avatar id (`sv-...`), so it never appears in rooms, ranked queues or tournaments, and game traffic never reaches it. Your slime's look and your hat inventory still come from your account.

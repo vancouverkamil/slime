@@ -50,3 +50,24 @@ function showRankedQueueUI() {
 function stopRankedQueueUI() {
   if (_rqTimerInterval) { clearInterval(_rqTimerInterval); _rqTimerInterval = null; }
 }
+
+// ── Ranked queue server messages ──────────────────────────
+onServerMessage('ranked_queued', function(msg) {
+  showRankedQueueUI();
+});
+
+onServerMessage('ranked_queue_left', function(msg) {
+  stopRankedQueueUI();
+});
+
+onServerMessage('ranked_error', function(msg) {
+  stopRankedQueueUI();
+  addChatMessage(null, msg.message || 'Ranked error.');
+});
+
+onServerMessage('ranked_result', function(msg) {
+  if (currentAccount && msg.ranked) {
+    currentAccount.ranked = msg.ranked;
+    try { localStorage.setItem('slime_rankedData', JSON.stringify(msg.ranked)); } catch(e) {}
+  }
+});

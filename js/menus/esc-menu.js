@@ -10,6 +10,7 @@ function endMatchEarly() {
 var escMenuOpen = false;
 
 function hideTopOverlay() {
+  if (typeof inboxIsOpen === 'function' && inboxIsOpen()) { closeInbox(); return true; }
   var inventory = document.getElementById('InventoryOverlay');
   if (inventory && inventory.style.display !== 'none' && inventory.style.display !== '') {
     hideInventory();

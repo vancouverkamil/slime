@@ -7,7 +7,8 @@
   // mobile builds, but there is no local server there — always use the
   // configured remote backend on native platforms.
   var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-  var isLocal = !isNative && (host === 'localhost' || host === '127.0.0.1' || host === '');
+  // Same-origin backend: the page was loaded from the game server itself (see server.js).
+  var isLocal = !isNative && (host === 'localhost' || host === '127.0.0.1' || host === '' || !!window.SLIME_SAME_ORIGIN_BACKEND);
   var backend = window.SLIME_BACKEND_URL || '';
   window.slimeAssetUrl = function(path) {
     if (window.SLIME_SUPABASE_FUNCTION_ASSETS) return '?file=' + path;

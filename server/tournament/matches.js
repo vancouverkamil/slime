@@ -1,4 +1,5 @@
 // In-match tournament messages (accept / result / live score) and reconnect reattachment.
+const { setMatchStatus } = require('./match-status');
 module.exports = function install(ctx) {
   const { activeTournaments, send, WIN_AMOUNT } = ctx;
   const { findMatch, resolveMatch, broadcastTournState, tickTourn } = ctx.tournamentHelpers;
@@ -35,7 +36,7 @@ module.exports = function install(ctx) {
     if (match.a && match.a.username === info.username) match.acceptedA = true;
     if (match.b && match.b.username === info.username) match.acceptedB = true;
     if (match.acceptedA && match.acceptedB) {
-      if (!ctx.isHeadToHead(match)) { match.status = 'live'; match.acceptDeadline = 0; }
+      if (!ctx.isHeadToHead(match)) { setMatchStatus(match, 'live'); match.acceptDeadline = 0; }
       else startHeadToHead(lobby, match);
     }
     broadcastTournState(lobby); tickTourn(lobby);
@@ -45,7 +46,7 @@ module.exports = function install(ctx) {
   // (or no room is free), keep retrying until the accept deadline.
   function startHeadToHead(lobby, match) {
     if (match.status !== 'awaiting' || match.roomId != null) return;
-    if (ctx.startTournamentRoom(lobby, match)) { match.status = 'live'; match.acceptDeadline = 0; broadcastTournState(lobby); return; }
+    if (ctx.startTournamentRoom(lobby, match)) { setMatchStatus(match, 'live'); match.acceptDeadline = 0; broadcastTournState(lobby); return; }
     if (Date.now() < match.acceptDeadline) setTimeout(() => startHeadToHead(lobby, match), 2000);
   }
 
@@ -58,7 +59,7 @@ module.exports = function install(ctx) {
     if (won === meA) match.winsA++; else match.winsB++;
     // resolveMatch skips matches already marked final, so don't set status before calling it.
     if (match.winsA >= 2 || match.winsB >= 2) resolveMatch(lobby, match, match.winsA >= 2 ? match.a : match.b, null);
-    else { match.status = 'live'; match.acceptDeadline = 0; }
+    else { setMatchStatus(match, 'live'); match.acceptDeadline = 0; }
     broadcastTournState(lobby); tickTourn(lobby);
   }
 

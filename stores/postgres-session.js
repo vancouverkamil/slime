@@ -29,6 +29,7 @@ async ensureSchema() {
         expires_at BIGINT NOT NULL
       )
     `;
+    await this.ensureSocialSchema();
   },
 
 rowToUser(row) {

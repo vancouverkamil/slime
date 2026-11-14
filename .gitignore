@@ -24,3 +24,6 @@ DEPLOYMENT.md
 
 # Capacitor mobile build output (regenerate with `npm run mobile:build`)
 www/
+
+# local server logs
+slime-server*.log

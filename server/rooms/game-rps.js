@@ -1,5 +1,7 @@
 module.exports = function createRpsController(options) {
   const { room, bcast, startNextPoint, broadcastState, RPS_CHOICES } = options;
+  // The game's own timer (same argument order as setTimeout), cancelled when the game ends.
+  const later = options.later ? (fn, ms) => options.later(ms, fn) : setTimeout;
 function sendRpsPrompt(reason) {
   room.state.phase = 'rps';
   room.state.rps = { choices: {}, reason: reason || 'start' };
@@ -21,7 +23,7 @@ function maybeResolveRps() {
   const winner = rpsWinner(choices.left, choices.right);
   if (!winner) {
     bcast({ type: 'rps_result', tie: true, choices: { left: choices.left, right: choices.right } });
-    setTimeout(() => { if (room.state && room.state.phase === 'rps') sendRpsPrompt('tie'); }, 900);
+    later(() => { if (room.state && room.state.phase === 'rps') sendRpsPrompt('tie'); }, 900);
     return;
   }
   room.state.leftServes = winner === 'left';
@@ -34,11 +36,11 @@ function maybeResolveRps() {
     choices: { left: choices.left, right: choices.right },
   });
   [3, 2, 1].forEach((n, i) => {
-    setTimeout(() => {
+    later(() => {
       if (room.state && room.state.phase === 'countdown') bcast({ type: 'pregame_countdown', n });
     }, 650 + i * 1000);
   });
-  setTimeout(() => {
+  later(() => {
     if (!room.state || room.state.phase !== 'countdown') return;
     startNextPoint();
     broadcastState();

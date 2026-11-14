@@ -1,3 +1,10 @@
+const { createRateLimiter, clientIp } = require('./rate-limit');
+
+// Brute-force protection: failed logins per address+username, and sign-ups per address.
+const loginFailures = createRateLimiter({ limit: 10, windowMs: 10 * 60 * 1000 });
+const signups = createRateLimiter({ limit: 20, windowMs: 60 * 60 * 1000 });
+const isLoopback = (ip) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+
 module.exports = function install(ctx) {
   const { app, accounts, normalizeUsername } = ctx;
 function parseCookies(header) {
@@ -5,7 +12,8 @@ function parseCookies(header) {
   String(header || '').split(';').forEach((part) => {
     const idx = part.indexOf('=');
     if (idx === -1) return;
-    cookies[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim());
+    try { cookies[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim()); }
+    catch (_) { /* malformed cookie value: ignore it */ }
   });
   return cookies;
 }
@@ -56,17 +64,33 @@ function clearSessionCookie(req) {
   return `slime_session=; HttpOnly; SameSite=${sameSite}; Path=/; Max-Age=0${secure}`;
 }
 
-async function getReqUser(req) {
-  const token = getReqToken(req);
-  return await accounts.getUserBySession(token);
+// Cookie-only auth for a request that changes something is accepted only from our
+// own site. Another website can make a browser send the cookie (cross-site request
+// forgery), but it can't read the session token our client puts in the body or URL.
+function cookieAuthAllowed(req) {
+  if (req.method === 'GET' || req.method === 'HEAD') return true;
+  const origin = req.headers.origin;
+  return !origin || isAllowedOrigin(origin) || !isCrossSiteRequest(req);
 }
 
-function getReqToken(req) {
+async function getReqUser(req) {
+  const explicit = getExplicitToken(req);
+  if (explicit) return await accounts.getUserBySession(explicit);
+  if (!cookieAuthAllowed(req)) return null;
+  return await accounts.getUserBySession(parseCookies(req.headers.cookie).slime_session);
+}
+
+// A token the client sent on purpose (header, URL or body), as opposed to the cookie.
+function getExplicitToken(req) {
   const auth = String(req.headers.authorization || '');
   if (auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
   if (req.query && req.query.session) return String(req.query.session);
   if (req.body && req.body._session) return String(req.body._session);
-  return parseCookies(req.headers.cookie).slime_session;
+  return '';
+}
+
+function getReqToken(req) {
+  return getExplicitToken(req) || parseCookies(req.headers.cookie).slime_session;
 }
 
 function sendUser(res, user) {
@@ -78,6 +102,8 @@ app.get('/api/me', async (req, res) => {
 });
 
 app.post('/api/auth/register', async (req, res) => {
+  const ip = clientIp(req);
+  if (!isLoopback(ip) && !signups.allow(ip)) { res.status(429).json({ error: 'Too many new accounts from here. Try again later.' }); return; }
   try {
     const user = await accounts.register(req.body.username, req.body.password);
     const token = await accounts.createSession(user.id);
@@ -90,8 +116,14 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
+    const ip = clientIp(req), key = ip + '|' + normalizeUsername(req.body.username);
+    if (!isLoopback(ip) && loginFailures.isBlocked(key)) {
+      res.status(429).json({ error: 'Too many failed logins. Try again in a few minutes.' });
+      return;
+    }
     const user = await accounts.login(req.body.username, req.body.password);
     if (!user) {
+      loginFailures.hit(key); // only failures count toward the lockout
       res.status(401).json({ error: 'Invalid username or password.' });
       return;
     }
@@ -175,5 +207,5 @@ app.delete('/api/me/hat-drawings/:id', async (req, res) => {
   sendUser(res, updated);
 });
 
-  Object.assign(ctx, { parseCookies, getReqToken });
+  Object.assign(ctx, { parseCookies, getReqToken, getReqUser });
 };

@@ -18,22 +18,31 @@ function stopReplay() {
   stopDrop();
 }
 
-function confirmReplayExit() {
+function hideReplayOverlay() {
   var rc = document.getElementById('ReplayContinue');
-  if (rc) { rc.className = ''; rc.style.display = 'none'; }
+  if (rc) { rc.className = ''; rc.style.display = ''; }
   var ro = document.getElementById('ReplayOverlay');
   if (ro) ro.className = '';
-  stopReplay();
-  document.removeEventListener('keydown', onReplayKey);
-  if (replayOnComplete) { var cb = replayOnComplete; replayOnComplete = null; cb(); }
+}
+
+// Continue from the replay. Only the replay that still owns the screen can
+// continue: if something else took over (e.g. the next tournament game started),
+// the old replay's overlay, key handler and callback are already gone.
+function confirmReplayExit() {
+  if (currentScreenOwner() !== 'replay') return;
+  var cb = replayOnComplete;
+  replayOnComplete = null;
+  releaseScreen('replay');
+  if (cb) cb();
 }
 function onReplayKey(e) { if (e.key !== 'Escape') confirmReplayExit(); }
 
 function playHighlights(winner, onComplete) {
-  claimScreen('replay');
+  var scene = claimScreen('replay');
+  scene.onExit(function() { stopReplay(); hideReplayOverlay(); replayOnComplete = null; });
   var clip = replayBuffer.slice(-250); // last 5 seconds at 50fps
   replayOnComplete = onComplete;
-  if (clip.length < 20) { onComplete(); return; }
+  if (clip.length < 20) { confirmReplayExit(); return; }
 
   canvas.style.display = 'block'; menuDiv.style.display = 'none'; hideBottomBar();
   var ro = document.getElementById('ReplayOverlay');
@@ -45,12 +54,12 @@ function playHighlights(winner, onComplete) {
   var total = clip.length * slow;
   var lbH = Math.round(viewHeight * 0.13);
 
-  replayInterval = setInterval(function() {
+  replayInterval = scene.interval(function() {
     if (fi >= clip.length) {
       clearInterval(replayInterval); replayInterval = null;
       var rc = document.getElementById('ReplayContinue');
       if (rc) rc.className = 'visible';
-      document.addEventListener('keydown', onReplayKey);
+      scene.listen(document, 'keydown', onReplayKey);
       return;
     }
     var f = clip[fi];

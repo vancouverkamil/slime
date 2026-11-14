@@ -59,6 +59,13 @@ function drawOnlineHUD() {
   drawTag(slimeLeft,  playerNameLeft,  leftStreak,  emoteLeft,  emoteLeftEnd);
   drawTag(slimeRight, playerNameRight, rightStreak, emoteRight, emoteRightEnd);
 
+  // which mode this match counts for
+  if (!isSpectator && onlineMatchMode) {
+    ctx.font = 'bold 10px Courier New';
+    ctx.fillStyle = onlineMatchMode === 'RANKED' ? '#ffcc00' : onlineMatchMode === 'TOURNAMENT' ? '#cc88ff' : '#66ffcc';
+    ctx.fillText(onlineMatchMode, viewWidth/2, viewHeight - 10);
+  }
+
   // rally counter
   if (rallyCount >= 5) {
     ctx.font = 'bold 11px Courier New';

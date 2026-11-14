@@ -12,6 +12,8 @@ load() {
       const parsed = JSON.parse(fs.readFileSync(this.file, 'utf8'));
       this.data.users = Array.isArray(parsed.users) ? parsed.users : [];
       this.data.sessions = parsed.sessions && typeof parsed.sessions === 'object' ? parsed.sessions : {};
+      this.data.socialEdges = Array.isArray(parsed.socialEdges) ? parsed.socialEdges : [];
+      this.data.directMessages = Array.isArray(parsed.directMessages) ? parsed.directMessages : [];
     } catch (_) {
       this.data = { users: [], sessions: {} };
       this.save();

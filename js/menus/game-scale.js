@@ -48,10 +48,16 @@ function applyGameScale() {
   var availableW = Math.max(1, Math.round(cd.clientWidth || cd.offsetWidth || MIN_VIEW_W));
   var availableH = Math.max(1, Math.round(cd.clientHeight || cd.offsetHeight || MIN_VIEW_H));
   var minAspect = 16 / 9;
-  var stageW = availableW;
-  var stageH = availableW / availableH < minAspect
-    ? Math.round(availableW / minAspect)
-    : availableH;
+  // While a match is on screen, keep the court's shape the same whether or not
+  // the bottom bar is showing: shape the stage for the height it would have
+  // without the bar, then scale it down to fit. (Court height scales with the
+  // canvas, so a shorter canvas would squash slimes, jumps and the ball.)
+  var bar = document.getElementById('BottomBar');
+  var matchOnScreen = canvas && canvas.style.display === 'block';
+  var barH = matchOnScreen && bar && bar.style.display !== 'none' ? bar.offsetHeight : 0;
+  var aspect = Math.max(minAspect, availableW / (availableH + barH));
+  var stageW = Math.min(availableW, Math.round(availableH * aspect));
+  var stageH = Math.round(stageW / aspect);
   stageW = Math.max(320, stageW);
   stageH = Math.max(180, stageH);
   var nw = stageW;

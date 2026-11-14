@@ -37,6 +37,7 @@
 <script type="text/javascript" src="js/core/page-chrome.js" defer></script>
 <script type="text/javascript" src="js/core/screen.js" defer></script>
 <!-- online: connection, chat, match state -->
+<script type="text/javascript" src="js/online/message-router.js" defer></script>
 <script type="text/javascript" src="js/online/connection.js" defer></script>
 <script type="text/javascript" src="js/customization/state.js" defer></script>
 <script type="text/javascript" src="js/game/sprites.js" defer></script>
@@ -55,8 +56,14 @@
 <script type="text/javascript" src="js/tournament/hub.js" defer></script>
 <script type="text/javascript" src="js/tournament/online-lobby.js" defer></script>
 <script type="text/javascript" src="js/tournament/spectate.js" defer></script>
+<script type="text/javascript" src="js/tournament/messages.js" defer></script>
+<!-- social: friends and private messages -->
+<script type="text/javascript" src="js/social/social.js" defer></script>
+<script type="text/javascript" src="js/social/inbox-ui.js" defer></script>
+<script type="text/javascript" src="js/social/social-messages.js" defer></script>
 <!-- online: match effects -->
 <script type="text/javascript" src="js/online/match-effects.js" defer></script>
+<script type="text/javascript" src="js/online/net-smoothing.js" defer></script>
 <!-- lobby: room browser -->
 <script type="text/javascript" src="js/lobby/lobby-select.js" defer></script>
 <script type="text/javascript" src="js/lobby/map-browser.js" defer></script>
@@ -66,6 +73,7 @@
 <script type="text/javascript" src="js/core/shortcuts.js" defer></script>
 <!-- online: matches -->
 <script type="text/javascript" src="js/online/server-messages.js" defer></script>
+<script type="text/javascript" src="js/online/match-messages.js" defer></script>
 <script type="text/javascript" src="js/online/online-match.js" defer></script>
 <script type="text/javascript" src="js/online/pregame-overlay.js" defer></script>
 <!-- menus: home, scaling, final 4, ranked -->
@@ -100,6 +108,7 @@
   <div id="TopBar">
     <span id="VersionText">v2.0</span>
     <span id="AnnouncementText">// SLIME VOLLEYBALL // ONLINE MULTIPLAYER //</span>
+    <button id="TopInboxBtn" class="top-wallet-btn top-inbox-btn" type="button" onclick="openInbox()" aria-label="Inbox: friends and messages">INBOX <span id="InboxBadge" class="inbox-badge" hidden>0</span></button>
     <button id="TopWalletBtn" class="top-wallet-btn" type="button" onclick="connectSlimeWallet()">CONNECT WALLET</button>
   </div>
 
@@ -222,6 +231,20 @@
       <button id="InventoryClose" onclick="hideInventory()">&#10005;</button>
     </div>
     <div id="InventoryGrid"></div>
+  </div>
+</div>
+
+<!-- Inbox: friends and private messages (js/social/) -->
+<div id="InboxOverlay" role="dialog" aria-modal="true" aria-labelledby="InboxTitle" onclick="if(event.target===this)closeInbox()">
+  <div id="InboxCard">
+    <div id="InboxHeader">
+      <span id="InboxTitle">// INBOX //</span>
+      <button id="InboxClose" type="button" onclick="closeInbox()" aria-label="Close inbox">&#10005;</button>
+    </div>
+    <div id="InboxBody">
+      <aside id="InboxSide"></aside>
+      <section id="InboxChat"></section>
+    </div>
   </div>
 </div>
 

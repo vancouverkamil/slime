@@ -61,6 +61,7 @@ function updatePerfOverlay() {
   perfOverlayEl.innerHTML =
     'FPS ' + perfFps + ' / ' + perfFrameMs.toFixed(1) + 'ms<br>' +
     'WS ' + perfSocketState() + ' / ' + (lastPingMs || '-') + 'ms<br>' +
+    (typeof netSmoothingStatus === 'function' ? netSmoothingStatus() + '<br>' : '') +
     'Mode ' + mode + '<br>' +
     'Room ' + room + '<br>' +
     'Players ' + (document.getElementById('PlayerCountNum') || {}).textContent;

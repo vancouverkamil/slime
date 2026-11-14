@@ -36,6 +36,7 @@ function showOptSection(sec) {
     var sst = document.getElementById('ScreenShakeToggle'); if (sst) sst.checked = screenShakeEnabled;
     var spt = document.getElementById('ShowPingToggle');    if (spt) spt.checked = showPingEnabled;
     var sft = document.getElementById('ShowFPSToggle');     if (sft) sft.checked = showFPSEnabled;
+    if (typeof syncNetSmoothingButtons === 'function') syncNetSmoothingButtons();
   }
   if (sec === 'gameplay') {
     if (typeof syncProfanityToggles === 'function') syncProfanityToggles();
@@ -66,6 +67,7 @@ function showOptions() {
 }
 function hideOptions() {
   document.getElementById('OptionsDiv').style.display = 'none';
+  if (typeof stopPreviewAnim === 'function') stopPreviewAnim(); // the preview isn't visible any more
   if (gameState === GAME_STATE_MENU_PAUSE) { updateCount = 0; gameState = GAME_STATE_RUNNING; }
   else if (gameState === GAME_STATE_MENU_PAUSE_BETWEEN_POINTS) startNextPoint();
   loadOptions();

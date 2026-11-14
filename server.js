@@ -71,7 +71,19 @@ app.use((req, _res, next) => {
   }
   next();
 });
-app.use(express.static(path.join(__dirname)));
+// Only what the browser needs is public: never server code, tests, scripts or data.
+const PUBLIC_ROOT_FILES = [
+  'slime_volleyball.html', 'ws-config.js', 'progression.js',
+  'vball.png', 'slime175green.png', 'slime175red.png', 'sky2.jpg', 'cave.jpg', 'sunset.jpg',
+];
+// A page served by this game server (localhost, a Cloudflare tunnel, the Railway URL)
+// talks to this same server. The static slime-config.js on Vercel still points at production.
+app.get('/slime-config.js', (req, res) => {
+  res.type('application/javascript').set('Cache-Control', 'no-store').send('window.SLIME_SAME_ORIGIN_BACKEND = true;\n');
+});
+app.use('/js', express.static(path.join(__dirname, 'js')));
+app.use('/css', express.static(path.join(__dirname, 'css')));
+PUBLIC_ROOT_FILES.forEach((file) => app.get('/' + file, (req, res) => res.sendFile(path.join(__dirname, file))));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'slime_volleyball.html')));
 app.get('/healthz', async (_req, res) => {
   try {
@@ -87,7 +99,8 @@ app.get('/healthz', async (_req, res) => {
   }
 });
 const server = http.createServer(app);
-const wss    = new WebSocketServer({ noServer: true });
+// 256 KB is far above any real message (a custom hat drawing is a few KB).
+const wss    = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
 
 const allClients = new Map(); // main-socket clients: ws -> info
 const rooms = createRooms();
@@ -98,6 +111,9 @@ const runtime = installServer({
   newBall, newSlime, initRound, tick,
 });
 routeUpgrades(server, runtime);
+
+// Log anything that escapes a handler instead of losing it silently.
+process.on('unhandledRejection', (err) => console.error('[process] unhandled rejection', err));
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Slime server on port ${PORT}`));

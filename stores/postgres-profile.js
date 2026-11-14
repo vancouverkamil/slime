@@ -60,7 +60,7 @@ async updateSlime(userId, slime) {
     return this.rowToUser(rows[0]);
   },
 
-async recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked) {
+async recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ranked, mode) {
     await this.ready;
     const left = leftUserId ? await this.findById(leftUserId) : null;
     const right = rightUserId ? await this.findById(rightUserId) : null;
@@ -94,7 +94,7 @@ async recordMatch(leftUserId, rightUserId, winnerSide, scoreLeft, scoreRight, ra
         pointsAgainst: (user.stats.pointsAgainst || 0) + scoreAgainst,
         xp: (user.stats.xp || 0) + xpGained,
       };
-      const recentMatch = { id: matchId, playedAt, result: won ? 'win' : 'loss', scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked, opponent: opponent ? opponent.username : 'guest' };
+      const recentMatch = { id: matchId, playedAt, result: won ? 'win' : 'loss', scoreFor, scoreAgainst, xpGained, coinsGained, ranked: !!ranked, mode: mode || (ranked ? 'ranked' : 'quickplay'), opponent: opponent ? opponent.username : 'guest' };
       const recentMatches = [recentMatch].concat(user.recentMatches || []).slice(0, 10);
       const achievements = awardMatchAchievements(user.achievements, { won, scoreFor, scoreAgainst, playedAt });
       const rankedVal = newElo ? JSON.stringify(newElo) : JSON.stringify(user.ranked || progression.defaultRanked());

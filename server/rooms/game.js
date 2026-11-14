@@ -1,16 +1,19 @@
 const createRpsController = require('./game-rps');
 const createDisconnectHandler = require('./game-reconnect');
+const { createGame } = require('./game-lifetime');
 
 module.exports = function install(ctx) {
   const { accounts, progression, crypto, WIN_AMOUNT, TICK_MS, RECONNECT_TIMEOUT_MS, RPS_CHOICES, newBall, newSlime, initRound, tick, send, broadcastRoom, pushLobbyState, getRank, progressionForUser } = ctx;
 function startRoomGame(room) {
+  if (room.game) room.game.dispose(); // never let a previous game's timers or listeners run into this one
+  const game = createGame(room);
   room.state = createState();
   room.state.mapId = room.mapId;
   room.state.phase = 'rps';
   room.phase = 'playing';
 
   const [left, right] = room.players;
-  const names = { nameLeft: left.info.name, nameRight: right.info.name, roomName: room.name };
+  const names = { nameLeft: left.info.name, nameRight: right.info.name, roomName: room.name, gameId: game.id };
   send(left.ws,  { type: 'start', side: 'left',  ...names });
   send(right.ws, { type: 'start', side: 'right', ...names });
   room.spectators.forEach(({ ws }) => send(ws, { type: 'game_started', ...names }));
@@ -22,15 +25,16 @@ function startRoomGame(room) {
     send(sw, { type: 'customize', side: 'right', hat: right.info.hat, hatAnim: right.info.hatAnim, color: right.info.bodyColor, hatDrawing: right.info.hatDrawing, trail: right.info.trail||'none' });
   });
 
-  function bcast(msg) { broadcastRoom(room, msg); }
+  // Every game message carries its gameId so clients can ignore a finished game's leftovers.
+  function bcast(msg) { if (game.isCurrent()) broadcastRoom(room, Object.assign({ gameId: game.id }, msg)); }
   function broadcastState() { bcast(buildStateMsg(room.state)); }
 
   const { sendRpsPrompt, handleRpsChoice } = createRpsController({
-    room, bcast, startNextPoint, broadcastState, RPS_CHOICES,
+    room, bcast, startNextPoint, broadcastState, RPS_CHOICES, later: game.later,
   });
 
   function endRoomGame() {
-    clearInterval(room.interval);
+    game.dispose();
     room.interval = null;
     room.state    = null;
     room.phase    = 'empty';
@@ -46,6 +50,7 @@ function startRoomGame(room) {
 
   function startNextPoint() {
     room.state.phase = 'playing';
+    room.state.round++; // clients never blend positions across a new point's reset
     initRound(room.state, room.state.leftServes);
     room.state.inputLeft  = { movement: 0, jump: false };
     room.state.inputRight = { movement: 0, jump: false };
@@ -61,7 +66,9 @@ function startRoomGame(room) {
       if (room.state.scoreLeft >= WIN_AMOUNT || room.state.scoreRight >= WIN_AMOUNT) {
         room.state.phase = 'done';
         const winner = room.state.scoreLeft >= WIN_AMOUNT ? 'left' : 'right';
-        await accounts.recordMatch(left.info.userId, right.info.userId, winner, room.state.scoreLeft, room.state.scoreRight, !!room.ranked);
+        // Each match counts for exactly one mode; only a ranked-queue match moves ranked rating.
+        const mode = room.tournament ? 'tournament' : room.ranked ? 'ranked' : 'quickplay';
+        await accounts.recordMatch(left.info.userId, right.info.userId, winner, room.state.scoreLeft, room.state.scoreRight, mode === 'ranked', mode);
         for (const playerInfo of [left.info, right.info]) {
           if (!playerInfo.userId) continue;
           const user = await accounts.findById(playerInfo.userId);
@@ -73,7 +80,7 @@ function startRoomGame(room) {
           if (user.ranked) playerInfo.ranked = user.ranked;
         }
         // Send ranked rating change to each player individually
-        if (room.ranked) {
+        if (mode === 'ranked') {
           send(left.ws,  { type: 'ranked_result', ranked: left.info.ranked  || progression.defaultRanked() });
           send(right.ws, { type: 'ranked_result', ranked: right.info.ranked || progression.defaultRanked() });
         }
@@ -86,7 +93,7 @@ function startRoomGame(room) {
       room.state.phase = 'point_pause';
       bcast({ type: 'point', scorer: result === 1 ? 'left' : 'right' });
       if (room.tournament && ctx.onTournamentPoint) ctx.onTournamentPoint(room.tournament, room.state.scoreLeft, room.state.scoreRight);
-      setTimeout(() => { if (room.state) { startNextPoint(); broadcastState(); } }, 700);
+      game.later(700, () => { if (room.state) { startNextPoint(); broadcastState(); } });
       return;
     }
     broadcastState();
@@ -108,6 +115,7 @@ function startRoomGame(room) {
   left.info.gameSide  = 'left';
   right.info.gameSide = 'right';
   left.info.gameHandler  = (msg) => {
+    if (!game.isCurrent()) return;
     handleInput('left', msg);
     if (msg.type === 'emote') {
       const e = String(msg.emoji || '').slice(0, 4);
@@ -115,6 +123,7 @@ function startRoomGame(room) {
     }
   };
   right.info.gameHandler = (msg) => {
+    if (!game.isCurrent()) return;
     handleInput('right', msg);
     if (msg.type === 'emote') {
       const e = String(msg.emoji || '').slice(0, 4);
@@ -123,7 +132,7 @@ function startRoomGame(room) {
   };
 
   const handleDisconnect = createDisconnectHandler({
-    room, bcast, handleInput, pushLobbyState, TICK_MS, buildStateMsg,
+    room, game, bcast, handleInput, pushLobbyState, TICK_MS, buildStateMsg,
     gameTick, send, crypto, RECONNECT_TIMEOUT_MS,
     onAbandon(remainingUsername) {
       if (!room.tournament || !ctx.onTournamentRoomAbandoned) return;
@@ -132,19 +141,18 @@ function startRoomGame(room) {
     },
   });
 
-  left.ws.on('close',  () => handleDisconnect('left'));
-  right.ws.on('close', () => handleDisconnect('right'));
+  game.listen(left.ws,  'close', () => handleDisconnect('left'));
+  game.listen(right.ws, 'close', () => handleDisconnect('right'));
 
-  room.interval = setInterval(() => {
+  room.interval = game.every(TICK_MS, () => {
     gameTick().catch((err) => {
-      console.error('game tick failed', err);
-      clearInterval(room.interval);
-      room.interval = null;
-      room.state = null;
-      room.phase = 'empty';
-      pushLobbyState();
+      console.error('[game] tick failed', { room: room.id, gameId: game.id, phase: room.state && room.state.phase }, err);
+      bcast({ type: 'game_aborted', reason: 'The match hit a server error.' });
+      const tourn = room.tournament;
+      endRoomGame();
+      if (tourn && ctx.onTournamentRoomAbandoned) ctx.onTournamentRoomAbandoned(tourn, null);
     });
-  }, TICK_MS);
+  });
   sendRpsPrompt('start');
   pushLobbyState();
 }
@@ -152,6 +160,8 @@ function startRoomGame(room) {
 function buildStateMsg(state) {
   return {
     type:       'state',
+    t:          Math.round((performance.now() - state.startedAt) * 10) / 10, // server ms; clients interpolate on it
+    round:      state.round,
     ball:       { x: state.ball.x, y: state.ball.y, velocityX: state.ball.velocityX },
     slimeLeft:  { x: state.slimeLeft.x,  y: state.slimeLeft.y  },
     slimeRight: { x: state.slimeRight.x, y: state.slimeRight.y },
@@ -167,6 +177,7 @@ function createState() {
     scoreLeft: 0, scoreRight: 0,
     inputLeft: { movement: 0, jump: false }, inputRight: { movement: 0, jump: false },
     phase: 'playing', leftServes: true,
+    startedAt: performance.now(), round: 0,
   };
   initRound(s, true);
   return s;

@@ -46,6 +46,8 @@ function lerpSpec(a, b, k) { return a + (b - a) * k; }
 function tournamentSpectateFrame() {
   tournSpecRaf = null;
   if (!isSpectator || !tournamentSpectateMatchId) return;
+  // Another screen took over (e.g. the player accepted their own match): stop quietly.
+  if (currentScreenOwner() !== 'online-match') { stopTournamentSpectating(); return; }
   tournSpecRaf = requestAnimationFrame(tournamentSpectateFrame);
   if (!tournSpecSnaps.length) return;
   var renderAt = Date.now() - TOURN_SPEC_DELAY_MS;
@@ -63,17 +65,30 @@ function tournamentSpectateFrame() {
   });
 }
 
-function exitTournamentSpectate() {
-  if (!tournamentSpectateMatchId) return;
+// Forget local spectating state only (the server has already moved us, e.g. into our own match).
+function forgetTournamentSpectate() {
   tournamentSpectateMatchId = null;
   tournSpecSnaps = [];
   if (tournSpecRaf) { cancelAnimationFrame(tournSpecRaf); tournSpecRaf = null; }
+  tournamentSpectateRoomId = null;
+}
+
+// Stop watching (loop, subscription, spectator flags) without changing screens.
+function stopTournamentSpectating() {
+  if (!tournamentSpectateMatchId) return false;
+  var roomId = tournamentSpectateRoomId;
+  forgetTournamentSpectate();
   isSpectator = false; currentRoomMapId = null; currentRoomId = null;
   hideSpecBadge(); showLeaveBtn(false); hidePregameOverlay();
   if (lobbySocket && lobbySocket.readyState === 1) {
-    if (tournamentSpectateRoomId != null) lobbySocket.send(JSON.stringify({ type:'leave_room' }));
+    // Name the room: if the server has meanwhile put us in our own match, it ignores this.
+    if (roomId != null) lobbySocket.send(JSON.stringify({ type:'leave_room', roomId: roomId }));
     else lobbySocket.send(JSON.stringify({ type:'tournament_spectate', matchId:null }));
   }
-  tournamentSpectateRoomId = null;
+  return true;
+}
+
+function exitTournamentSpectate() {
+  if (!stopTournamentSpectating()) return;
   if (tournamentState) showTournamentHub(); else toInitialMenu();
 }

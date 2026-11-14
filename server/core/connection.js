@@ -1,3 +1,10 @@
+const { createRateLimiter } = require('./rate-limit');
+const customizeLimiter = createRateLimiter({ limit: 20, windowMs: 10 * 1000 });
+
+const OUT_OF_GAME_MESSAGES = new Set(['leave_room', 'cancel_queue', 'perf_ping']);
+// Handled normally even while a game is running, alongside the game input.
+const IN_GAME_LOBBY_MESSAGES = new Set(['chat', 'set_name', 'customize']);
+
 module.exports = function install(ctx) {
   const { accounts, wss, allClients, progression, send, broadcastAll, broadcastRoom, getLobbySnapshot, getPlayerList, pushLobbyState, randomName, makeClientId, getRank, progressionForUser, canUseHat, parseCookies, handleJoinRoom, leaveRoom, handleRankedQueue, cancelRankedQueue, handleTournamentJoin, handleTournamentReady, handleTournamentLeave, handleTournamentAccept, handleTournamentResult, handleTournamentScore, handleTournamentSpectate, handleTournamentState } = ctx;
 wss.on('connection', async (ws, req) => {
@@ -36,25 +43,23 @@ wss.on('connection', async (ws, req) => {
   pushLobbyState();
 
   ws.on('message', async (raw) => {
+    let msg;
+    try { msg = JSON.parse(raw); } catch (_) { return; } // not JSON: ignore
+    if (!msg || typeof msg !== 'object') return;
     try {
-      const msg = JSON.parse(raw);
-      // In-game inputs route to game handler; chat still handled normally
-      if (info.state === 'playing' && info.gameHandler) {
+      // In-game inputs route to game handler; chat still handled normally.
+      // Leaving and pings are not game input: they always reach the normal handler.
+      if (info.state === 'playing' && info.gameHandler && !OUT_OF_GAME_MESSAGES.has(msg.type)) {
         info.gameHandler(msg);
-        if (msg.type === 'chat') relayChat(info, msg);
-        if (msg.type === 'set_name') {
-          const name = String(msg.name || '').trim().slice(0, 20);
-          if (!info.userId && name) info.name = name;
-          if (!info.userId) {
-            info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
-            info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
-          }
-        }
-        if (msg.type === 'customize') await handleCustomize(ws, info, msg);
+        if (IN_GAME_LOBBY_MESSAGES.has(msg.type)) await handleMsg(ws, info, msg);
         return;
       }
       await handleMsg(ws, info, msg);
-    } catch (_) {}
+    } catch (err) {
+      // Never swallow handler errors: they hide real bugs (the Slimeverse join once failed silently this way).
+      console.error('[ws] message handler failed', { type: msg.type, user: info.username || info.name, state: info.state, room: info.room && info.room.id }, err);
+      send(ws, { type: 'server_error', ref: msg.type });
+    }
   });
 
   ws.on('close', () => {
@@ -69,50 +74,52 @@ wss.on('connection', async (ws, req) => {
 });
 
 // ── message routing ───────────────────────────────────────
-async function handleMsg(ws, info, msg) {
-  if (msg.type === 'perf_ping') {
-    send(ws, { type: 'perf_pong', t: msg.t });
-  } else if (msg.type === 'chat') {
-    relayChat(info, msg);
-  } else if (msg.type === 'set_name') {
-    const name = String(msg.name || '').trim().slice(0, 20);
-    if (!info.userId && name) info.name = name;
-    if (!info.userId) {
-      info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
-      info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
-    }
-  } else if (msg.type === 'ranked_queue') {
-    handleRankedQueue(ws, info);
-  } else if (msg.type === 'ranked_queue_cancel') {
-    cancelRankedQueue(ws, info);
-  } else if (msg.type === 'join_room') {
-    handleJoinRoom(ws, info, msg.roomId, msg.rejoinToken);
-  } else if (msg.type === 'customize') {
-    await handleCustomize(ws, info, msg);
-  } else if (msg.type === 'leave_room' || msg.type === 'cancel_queue') {
-    leaveRoom(ws, info, false);
-    info.state = 'lobby';
-    pushLobbyState();
-  } else if (msg.type === 'tournament_join') {
-    handleTournamentJoin(ws, info, msg);
-  } else if (msg.type === 'tournament_ready') {
-    handleTournamentReady(ws, info);
-  } else if (msg.type === 'tournament_leave') {
-    handleTournamentLeave(ws, info);
-  } else if (msg.type === 'tournament_accept') {
-    handleTournamentAccept(ws, info, msg);
-  } else if (msg.type === 'tournament_result') {
-    handleTournamentResult(ws, info, msg);
-  } else if (msg.type === 'tournament_score') {
-    handleTournamentScore(ws, info, msg);
-  } else if (msg.type === 'tournament_spectate') {
-    handleTournamentSpectate(ws, info, msg);
-  } else if (msg.type === 'tournament_state') {
-    handleTournamentState(ws, info, msg);
+function setGuestName(info, msg) {
+  const name = String(msg.name || '').trim().slice(0, 20);
+  if (!info.userId && name) info.name = name;
+  if (!info.userId) {
+    info.wins = Math.max(0, Math.min(99999, parseInt(msg.wins) || 0));
+    info.rank  = String(msg.rank || 'PRIVATE').slice(0, 20);
   }
 }
 
+function leaveRoomRequest(ws, info, msg) {
+  // A leave that names a room only applies to that room (a late "stop spectating"
+  // must not pull a player out of the match they were just moved into).
+  if (msg.roomId != null && (!info.room || info.room.id !== Number(msg.roomId))) return;
+  leaveRoom(ws, info, false);
+  info.state = 'lobby';
+  pushLobbyState();
+}
+
+// Lobby-socket messages: exactly one handler per type; anything else is ignored.
+const HANDLERS = {
+  perf_ping:           (ws, info, msg) => send(ws, { type: 'perf_pong', t: msg.t }),
+  chat:                (ws, info, msg) => relayChat(info, msg),
+  set_name:            (ws, info, msg) => setGuestName(info, msg),
+  customize:           (ws, info, msg) => handleCustomize(ws, info, msg),
+  join_room:           (ws, info, msg) => handleJoinRoom(ws, info, msg.roomId, msg.rejoinToken),
+  leave_room:          leaveRoomRequest,
+  cancel_queue:        leaveRoomRequest,
+  ranked_queue:        (ws, info) => handleRankedQueue(ws, info),
+  ranked_queue_cancel: (ws, info) => cancelRankedQueue(ws, info),
+  tournament_join:     (ws, info, msg) => handleTournamentJoin(ws, info, msg),
+  tournament_ready:    (ws, info) => handleTournamentReady(ws, info),
+  tournament_leave:    (ws, info) => handleTournamentLeave(ws, info),
+  tournament_accept:   (ws, info, msg) => handleTournamentAccept(ws, info, msg),
+  tournament_result:   (ws, info, msg) => handleTournamentResult(ws, info, msg),
+  tournament_score:    (ws, info, msg) => handleTournamentScore(ws, info, msg),
+  tournament_spectate: (ws, info, msg) => handleTournamentSpectate(ws, info, msg),
+  tournament_state:    (ws, info, msg) => handleTournamentState(ws, info, msg),
+};
+
+async function handleMsg(ws, info, msg) {
+  const handler = Object.prototype.hasOwnProperty.call(HANDLERS, msg.type) ? HANDLERS[msg.type] : null;
+  if (handler) await handler(ws, info, msg);
+}
+
 async function handleCustomize(ws, info, msg) {
+  if (!customizeLimiter.allow(info.id)) return; // each change is a database write
   let hat       = String(msg.hat      || 'none').slice(0, 20);
   const hatAnim = String(msg.hatAnim  || 'none').slice(0, 20);
   const color   = String(msg.color    || '#00ff00').slice(0, 20);

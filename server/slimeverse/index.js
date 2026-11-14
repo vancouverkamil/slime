@@ -12,7 +12,7 @@ const TICK_MS = 16;
 
 module.exports = function install(ctx) {
   const { accounts, parseCookies, progressionForUser, canUseHat } = ctx;
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
   const avatars = new Map(); // ws -> avatar
 
   function send(ws, msg) { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); }
@@ -37,11 +37,14 @@ module.exports = function install(ctx) {
     ws.on('message', (raw) => {
       let msg;
       try { msg = JSON.parse(raw); } catch (_) { return; }
+      if (!msg || typeof msg !== 'object') return; // e.g. "null" would otherwise throw and crash the process
       if (msg.type === 'input') applyInput(avatar, msg);
       else if (msg.type === 'store_enter') { avatar.inStore = true; avatar.storeX = STORE_SPAWN_X; }
       else if (msg.type === 'store_exit') avatar.inStore = false;
       else if (msg.type === 'store_move') moveInStore(avatar, msg.storeX);
       else if (msg.type === 'appearance') {
+        if (Date.now() - (avatar.appearanceAt || 0) < 250) return; // at most 4 look changes a second
+        avatar.appearanceAt = Date.now();
         applyAppearance(avatar, msg, hatAllowed);
         broadcast({ type: 'appearance', player: publicAvatar(avatar) });
       }

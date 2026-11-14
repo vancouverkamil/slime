@@ -1,3 +1,4 @@
+const { setMatchStatus } = require('./match-status');
 module.exports = function install(ctx) {
   const { allClients, send } = ctx;
 const TOURN_BRACKETS = [
@@ -102,11 +103,12 @@ function advance(lobby, match) {
   }
   const next = nextRound[Math.floor(match.slot / 2)];
   if (match.slot % 2 === 0) next.a = match.winner; else next.b = match.winner;
-  next.status = next.a && next.b ? 'upcoming' : 'waiting';
+  setMatchStatus(next, next.a && next.b ? 'upcoming' : 'waiting');
 }
 function resolveMatch(lobby, match, winner, loser) {
   if (!match || match.status === 'final') return;
-  match.winner = winner; match.status = 'final'; match.winsA = winner === match.a ? 2 : Math.max(match.winsA || 0, 0); match.winsB = winner === match.b ? 2 : Math.max(match.winsB || 0, 0);
+  if (!setMatchStatus(match, 'final')) return;
+  match.winner = winner; match.winsA = winner === match.a ? 2 : Math.max(match.winsA || 0, 0); match.winsB = winner === match.b ? 2 : Math.max(match.winsB || 0, 0);
   if (loser) loser.disqualified = !!loser.username; advance(lobby, match);
 }
 function scoreBot(match) {
@@ -125,8 +127,8 @@ function tickTourn(lobby) {
     }
     if (match.status === 'bot_live' && now > match.resolveAt) { resolveMatch(lobby, match, scoreBot(match), null); changed = true; continue; }
     if (match.status !== 'upcoming' || !match.a || !match.b) continue;
-    if (!match.a.username && !match.b.username) { match.status = 'bot_live'; match.resolveAt = now + 8000; changed = true; continue; }
-    match.status = 'awaiting'; match.acceptDeadline = now + 60000; match.acceptedA = !match.a.username; match.acceptedB = !match.b.username; changed = true; sendAccepts(lobby, match);
+    if (!match.a.username && !match.b.username) { setMatchStatus(match, 'bot_live'); match.resolveAt = now + 8000; changed = true; continue; }
+    setMatchStatus(match, 'awaiting'); match.acceptDeadline = now + 60000; match.acceptedA = !match.a.username; match.acceptedB = !match.b.username; changed = true; sendAccepts(lobby, match);
   }
   if (changed) broadcastTournState(lobby);
   scheduleTick(lobby);

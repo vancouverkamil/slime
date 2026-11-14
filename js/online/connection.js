@@ -33,7 +33,7 @@ function connectLobby() {
           } catch(e) {}
         }
       }
-      if (typeof onlineInputInterval !== 'undefined') clearInterval(onlineInputInterval);
+      if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
       onlineMode = false; isSpectator = false;
       canvas.style.display = 'none';
       menuDiv.style.display = 'block';
