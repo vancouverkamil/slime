@@ -113,6 +113,10 @@ export async function createSlimeTown(onProgress) {
   const self = new SlimeAvatar();
   const others = {};
   let scale = 2;
+  // Animation clock in SECONDS, like Money Radar's game loop (engine/loop.js).
+  // Feeding it the page's millisecond timestamp ran every flicker, pulse and
+  // wave ~1000x too fast and made the whole town strobe.
+  let clock = 0;
 
   const town = {
     width: scene.pixelW,
@@ -175,8 +179,11 @@ export async function createSlimeTown(onProgress) {
       camera.setView(viewW, viewH);
     },
 
-    // One frame. me = {x, y, hop, p}; players = [{id, x, y, hop, p}] for everyone else.
-    frame(ctx, w, h, t, dt, me, players) {
+    // One frame. dt = seconds since the last frame; me = {x, y, hop, p};
+    // players = [{id, x, y, hop, p}] for everyone else.
+    frame(ctx, w, h, dt, me, players) {
+      dt = Math.max(0, Math.min(0.25, dt || 0));
+      clock += dt;
       if (surface.width !== Math.round(w) || surface.height !== Math.round(h)) this.resize(w, h);
       self.place(me.x, me.y, me.hop, me.p);
       const seen = {};
@@ -189,7 +196,7 @@ export async function createSlimeTown(onProgress) {
       scene.live = Object.values(others);
       scene.update(dt, self, true);
       camera.follow(me.x, me.y, dt);
-      renderer.render(scene, camera, assets, t, {
+      renderer.render(scene, camera, assets, clock, {
         phase: PHASE, reducedMotion: false, lighting: lighting.enabled ? lighting : null,
         player: self, radar: null, ambient: true, focus: null, overlay: null,
       });

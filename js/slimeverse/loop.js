@@ -34,7 +34,7 @@ function renderSlimeverse(ts) {
     others.push({ id: id, x: v.x, y: v.z, hop: mvServerHop(v.y), p: v });
   });
 
-  slimeTown.frame(ctx, viewWidth, viewHeight, ts, dt / 1000,
+  slimeTown.frame(ctx, viewWidth, viewHeight, dt / 1000,
     { x: me.x, y: me.z, hop: me.y, p: Object.assign({}, self, slimeverseOwnLook()) }, others);
 
   others.forEach(function(o) { drawSlimeverseNameTag(o.p, o.x, o.y, o.hop, false); });
