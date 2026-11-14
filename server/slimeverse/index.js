@@ -3,8 +3,8 @@
 // ranked queues or tournaments, so the world cannot interfere with a match.
 const { WebSocketServer } = require('ws');
 const {
-  SLIMEVERSE_WORLD, STORE_SPAWN_X,
-  createAvatar, publicAvatar, applyInput, applyAppearance, moveInStore, stepAvatar,
+  SLIMEVERSE_WORLD,
+  createAvatar, publicAvatar, applyInput, applyAppearance, stepAvatar,
 } = require('./avatars');
 
 const SLIMEVERSE_PATH = '/slimeverse';
@@ -39,9 +39,6 @@ module.exports = function install(ctx) {
       try { msg = JSON.parse(raw); } catch (_) { return; }
       if (!msg || typeof msg !== 'object') return; // e.g. "null" would otherwise throw and crash the process
       if (msg.type === 'input') applyInput(avatar, msg);
-      else if (msg.type === 'store_enter') { avatar.inStore = true; avatar.storeX = STORE_SPAWN_X; }
-      else if (msg.type === 'store_exit') avatar.inStore = false;
-      else if (msg.type === 'store_move') moveInStore(avatar, msg.storeX);
       else if (msg.type === 'appearance') {
         if (Date.now() - (avatar.appearanceAt || 0) < 250) return; // at most 4 look changes a second
         avatar.appearanceAt = Date.now();

@@ -1,23 +1,25 @@
-// Slimeverse: the world HUD.
-// ── Exterior HUD ──────────────────────────────────────────────────────────
-function drawSlimeverseHud() {
+// Slimeverse: the town HUD. A slim bar on top (where you are, who is here)
+// and the controls along the bottom, so the building signs stay visible.
+function drawSlimeverseHud(myX) {
   var s = typeof uiScale === 'function' ? uiScale() : 1;
-  refreshSlimeverseLeaderboard();
+  var area = slimeTown ? slimeTown.districtAt(myX).toUpperCase() : 'SUNSET BAY';
+  var live = Object.keys(slimeversePlayers).length;
+  var title = 'SLIMEVERSE // ' + area;
+  var count = '   LIVE ' + live;
   ctx.save();
-  var panelW = Math.min(570 * s, viewWidth - 20 * s);
-  var panelH = 78 * s;
-  var activePlayers = Object.keys(slimeversePlayers).length;
-  ctx.fillStyle = 'rgba(0,10,20,.76)'; ctx.strokeStyle = 'rgba(0,255,200,.28)';
-  ctx.lineWidth = Math.max(1, s);
-  ctx.fillRect(10 * s, 10 * s, panelW, panelH); ctx.strokeRect(10 * s, 10 * s, panelW, panelH);
-  ctx.fillStyle = 'rgba(90,255,190,.08)'; ctx.fillRect(10 * s, 10 * s, 7 * s, panelH);
-  ctx.fillStyle = '#00ffcc'; ctx.font = 'bold ' + Math.round(15 * s) + 'px Courier New';
-  ctx.fillText('SLIMEVERSE // MOONLIT COMMONS', 26 * s, 33 * s);
-  ctx.fillStyle = '#9bea80'; ctx.font = 'bold ' + Math.round(10 * s) + 'px Courier New';
-  ctx.fillText('LIVE ' + activePlayers + '  //  COLISEUM BOARD ONLINE  //  FIREFLY HOUR', 26 * s, 51 * s);
-  ctx.fillStyle = '#668078'; ctx.font = Math.round(10 * s) + 'px Courier New';
-  ctx.fillText('A/D move  -  W/SPC jump  -  UP/DN depth  -  E interact  -  ESC exit', 26 * s, 71 * s);
+  ctx.font = 'bold ' + Math.round(12 * s) + 'px Courier New';
+  var tw = ctx.measureText(title).width;
+  var cw = ctx.measureText(count).width;
+  ctx.fillStyle = 'rgba(0,10,20,.66)'; ctx.strokeStyle = 'rgba(0,255,200,.25)'; ctx.lineWidth = Math.max(1, s);
+  ctx.fillRect(8 * s, 8 * s, tw + cw + 20 * s, 24 * s); ctx.strokeRect(8 * s, 8 * s, tw + cw + 20 * s, 24 * s);
+  ctx.fillStyle = '#00ffcc'; ctx.fillText(title, 18 * s, 25 * s);
+  ctx.fillStyle = '#9bea80'; ctx.fillText(count, 18 * s + tw, 25 * s);
+  var help = 'ARROWS/WASD move  -  SPACE jump  -  walk into HAT SHOP / FINAL 4  -  ESC exit';
+  ctx.font = Math.round(11 * s) + 'px Courier New';
+  var hw = ctx.measureText(help).width + 16 * s;
+  ctx.fillStyle = 'rgba(0,10,20,.6)';
+  ctx.fillRect(viewWidth / 2 - hw / 2, viewHeight - 24 * s, hw, 18 * s);
+  ctx.fillStyle = '#9fb8b0'; ctx.textAlign = 'center';
+  ctx.fillText(help, viewWidth / 2, viewHeight - 11 * s);
   ctx.restore();
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────

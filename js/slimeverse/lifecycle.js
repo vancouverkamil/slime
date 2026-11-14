@@ -11,14 +11,11 @@ function startSlimeverse() {
   slimeverseSelfId  = null;
   slimeversePlayers = {};
   slimeverseVisualPlayers = {};
-  svStoreInside     = false;
-  svStoreTransition = 0;
   mvLastTime = 0; mvAccum = 0;
   hideSpecBadge(); showLeaveBtn(true); hideBottomBar();
   canvas.style.display = 'block';
   menuDiv.style.display = 'none';
   connectSlimeverse();
-  refreshSlimeverseLeaderboard();
   startSlimeverseInput();
   requestAnimationFrame(renderSlimeverse);
 }
@@ -29,8 +26,7 @@ function startSlimeverse() {
 function stopSlimeverse() {
   if (!slimeverseActive) return false;
   slimeverseActive  = false;
-  svStoreInside     = false;
-  svStoreTransition = 0;
+  if (typeof closeHatShop === 'function') closeHatShop();
   if (slimeverseInputInterval) { clearInterval(slimeverseInputInterval); slimeverseInputInterval = null; }
   slimeverseSelfId  = null;
   slimeversePlayers = {};

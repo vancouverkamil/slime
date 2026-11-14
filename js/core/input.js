@@ -86,10 +86,10 @@ addEventListener("keydown", function(e) {
     e.preventDefault();
     return;
   }
-  // ESC: close store or leave slimeverse
+  // ESC: leave the hat shop, else leave the Slimeverse
   if (e.keyCode === 27) {
-    if (typeof svStoreInside !== 'undefined' && svStoreInside) {
-      if (typeof exitStoreInterior === 'function') exitStoreInterior();
+    if (typeof svShopOpen !== 'undefined' && svShopOpen) {
+      closeHatShop();
       e.preventDefault();
     } else if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
       if (typeof leaveSlimeverse === 'function') leaveSlimeverse();
@@ -99,7 +99,7 @@ addEventListener("keydown", function(e) {
   }
   // Prevent page scroll on arrow keys while in slimeverse
   if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {
-    if (e.keyCode === KEY_UP || e.keyCode === KEY_DOWN) e.preventDefault();
+    if (e.keyCode === KEY_UP || e.keyCode === KEY_DOWN || e.keyCode === KEY_SPACE) e.preventDefault();
   }
   if (e.keyCode == KEY_SPACE) {
     if (typeof slimeverseActive !== 'undefined' && slimeverseActive) {

@@ -1,10 +1,12 @@
-// Slimeverse avatars: the identity and physics of a slime wandering the open world.
-// An avatar is its own identity, separate from the lobby/match/tournament client
-// on the main socket, so nothing done in the Slimeverse can touch a game.
+// Slimeverse avatars: the identity and physics of a slime exploring the town
+// (Money Radar's neo-zen pixel town, js/slimeverse/town/). An avatar is its own
+// identity, separate from the lobby/match/tournament client on the main socket,
+// so nothing done in the Slimeverse can touch a game.
+// Units are town pixels: x across, z = feet row down the map, y = jump height.
 
-const SLIMEVERSE_WORLD = { width: 4500, height: 2250, floorY: 1980, maxZ: 3000 };
-const STORE_WORLD_W = 2700;
-const STORE_SPAWN_X = 1050;
+const SLIMEVERSE_WORLD = { width: 1536, depth: 640 };
+const SPAWN = { x: 728, z: 204 };   // the clear lane in front of the doors (tile row 12), by the town's default spawn
+const MOVE = 1.6, JUMP_VY = 2.7, GRAVITY = 0.166, MAX_HOP = 40; // same as js/slimeverse/prediction.js
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -20,40 +22,39 @@ function createAvatar({ user, profile, level, spawnIndex, guestName }) {
     hatAnim: slime.hatAnim || 'none',
     color: slime.color || '#00ff00',
     hatDrawing: Array.isArray(slime.hatDrawing) ? slime.hatDrawing : [],
-    x: 500 + (spawnIndex % 8) * 85,
-    y: SLIMEVERSE_WORLD.floorY,
-    z: 200,
+    x: SPAWN.x + ((spawnIndex % 8) - 4) * 14,   // side by side along the boulevard
+    y: 0,
+    z: SPAWN.z,
     vx: 0, vy: 0, vz: 0,
     left: false, right: false, jump: false, fwd: false, back: false,
-    inStore: false,
-    storeX: STORE_SPAWN_X,
     clientPoseAt: 0,
   };
 }
 
 function publicAvatar(av) {
+  const r1 = (v) => Math.round(v * 10) / 10;
   return {
     id: av.id, name: av.name, username: av.username, level: av.level,
     hat: av.hat, hatAnim: av.hatAnim, color: av.color, hatDrawing: av.hatDrawing,
-    x: Math.round(av.x), y: Math.round(av.y), z: Math.round(av.z),
-    vx: Math.round(av.vx * 10) / 10, vy: Math.round(av.vy * 10) / 10, vz: Math.round(av.vz * 10) / 10,
-    inStore: av.inStore, storeX: av.storeX,
+    x: r1(av.x), y: r1(av.y), z: r1(av.z),
+    vx: r1(av.vx), vy: r1(av.vy), vz: r1(av.vz),
   };
 }
 
-// The client predicts its own movement; it reports its pose and the server keeps it in bounds.
+// The client predicts its own movement (with the town's walls); it reports its
+// pose and the server keeps it inside the town.
 function applyInput(av, msg) {
   av.left = !!msg.left; av.right = !!msg.right;
   av.fwd = !!msg.fwd; av.back = !!msg.back;
   if (msg.jump) av.jump = true;
   const px = Number(msg.x), py = Number(msg.y), pz = Number(msg.z);
   if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) return;
-  av.x = clamp(px, 70, SLIMEVERSE_WORLD.width - 70);
-  av.y = clamp(py, 0, SLIMEVERSE_WORLD.floorY);
-  av.z = clamp(pz, 0, SLIMEVERSE_WORLD.maxZ);
-  if (Number.isFinite(Number(msg.vx))) av.vx = clamp(Number(msg.vx), -12, 12);
-  if (Number.isFinite(Number(msg.vy))) av.vy = clamp(Number(msg.vy), -30, 30);
-  if (Number.isFinite(Number(msg.vz))) av.vz = clamp(Number(msg.vz), -14, 14);
+  av.x = clamp(px, 0, SLIMEVERSE_WORLD.width);
+  av.y = clamp(py, 0, MAX_HOP);
+  av.z = clamp(pz, 0, SLIMEVERSE_WORLD.depth);
+  if (Number.isFinite(Number(msg.vx))) av.vx = clamp(Number(msg.vx), -4, 4);
+  if (Number.isFinite(Number(msg.vy))) av.vy = clamp(Number(msg.vy), -6, 6);
+  if (Number.isFinite(Number(msg.vz))) av.vz = clamp(Number(msg.vz), -4, 4);
   av.jump = false;
   av.clientPoseAt = Date.now();
 }
@@ -66,27 +67,24 @@ function applyAppearance(av, msg, canUseHat) {
   av.hatDrawing = Array.isArray(msg.hatDrawing) ? msg.hatDrawing.slice(0, 300) : [];
 }
 
-function moveInStore(av, storeX) {
-  if (av.inStore) av.storeX = clamp(Number(storeX) || STORE_SPAWN_X, 80, STORE_WORLD_W - 80);
-}
-
-// Server-side step for avatars whose client has not reported a pose recently.
+// Server-side step for avatars whose client has not reported a pose recently
+// (no walls here: only the reporting client knows the town's collision).
 function stepAvatar(av, now) {
-  if (av.inStore) return;
   if (av.clientPoseAt && now - av.clientPoseAt < 120) return;
-  const floorY = SLIMEVERSE_WORLD.floorY;
-  av.vx = av.left && !av.right ? -7 : av.right && !av.left ? 7 : 0;
-  av.vz = av.fwd && !av.back ? -8 : av.back && !av.fwd ? 8 : 0;
-  if (av.jump && av.y >= floorY) av.vy = -22;
+  av.vx = av.left && !av.right ? -MOVE : av.right && !av.left ? MOVE : 0;
+  av.vz = av.fwd && !av.back ? -MOVE : av.back && !av.fwd ? MOVE : 0;
+  if (av.jump && av.y <= 0) av.vy = JUMP_VY;
   av.jump = false;
-  av.vy = Math.min(26, av.vy + 1.35);
-  av.x = clamp(av.x + av.vx, 70, SLIMEVERSE_WORLD.width - 70);
-  av.y += av.vy;
-  av.z = clamp(av.z + av.vz, 0, SLIMEVERSE_WORLD.maxZ);
-  if (av.y > floorY) { av.y = floorY; av.vy = 0; }
+  if (av.y > 0 || av.vy) {
+    av.vy -= GRAVITY;
+    av.y += av.vy;
+    if (av.y <= 0) { av.y = 0; av.vy = 0; }
+  }
+  av.x = clamp(av.x + av.vx, 0, SLIMEVERSE_WORLD.width);
+  av.z = clamp(av.z + av.vz, 0, SLIMEVERSE_WORLD.depth);
 }
 
 module.exports = {
-  SLIMEVERSE_WORLD, STORE_SPAWN_X,
-  createAvatar, publicAvatar, applyInput, applyAppearance, moveInStore, stepAvatar,
+  SLIMEVERSE_WORLD,
+  createAvatar, publicAvatar, applyInput, applyAppearance, stepAvatar,
 };

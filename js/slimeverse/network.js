@@ -56,12 +56,18 @@ function handleSlimeverseMessage(msg) {
     slimeverseWorld  = msg.world || slimeverseWorld;
     if (msg.player) {
       slimeversePlayers[msg.player.id] = msg.player;
-      mvSyncFromServer(mvLocal, msg.player, slimeverseWorld);
+      mvSyncFromServer(mvLocal, msg.player);
+      // Never start inside a wall, whatever the server picked.
+      if (slimeTown) {
+        var spot = slimeTown.free(mvLocal.x, mvLocal.z);
+        mvLocal.x = spot.x; mvLocal.z = spot.y;
+        slimeTown.snapCamera(mvLocal.x, mvLocal.z);
+      }
     }
   } else if (msg.type === 'state') {
     (msg.players || []).forEach(function(p) {
       slimeversePlayers[p.id] = Object.assign(slimeversePlayers[p.id] || {}, p);
-      if (p.id === slimeverseSelfId) mvReconcile(mvLocal, p, 0.06);
+      if (p.id === slimeverseSelfId) mvReconcile(mvLocal, p);
     });
   } else if (msg.type === 'leave') {
     delete slimeversePlayers[msg.id];
@@ -77,15 +83,11 @@ function startSlimeverseInput() {
   slimeverseInputInterval = setInterval(function() {
     // Wait for the server's welcome (which sets our spawn point) before reporting a pose.
     if (!slimeverseActive || !slimeverseSelfId) return;
-    if (svStoreInside) {
-      svSend({ type: 'store_move', storeX: svStorePlayerX });
-      return;
-    }
     var inp = mvGetInput();
     svSend({
       type: 'input',
       left: inp.left, right: inp.right,
-      jump: inp.jump, fwd: inp.fwd, back: inp.back,
+      jump: inp.jump, fwd: inp.up, back: inp.down,
       x: mvLocal.x, y: mvLocal.y, z: mvLocal.z,
       vx: mvLocal.vx, vy: mvLocal.vy, vz: mvLocal.vz,
     });

@@ -7,19 +7,12 @@ var SLIMEVERSE_SCRIPTS = [
   'js/slimeverse/network.js',
   'js/slimeverse/lifecycle.js',
   'js/slimeverse/loop.js',
-  'js/slimeverse/world.js',
-  'js/slimeverse/world-props.js',
-  'js/slimeverse/store-building.js',
-  'js/slimeverse/final4-tower.js',
-  'js/slimeverse/final4-tower-frame.js',
-  'js/slimeverse/final4-tower-floors.js',
   'js/slimeverse/avatar.js',
-  'js/slimeverse/portals.js',
   'js/slimeverse/hud.js',
-  'js/slimeverse/store-interior.js',
-  'js/slimeverse/store-shelves.js',
-  'js/slimeverse/store-purchase.js',
+  'js/slimeverse/buildings.js',
 ];
+// The world itself: Money Radar's neo-zen pixel town (ES modules + art in js/slimeverse/town/).
+var SLIMEVERSE_TOWN_MODULE = 'js/slimeverse/town/slime_town.js';
 
 var _lazyScriptPromises = {};
 function loadLazyScript(src) {
@@ -42,10 +35,20 @@ function ensureSlimeverseLoaded() {
   if (!_slimeverseLoaded) {
     _slimeverseLoaded = SLIMEVERSE_SCRIPTS.reduce(function(chain, src) {
       return chain.then(function() { return loadLazyScript(src); });
-    }, Promise.resolve());
+    }, Promise.resolve()).then(loadSlimeverseTown);
     _slimeverseLoaded.catch(function() { _slimeverseLoaded = null; });
   }
   return _slimeverseLoaded;
+}
+
+// Build the town once (its art is ~200 small PNGs); later visits reuse it.
+function loadSlimeverseTown() {
+  if (slimeTown) return slimeTown;
+  var src = window.slimeAssetUrl ? window.slimeAssetUrl(SLIMEVERSE_TOWN_MODULE) : SLIMEVERSE_TOWN_MODULE;
+  window.SLIME_TOWN_ASSETS = new URL('js/slimeverse/town/assets/', document.baseURI).href;
+  return import(new URL(src, document.baseURI).href).then(function(mod) {
+    return mod.createSlimeTown();
+  }).then(function(town) { slimeTown = town; return town; });
 }
 
 function enterSlimeverseEye(btn) {

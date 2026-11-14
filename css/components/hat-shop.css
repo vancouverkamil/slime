@@ -1,0 +1,36 @@
+/* Slimeverse HAT SHOP panel (js/slimeverse/buildings.js): opens when a slime walks into the shop's door. */
+.sv-hat-shop {
+  position: absolute; inset: 0; z-index: 40;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(5, 0, 15, .72);
+}
+.sv-hat-shop-card {
+  width: min(720px, 94%); max-height: 92%; overflow: auto;
+  background: var(--bg); border: 1px solid rgba(var(--accent-2-rgb), .55);
+  box-shadow: 0 0 28px rgba(var(--accent-2-rgb), .25);
+  padding: 16px 18px; font-family: 'Courier New', monospace;
+}
+.sv-hat-shop-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.sv-hat-shop-title { color: var(--accent-2); font-weight: bold; letter-spacing: 4px; font-size: var(--fs-sm); text-shadow: 0 0 10px rgba(var(--accent-2-rgb), .7); }
+.sv-hat-shop-coins { color: var(--gold); font-weight: bold; letter-spacing: 2px; font-size: var(--fs-xs); margin-left: auto; }
+.sv-hat-shop-close {
+  background: none; border: 1px solid rgba(var(--accent-rgb), .5); color: var(--accent);
+  font: bold var(--fs-xs) 'Courier New', monospace; letter-spacing: 2px; padding: 6px 12px; cursor: pointer;
+}
+.sv-hat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sv-hat-card {
+  border: 1px solid rgba(var(--accent-rgb), .2); background: rgba(var(--accent-rgb), .04);
+  padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.sv-hat-card.is-wearing { border-color: rgba(var(--gold-rgb), .8); }
+.sv-hat-preview { width: 120px; height: 96px; }
+.sv-hat-name { color: var(--accent-soft); font-size: var(--fs-xs); letter-spacing: 1px; text-align: center; }
+.sv-hat-btn {
+  width: 100%; background: rgba(var(--accent-2-rgb), .12); border: 1px solid rgba(var(--accent-2-rgb), .6);
+  color: #fff; font: bold var(--fs-xs) 'Courier New', monospace; letter-spacing: 1px; padding: 6px 4px; cursor: pointer;
+}
+.sv-hat-btn:disabled { cursor: default; color: var(--gold); border-color: rgba(var(--gold-rgb), .6); background: none; }
+.sv-hat-shop-msg { margin-top: 12px; color: var(--text-faint); font-size: var(--fs-xs); text-align: center; min-height: 1.4em; }
+@media (max-width: 680px) {
+  .sv-hat-grid { grid-template-columns: repeat(2, 1fr); }
+}

@@ -15,36 +15,42 @@ function test(name, fn) {
 const source = readComponent('js/slimeverse');
 const css = readStylesheet('css/slime.css');
 
-test('slimeverse includes a leaderboard coliseum and lantern paths', () => {
-  assert.match(source, /var SV_COLISEUM_X\s*=\s*620/);
-  assert.match(source, /function drawSVColiseum\(/);
-  assert.match(source, /function drawSVChaseLights\(/);
-  assert.match(source, /function drawSVRadioTower\(/);
-  assert.match(source, /SLIMEVERSE TOP 10/);
-  assert.match(source, /function drawSVLanterns\(/);
-  assert.match(source, /refreshSlimeverseLeaderboard\(\)/);
+test('the Slimeverse world is the copied Money Radar town, built once by the loader', () => {
+  assert.match(fs.readFileSync('js/slimeverse/loader.js', 'utf8'), /js\/slimeverse\/town\/slime_town\.js/);
+  assert.match(source, /slimeTown\.frame\(/);
+  assert.ok(fs.existsSync('js/slimeverse/town/scene/town.js'));
+  assert.ok(fs.existsSync('js/slimeverse/town/assets/manifest.json'));
 });
 
-test('slimeverse uses a closer readable character-scale camera', () => {
-  assert.match(source, /var SV_FLOOR_FRAC\s*=\s*0\.88/);
-  assert.match(source, /var SV_FAR_SCALE\s*=\s*0\.10/);
-  assert.match(source, /var SV_PLAYER_SCALE\s*=\s*1\.42/);
-  assert.match(source, /var SV_WORLD_ZOOM\s*=\s*1\.34/);
+test('the old city, hat shop and Final 4 tower are gone from the Slimeverse', () => {
+  assert.doesNotMatch(source, /svStoreInside|drawSlimeverseStoreBuilding|drawFinal4Tower|SV_COLISEUM/);
 });
 
-test('slimeverse landmarks and entrance zones render at double scale', () => {
-  assert.match(source, /var SV_LANDMARK_SCALE\s*=\s*2\.0/);
-  assert.match(source, /drawSVColiseum\([\s\S]*svScaleAt\(SV_COLISEUM_Z\) \* SV_LANDMARK_SCALE/);
-  assert.match(source, /drawSlimeverseStoreBuilding\([\s\S]*svScaleAt\(SV_STORE_Z\) \* SV_LANDMARK_SCALE/);
-  assert.match(source, /drawFinal4Tower\([\s\S]*svScaleAt\(SV_FINAL4_Z\) \* SV_LANDMARK_SCALE/);
-  assert.match(source, /var sc = svScaleAt\(SV_FINAL4_Z\) \* SV_LANDMARK_SCALE/);
-  assert.match(source, /dz < 90 \* SV_LANDMARK_SCALE && dx < 240 \* SV_LANDMARK_SCALE/);
-  assert.match(source, /f4dz < 125 \* SV_LANDMARK_SCALE && f4dx < 190 \* SV_LANDMARK_SCALE/);
+test('the town copy leaves Money Radar features out', () => {
+  const town = fs.readFileSync('js/slimeverse/town/scene/town.js', 'utf8');
+  const scene = fs.readFileSync('js/slimeverse/town/world/scene.js', 'utf8');
+  assert.doesNotMatch(town, /crowd:|cars:|dynamic: '(hiring|news)'/);
+  assert.doesNotMatch(scene, /npc\/|createCrowd|new Car\(/);
+  assert.ok(!fs.existsSync('js/slimeverse/town/panels') && !fs.existsSync('js/slimeverse/town/adapters'));
 });
 
-test('slimeverse smooths remote player snapshots before rendering', () => {
+test('the town has a walk-in HAT SHOP and FINAL 4 tower in its own art', () => {
+  const lots = fs.readFileSync('js/slimeverse/town/scene/slime_buildings.js', 'utf8');
+  assert.match(lots, /id: 'final4'/);
+  assert.match(lots, /id: 'hat_shop'/);
+  const manifest = JSON.parse(fs.readFileSync('js/slimeverse/town/assets/manifest.json', 'utf8')).assets;
+  for (const name of ['bld_hat_shop', 'bld_final4']) {
+    assert.ok(manifest[name] && manifest[name].door, name + ' has a door');
+    assert.ok(fs.existsSync('js/slimeverse/town/assets/' + manifest[name].file), name + ' art exists');
+    assert.ok(manifest[name + '_lights'] && manifest[name + '_neon'], name + ' has night layers');
+  }
+  assert.match(source, /startFinal4\(\)/);
+  assert.match(source, /\/api\/me\/buy/);
+});
+
+test('slimeverse smooths remote player snapshots before drawing', () => {
   assert.match(source, /function smoothSlimeverseRemotePlayer\(/);
-  assert.match(source, /drawSlimeversePlayer\(smoothSlimeverseRemotePlayer\(p\)\)/);
+  assert.match(source, /smoothSlimeverseRemotePlayer\(slimeversePlayers\[id\]\)/);
 });
 
 test('inventory desktop sizing is intentionally larger while phones stay compact', () => {

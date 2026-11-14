@@ -1,0 +1,4388 @@
+{
+ "assets": {
+  "bamboo": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 820
+    }
+   },
+   "collision": [
+    5,
+    42,
+    14,
+    5
+   ],
+   "file": "props/bamboo.png",
+   "frame_h": 48,
+   "frame_w": 24,
+   "height": 48,
+   "width": 72
+  },
+  "beach_umbrella": {
+   "collision": [
+    14,
+    26,
+    4,
+    4
+   ],
+   "file": "props/beach_umbrella.png",
+   "height": 32,
+   "width": 32
+  },
+  "bench": {
+   "collision": [
+    2,
+    8,
+    28,
+    7
+   ],
+   "file": "props/bench.png",
+   "height": 16,
+   "width": 32
+  },
+  "bld_bank": {
+   "collision": [
+    6,
+    30,
+    148,
+    114
+   ],
+   "door": [
+    64,
+    116,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "turn",
+    "at": [
+     65,
+     5
+    ],
+    "sprite": "emblem_dollar"
+   },
+   "file": "buildings/bank.png",
+   "height": 144,
+   "width": 160
+  },
+  "bld_bank_lights": {
+   "file": "buildings/bank_lights.png",
+   "height": 144,
+   "width": 160
+  },
+  "bld_bank_neon": {
+   "file": "buildings/bank_neon.png",
+   "height": 144,
+   "width": 160
+  },
+  "bld_career": {
+   "collision": [
+    4,
+    36,
+    200,
+    140
+   ],
+   "door": [
+    88,
+    148,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "sweep",
+    "at": [
+     90,
+     23
+    ],
+    "sprite": "emblem_radar"
+   },
+   "file": "buildings/career.png",
+   "height": 176,
+   "width": 208
+  },
+  "bld_career_lights": {
+   "file": "buildings/career_lights.png",
+   "height": 176,
+   "width": 208
+  },
+  "bld_career_neon": {
+   "file": "buildings/career_neon.png",
+   "height": 176,
+   "width": 208
+  },
+  "bld_condo_tower": {
+   "collision": [
+    6,
+    6,
+    164,
+    234
+   ],
+   "door": [
+    72,
+    212,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "scan",
+    "at": [
+     16,
+     -32
+    ],
+    "sprite": "condo_dome"
+   },
+   "file": "buildings/condo_tower.png",
+   "height": 240,
+   "width": 176
+  },
+  "bld_condo_tower_lights": {
+   "file": "buildings/condo_tower_lights.png",
+   "height": 240,
+   "width": 176
+  },
+  "bld_condo_tower_neon": {
+   "file": "buildings/condo_tower_neon.png",
+   "height": 240,
+   "width": 176
+  },
+  "bld_fitness": {
+   "collision": [
+    6,
+    22,
+    116,
+    106
+   ],
+   "door": [
+    48,
+    100,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "pulse",
+    "at": [
+     42,
+     2
+    ],
+    "sprite": "emblem_dumbbell"
+   },
+   "file": "buildings/fitness.png",
+   "height": 128,
+   "width": 128
+  },
+  "bld_fitness_lights": {
+   "file": "buildings/fitness_lights.png",
+   "height": 128,
+   "width": 128
+  },
+  "bld_fitness_neon": {
+   "file": "buildings/fitness_neon.png",
+   "height": 128,
+   "width": 128
+  },
+  "bld_gfx": {
+   "collision": [
+    6,
+    22,
+    116,
+    106
+   ],
+   "door": [
+    48,
+    100,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "float",
+    "at": [
+     42,
+     -7
+    ],
+    "sprite": "emblem_quill"
+   },
+   "file": "buildings/gfx.png",
+   "height": 128,
+   "width": 128
+  },
+  "bld_gfx_lights": {
+   "file": "buildings/gfx_lights.png",
+   "height": 128,
+   "width": 128
+  },
+  "bld_gfx_neon": {
+   "file": "buildings/gfx_neon.png",
+   "height": 128,
+   "width": 128
+  },
+  "bld_lab_annex": {
+   "collision": [
+    4,
+    22,
+    120,
+    90
+   ],
+   "door": [
+    48,
+    86,
+    32,
+    26
+   ],
+   "emblem": {
+    "anim": "chase",
+    "at": [
+     106,
+     13
+    ],
+    "sprite": "emblem_chase"
+   },
+   "file": "buildings/lab_annex.png",
+   "height": 112,
+   "width": 128
+  },
+  "bld_lab_annex_lights": {
+   "file": "buildings/lab_annex_lights.png",
+   "height": 112,
+   "width": 128
+  },
+  "bld_lab_annex_neon": {
+   "file": "buildings/lab_annex_neon.png",
+   "height": 112,
+   "width": 128
+  },
+  "bld_lab_pod": {
+   "collision": [
+    10,
+    40,
+    77,
+    56
+   ],
+   "door": [
+    32,
+    70,
+    32,
+    26
+   ],
+   "file": "buildings/lab_pod.png",
+   "height": 96,
+   "width": 96
+  },
+  "bld_lab_pod_lights": {
+   "file": "buildings/lab_pod_lights.png",
+   "height": 96,
+   "width": 96
+  },
+  "bld_lab_pod_neon": {
+   "file": "buildings/lab_pod_neon.png",
+   "height": 96,
+   "width": 96
+  },
+  "bld_laboratory": {
+   "collision": [
+    4,
+    96,
+    216,
+    96
+   ],
+   "door": [
+    96,
+    164,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "watch",
+    "at": [
+     50,
+     4
+    ],
+    "front": "neon",
+    "sprite": "emblem_telescope"
+   },
+   "file": "buildings/laboratory.png",
+   "height": 192,
+   "width": 224
+  },
+  "bld_laboratory_lights": {
+   "file": "buildings/laboratory_lights.png",
+   "height": 192,
+   "width": 224
+  },
+  "bld_laboratory_neon": {
+   "file": "buildings/laboratory_neon.png",
+   "height": 192,
+   "width": 224
+  },
+  "bld_strategy": {
+   "collision": [
+    6,
+    22,
+    148,
+    138
+   ],
+   "door": [
+    64,
+    132,
+    32,
+    28
+   ],
+   "emblem": {
+    "anim": "glow",
+    "at": [
+     54,
+     -13
+    ],
+    "front": true,
+    "sprite": "emblem_bulb"
+   },
+   "file": "buildings/strategy.png",
+   "height": 160,
+   "width": 160
+  },
+  "bld_strategy_lights": {
+   "file": "buildings/strategy_lights.png",
+   "height": 160,
+   "width": 160
+  },
+  "bld_strategy_neon": {
+   "file": "buildings/strategy_neon.png",
+   "height": 160,
+   "width": 160
+  },
+  "bridge_post": {
+   "anims": {
+    "lit": {
+     "frames": [
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 1000
+    },
+    "off": {
+     "frames": [
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 1000
+    }
+   },
+   "collision": [
+    3,
+    25,
+    10,
+    5
+   ],
+   "file": "props/bridge_post.png",
+   "frame_h": 32,
+   "frame_w": 16,
+   "height": 32,
+   "width": 32
+  },
+  "bridge_rail": {
+   "file": "props/bridge_rail.png",
+   "height": 16,
+   "width": 64
+  },
+  "condo_dome": {
+   "anims": {
+    "scan": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ]
+     ],
+     "ms": 120
+    }
+   },
+   "file": "buildings/condo_dome.png",
+   "frame_h": 60,
+   "frame_w": 144,
+   "height": 60,
+   "width": 2304
+  },
+  "condo_dome_glow": {
+   "anims": {
+    "scan": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ]
+     ],
+     "ms": 120
+    }
+   },
+   "file": "buildings/condo_dome_glow.png",
+   "frame_h": 60,
+   "frame_w": 144,
+   "height": 60,
+   "width": 2304
+  },
+  "crystal_planter": {
+   "anims": {
+    "shimmer": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 320
+    }
+   },
+   "collision": [
+    2,
+    9,
+    12,
+    6
+   ],
+   "file": "props/crystal_planter.png",
+   "frame_h": 16,
+   "frame_w": 16,
+   "height": 16,
+   "width": 48
+  },
+  "emblem_bulb": {
+   "anims": {
+    "glow": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ]
+     ],
+     "ms": 300
+    }
+   },
+   "file": "buildings/emblem_bulb.png",
+   "frame_h": 50,
+   "frame_w": 52,
+   "height": 50,
+   "width": 728
+  },
+  "emblem_bulb_glow": {
+   "anims": {
+    "glow": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ]
+     ],
+     "ms": 300
+    }
+   },
+   "file": "buildings/emblem_bulb_glow.png",
+   "frame_h": 50,
+   "frame_w": 52,
+   "height": 50,
+   "width": 728
+  },
+  "emblem_chase": {
+   "anims": {
+    "chase": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ],
+      [
+       16,
+       0
+      ],
+      [
+       17,
+       0
+      ],
+      [
+       18,
+       0
+      ],
+      [
+       19,
+       0
+      ],
+      [
+       20,
+       0
+      ],
+      [
+       21,
+       0
+      ]
+     ],
+     "ms": 115
+    }
+   },
+   "file": "buildings/emblem_chase.png",
+   "frame_h": 92,
+   "frame_w": 4,
+   "height": 92,
+   "width": 88
+  },
+  "emblem_chase_glow": {
+   "anims": {
+    "chase": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ],
+      [
+       16,
+       0
+      ],
+      [
+       17,
+       0
+      ],
+      [
+       18,
+       0
+      ],
+      [
+       19,
+       0
+      ],
+      [
+       20,
+       0
+      ],
+      [
+       21,
+       0
+      ]
+     ],
+     "ms": 115
+    }
+   },
+   "file": "buildings/emblem_chase_glow.png",
+   "frame_h": 92,
+   "frame_w": 4,
+   "height": 92,
+   "width": 88
+  },
+  "emblem_dollar": {
+   "anims": {
+    "turn": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ],
+      [
+       16,
+       0
+      ],
+      [
+       17,
+       0
+      ],
+      [
+       18,
+       0
+      ],
+      [
+       19,
+       0
+      ]
+     ],
+     "ms": 210
+    }
+   },
+   "file": "buildings/emblem_dollar.png",
+   "frame_h": 30,
+   "frame_w": 30,
+   "height": 30,
+   "width": 600
+  },
+  "emblem_dollar_glow": {
+   "anims": {
+    "turn": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ],
+      [
+       16,
+       0
+      ],
+      [
+       17,
+       0
+      ],
+      [
+       18,
+       0
+      ],
+      [
+       19,
+       0
+      ]
+     ],
+     "ms": 210
+    }
+   },
+   "file": "buildings/emblem_dollar_glow.png",
+   "frame_h": 30,
+   "frame_w": 30,
+   "height": 30,
+   "width": 600
+  },
+  "emblem_dumbbell": {
+   "anims": {
+    "pulse": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ]
+     ],
+     "ms": 240
+    }
+   },
+   "file": "buildings/emblem_dumbbell.png",
+   "frame_h": 26,
+   "frame_w": 44,
+   "height": 26,
+   "width": 352
+  },
+  "emblem_dumbbell_glow": {
+   "anims": {
+    "pulse": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ]
+     ],
+     "ms": 240
+    }
+   },
+   "file": "buildings/emblem_dumbbell_glow.png",
+   "frame_h": 26,
+   "frame_w": 44,
+   "height": 26,
+   "width": 352
+  },
+  "emblem_quill": {
+   "anims": {
+    "float": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ]
+     ],
+     "ms": 220
+    }
+   },
+   "file": "buildings/emblem_quill.png",
+   "frame_h": 36,
+   "frame_w": 46,
+   "height": 36,
+   "width": 276
+  },
+  "emblem_quill_glow": {
+   "anims": {
+    "float": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ]
+     ],
+     "ms": 220
+    }
+   },
+   "file": "buildings/emblem_quill_glow.png",
+   "frame_h": 36,
+   "frame_w": 46,
+   "height": 36,
+   "width": 276
+  },
+  "emblem_radar": {
+   "anims": {
+    "sweep": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ]
+     ],
+     "ms": 140
+    }
+   },
+   "file": "buildings/emblem_radar.png",
+   "frame_h": 28,
+   "frame_w": 28,
+   "height": 28,
+   "width": 448
+  },
+  "emblem_radar_glow": {
+   "anims": {
+    "sweep": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       7,
+       0
+      ],
+      [
+       8,
+       0
+      ],
+      [
+       9,
+       0
+      ],
+      [
+       10,
+       0
+      ],
+      [
+       11,
+       0
+      ],
+      [
+       12,
+       0
+      ],
+      [
+       13,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       15,
+       0
+      ]
+     ],
+     "ms": 140
+    }
+   },
+   "file": "buildings/emblem_radar_glow.png",
+   "frame_h": 28,
+   "frame_w": 28,
+   "height": 28,
+   "width": 448
+  },
+  "emblem_telescope": {
+   "anims": {
+    "watch": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 250
+    }
+   },
+   "file": "buildings/emblem_telescope.png",
+   "frame_h": 64,
+   "frame_w": 60,
+   "height": 64,
+   "width": 420
+  },
+  "emblem_telescope_glow": {
+   "anims": {
+    "watch": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       6,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       5,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 250
+    }
+   },
+   "file": "buildings/emblem_telescope_glow.png",
+   "frame_h": 64,
+   "frame_w": 60,
+   "height": 64,
+   "width": 420
+  },
+  "fern": {
+   "file": "props/fern.png",
+   "height": 20,
+   "width": 32
+  },
+  "glow_pylon": {
+   "anims": {
+    "pulse": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ]
+     ],
+     "ms": 260
+    }
+   },
+   "collision": [
+    4,
+    26,
+    8,
+    5
+   ],
+   "file": "props/glow_pylon.png",
+   "frame_h": 32,
+   "frame_w": 16,
+   "height": 32,
+   "width": 64
+  },
+  "glow_shroom": {
+   "file": "props/glow_shroom.png",
+   "height": 16,
+   "width": 16
+  },
+  "grand_bonsai": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       3,
+       0
+      ]
+     ],
+     "ms": 340
+    }
+   },
+   "file": "props/grand_bonsai.png",
+   "frame_h": 100,
+   "frame_w": 116,
+   "height": 100,
+   "shadow": {
+    "onto": [
+     0,
+     79,
+     116,
+     69
+    ],
+    "strength": 0.6
+   },
+   "width": 580
+  },
+  "grand_fountain": {
+   "anims": {
+    "flow": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ]
+     ],
+     "ms": 200
+    }
+   },
+   "collision": [
+    6,
+    56,
+    116,
+    62
+   ],
+   "file": "props/grand_fountain.png",
+   "frame_h": 116,
+   "frame_w": 128,
+   "height": 116,
+   "shadow": {
+    "footprint": [
+     6,
+     57,
+     116,
+     60
+    ],
+    "height": 30,
+    "strength": 0.5
+   },
+   "width": 512
+  },
+  "grand_fountain_apron": {
+   "file": "props/grand_fountain_apron.png",
+   "height": 116,
+   "width": 184
+  },
+  "holo_sign": {
+   "anims": {
+    "flicker": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 140
+    }
+   },
+   "collision": [
+    10,
+    26,
+    12,
+    4
+   ],
+   "file": "props/holo_sign.png",
+   "frame_h": 32,
+   "frame_w": 32,
+   "height": 32,
+   "width": 128
+  },
+  "hydrant": {
+   "collision": [
+    4,
+    10,
+    8,
+    5
+   ],
+   "file": "props/hydrant.png",
+   "height": 16,
+   "width": 16
+  },
+  "job_poster": {
+   "collision": [
+    5,
+    26,
+    22,
+    5
+   ],
+   "file": "props/job_poster.png",
+   "height": 32,
+   "width": 32
+  },
+  "jungle_tree": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 900
+    }
+   },
+   "collision": [
+    35,
+    68,
+    10,
+    8
+   ],
+   "file": "props/jungle_tree.png",
+   "frame_h": 80,
+   "frame_w": 80,
+   "height": 80,
+   "width": 240
+  },
+  "jungle_tree_glow": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 950
+    }
+   },
+   "collision": [
+    35,
+    68,
+    10,
+    8
+   ],
+   "file": "props/jungle_tree_glow.png",
+   "frame_h": 80,
+   "frame_w": 80,
+   "height": 80,
+   "width": 240
+  },
+  "lab_bench": {
+   "collision": [
+    2,
+    8,
+    28,
+    6
+   ],
+   "file": "props/lab_bench.png",
+   "height": 16,
+   "width": 32
+  },
+  "lab_streetlight": {
+   "anims": {
+    "lit": {
+     "frames": [
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 1000
+    },
+    "off": {
+     "frames": [
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 1000
+    }
+   },
+   "collision": [
+    5,
+    42,
+    6,
+    5
+   ],
+   "file": "props/lab_streetlight.png",
+   "frame_h": 48,
+   "frame_w": 16,
+   "height": 48,
+   "width": 32
+  },
+  "lifeguard_tower": {
+   "collision": [
+    3,
+    38,
+    26,
+    9
+   ],
+   "file": "props/lifeguard_tower.png",
+   "height": 48,
+   "width": 32
+  },
+  "lion_spring": {
+   "anims": {
+    "flow": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       5,
+       0
+      ]
+     ],
+     "ms": 110
+    }
+   },
+   "collision": [
+    0,
+    18,
+    64,
+    22
+   ],
+   "file": "props/lion_spring.png",
+   "frame_h": 54,
+   "frame_w": 64,
+   "height": 54,
+   "shadow": {
+    "strength": 0.4
+   },
+   "width": 384
+  },
+  "mailbox": {
+   "collision": [
+    3,
+    10,
+    10,
+    5
+   ],
+   "file": "props/mailbox.png",
+   "height": 16,
+   "width": 16
+  },
+  "monstera": {
+   "collision": [
+    9,
+    18,
+    10,
+    5
+   ],
+   "file": "props/monstera.png",
+   "height": 24,
+   "width": 28
+  },
+  "neon_gate": {
+   "file": "props/neon_gate.png",
+   "height": 56,
+   "width": 64
+  },
+  "neon_pole": {
+   "anims": {
+    "flicker": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 180
+    }
+   },
+   "collision": [
+    1,
+    58,
+    7,
+    5
+   ],
+   "file": "props/neon_pole.png",
+   "frame_h": 64,
+   "frame_w": 16,
+   "height": 64,
+   "width": 48
+  },
+  "newsbox": {
+   "collision": [
+    2,
+    16,
+    12,
+    7
+   ],
+   "file": "props/newsbox.png",
+   "height": 24,
+   "width": 16
+  },
+  "palm": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 600
+    }
+   },
+   "collision": [
+    14,
+    42,
+    8,
+    6
+   ],
+   "file": "props/palm.png",
+   "frame_h": 48,
+   "frame_w": 40,
+   "height": 48,
+   "width": 120
+  },
+  "palm_small": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 650
+    }
+   },
+   "collision": [
+    13,
+    27,
+    6,
+    5
+   ],
+   "file": "props/palm_small.png",
+   "frame_h": 32,
+   "frame_w": 32,
+   "height": 32,
+   "width": 96
+  },
+  "palm_tech": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 600
+    }
+   },
+   "collision": [
+    14,
+    41,
+    8,
+    6
+   ],
+   "file": "props/palm_tech.png",
+   "frame_h": 48,
+   "frame_w": 40,
+   "height": 48,
+   "width": 120
+  },
+  "paper_lantern": {
+   "anims": {
+    "lit": {
+     "frames": [
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 1000
+    },
+    "off": {
+     "frames": [
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 1000
+    }
+   },
+   "collision": [
+    1,
+    34,
+    5,
+    5
+   ],
+   "file": "props/paper_lantern.png",
+   "frame_h": 40,
+   "frame_w": 16,
+   "height": 40,
+   "width": 32
+  },
+  "sailboat": {
+   "anims": {
+    "bob": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 900
+    }
+   },
+   "file": "props/sailboat.png",
+   "frame_h": 32,
+   "frame_w": 32,
+   "height": 32,
+   "width": 64
+  },
+  "sakura": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 700
+    }
+   },
+   "collision": [
+    23,
+    56,
+    10,
+    6
+   ],
+   "file": "props/sakura.png",
+   "frame_h": 64,
+   "frame_w": 56,
+   "height": 64,
+   "width": 168
+  },
+  "sakura_small": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 760
+    }
+   },
+   "collision": [
+    16,
+    38,
+    8,
+    5
+   ],
+   "file": "props/sakura_small.png",
+   "frame_h": 44,
+   "frame_w": 40,
+   "height": 44,
+   "width": 120
+  },
+  "sign_post": {
+   "collision": [
+    8,
+    27,
+    4,
+    4
+   ],
+   "file": "props/sign_post.png",
+   "height": 32,
+   "width": 20
+  },
+  "stone_lantern": {
+   "anims": {
+    "lit": {
+     "frames": [
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 1000
+    },
+    "off": {
+     "frames": [
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 1000
+    }
+   },
+   "collision": [
+    3,
+    26,
+    10,
+    5
+   ],
+   "file": "props/stone_lantern.png",
+   "frame_h": 32,
+   "frame_w": 16,
+   "height": 32,
+   "width": 32
+  },
+  "streetlight": {
+   "anims": {
+    "lit": {
+     "frames": [
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 1000
+    },
+    "off": {
+     "frames": [
+      [
+       0,
+       0
+      ]
+     ],
+     "ms": 1000
+    }
+   },
+   "collision": [
+    5,
+    42,
+    6,
+    5
+   ],
+   "file": "props/streetlight.png",
+   "frame_h": 48,
+   "frame_w": 16,
+   "height": 48,
+   "width": 32
+  },
+  "surfboards": {
+   "collision": [
+    0,
+    25,
+    16,
+    6
+   ],
+   "file": "props/surfboards.png",
+   "height": 32,
+   "width": 16
+  },
+  "tall_grass": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 700
+    }
+   },
+   "file": "props/tall_grass.png",
+   "frame_h": 16,
+   "frame_w": 16,
+   "height": 16,
+   "width": 48
+  },
+  "tesla_coil": {
+   "anims": {
+    "spark": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ]
+     ],
+     "ms": 110
+    }
+   },
+   "collision": [
+    3,
+    26,
+    10,
+    5
+   ],
+   "file": "props/tesla_coil.png",
+   "frame_h": 32,
+   "frame_w": 16,
+   "height": 32,
+   "width": 64
+  },
+  "tiles_city": {
+   "anims": {
+    "channel_h": {
+     "frames": [
+      [
+       0,
+       13
+      ],
+      [
+       1,
+       13
+      ],
+      [
+       2,
+       13
+      ],
+      [
+       3,
+       13
+      ]
+     ],
+     "ms": 380
+    },
+    "lab_plaza_core": {
+     "frames": [
+      [
+       0,
+       9
+      ],
+      [
+       1,
+       9
+      ],
+      [
+       2,
+       9
+      ],
+      [
+       3,
+       9
+      ]
+     ],
+     "ms": 240
+    },
+    "river": {
+     "frames": [
+      [
+       0,
+       11
+      ],
+      [
+       1,
+       11
+      ],
+      [
+       2,
+       11
+      ],
+      [
+       3,
+       11
+      ]
+     ],
+     "ms": 420
+    },
+    "river_l": {
+     "frames": [
+      [
+       4,
+       11
+      ],
+      [
+       5,
+       11
+      ],
+      [
+       6,
+       11
+      ],
+      [
+       7,
+       11
+      ]
+     ],
+     "ms": 420
+    },
+    "river_mouth": {
+     "frames": [
+      [
+       3,
+       5
+      ],
+      [
+       4,
+       5
+      ],
+      [
+       5,
+       5
+      ]
+     ],
+     "ms": 500
+    },
+    "river_mouth_l": {
+     "frames": [
+      [
+       0,
+       14
+      ],
+      [
+       1,
+       14
+      ],
+      [
+       2,
+       14
+      ]
+     ],
+     "ms": 500
+    },
+    "river_mouth_r": {
+     "frames": [
+      [
+       3,
+       14
+      ],
+      [
+       4,
+       14
+      ],
+      [
+       5,
+       14
+      ]
+     ],
+     "ms": 500
+    },
+    "river_r": {
+     "frames": [
+      [
+       0,
+       12
+      ],
+      [
+       1,
+       12
+      ],
+      [
+       2,
+       12
+      ],
+      [
+       3,
+       12
+      ]
+     ],
+     "ms": 420
+    },
+    "river_t": {
+     "frames": [
+      [
+       4,
+       12
+      ],
+      [
+       5,
+       12
+      ],
+      [
+       6,
+       12
+      ],
+      [
+       7,
+       12
+      ]
+     ],
+     "ms": 420
+    },
+    "sea": {
+     "frames": [
+      [
+       0,
+       3
+      ],
+      [
+       1,
+       3
+      ],
+      [
+       2,
+       3
+      ],
+      [
+       3,
+       3
+      ]
+     ],
+     "ms": 450
+    },
+    "sea_deep": {
+     "frames": [
+      [
+       0,
+       4
+      ],
+      [
+       1,
+       4
+      ],
+      [
+       2,
+       4
+      ],
+      [
+       3,
+       4
+      ]
+     ],
+     "ms": 520
+    },
+    "shore": {
+     "frames": [
+      [
+       0,
+       5
+      ],
+      [
+       1,
+       5
+      ],
+      [
+       2,
+       5
+      ]
+     ],
+     "ms": 500
+    },
+    "tech_line_h": {
+     "frames": [
+      [
+       0,
+       7
+      ],
+      [
+       1,
+       7
+      ],
+      [
+       2,
+       7
+      ],
+      [
+       3,
+       7
+      ]
+     ],
+     "ms": 160
+    },
+    "tech_line_v": {
+     "frames": [
+      [
+       0,
+       8
+      ],
+      [
+       1,
+       8
+      ],
+      [
+       2,
+       8
+      ],
+      [
+       3,
+       8
+      ]
+     ],
+     "ms": 160
+    },
+    "water_pool": {
+     "frames": [
+      [
+       5,
+       2
+      ],
+      [
+       6,
+       2
+      ]
+     ],
+     "ms": 600
+    }
+   },
+   "file": "tiles/city.png",
+   "height": 240,
+   "tile_h": 16,
+   "tile_w": 16,
+   "tiles": {
+    "boardwalk": [
+     3,
+     2
+    ],
+    "boardwalk_edge": [
+     4,
+     2
+    ],
+    "bridge": [
+     0,
+     10
+    ],
+    "bridge_end_l": [
+     5,
+     10
+    ],
+    "bridge_end_r": [
+     6,
+     10
+    ],
+    "channel_h": [
+     0,
+     13
+    ],
+    "grass": [
+     0,
+     0
+    ],
+    "grass_alt": [
+     1,
+     0
+    ],
+    "grass_dusk": [
+     4,
+     6
+    ],
+    "grass_dusk_alt": [
+     5,
+     6
+    ],
+    "grass_flowers": [
+     2,
+     0
+    ],
+    "gravel_h": [
+     1,
+     10
+    ],
+    "gravel_v": [
+     2,
+     10
+    ],
+    "hedge_tile": [
+     7,
+     0
+    ],
+    "lab_plaza": [
+     2,
+     6
+    ],
+    "lab_plaza_alt": [
+     3,
+     6
+    ],
+    "lab_plaza_core": [
+     0,
+     9
+    ],
+    "path": [
+     6,
+     0
+    ],
+    "pave": [
+     0,
+     1
+    ],
+    "pave_alt": [
+     1,
+     1
+    ],
+    "pave_curb": [
+     2,
+     1
+    ],
+    "pave_curb_top": [
+     3,
+     1
+    ],
+    "pave_petals": [
+     4,
+     10
+    ],
+    "plaza": [
+     1,
+     2
+    ],
+    "plaza_alt": [
+     2,
+     2
+    ],
+    "river": [
+     0,
+     11
+    ],
+    "river_l": [
+     4,
+     11
+    ],
+    "river_mouth": [
+     3,
+     5
+    ],
+    "river_mouth_l": [
+     0,
+     14
+    ],
+    "river_mouth_r": [
+     3,
+     14
+    ],
+    "river_r": [
+     0,
+     12
+    ],
+    "river_t": [
+     4,
+     12
+    ],
+    "road": [
+     4,
+     1
+    ],
+    "road_crosswalk": [
+     0,
+     2
+    ],
+    "road_dash": [
+     5,
+     1
+    ],
+    "road_dash_n": [
+     6,
+     1
+    ],
+    "road_dash_s": [
+     7,
+     1
+    ],
+    "road_end": [
+     6,
+     6
+    ],
+    "sand": [
+     3,
+     0
+    ],
+    "sand_alt": [
+     4,
+     0
+    ],
+    "sand_shell": [
+     5,
+     0
+    ],
+    "sea": [
+     0,
+     3
+    ],
+    "sea_deep": [
+     0,
+     4
+    ],
+    "shore": [
+     0,
+     5
+    ],
+    "stepping": [
+     3,
+     10
+    ],
+    "tech_line_h": [
+     0,
+     7
+    ],
+    "tech_line_v": [
+     0,
+     8
+    ],
+    "tech_pave": [
+     0,
+     6
+    ],
+    "tech_pave_alt": [
+     1,
+     6
+    ],
+    "water_pool": [
+     5,
+     2
+    ]
+   },
+   "width": 128
+  },
+  "trash_can": {
+   "collision": [
+    3,
+    9,
+    10,
+    6
+   ],
+   "file": "props/trash_can.png",
+   "height": 16,
+   "width": 16
+  },
+  "tree_fern": {
+   "anims": {
+    "sway": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     "ms": 800
+    }
+   },
+   "collision": [
+    13,
+    41,
+    6,
+    5
+   ],
+   "file": "props/tree_fern.png",
+   "frame_h": 48,
+   "frame_w": 32,
+   "height": 48,
+   "width": 96
+  },
+  "vending": {
+   "anims": {
+    "blink": {
+     "frames": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ]
+     ],
+     "ms": 700
+    }
+   },
+   "collision": [
+    1,
+    22,
+    14,
+    9
+   ],
+   "file": "props/vending.png",
+   "frame_h": 32,
+   "frame_w": 16,
+   "height": 32,
+   "width": 32
+  },
+  "zen_rock": {
+   "collision": [
+    4,
+    10,
+    24,
+    10
+   ],
+   "file": "props/zen_rock.png",
+   "height": 24,
+   "width": 32
+  },
+  "bld_hat_shop": {
+   "file": "buildings/hat_shop.png",
+   "width": 128,
+   "height": 128,
+   "collision": [
+    6,
+    22,
+    116,
+    106
+   ],
+   "door": [
+    48,
+    100,
+    32,
+    28
+   ]
+  },
+  "bld_hat_shop_lights": {
+   "file": "buildings/hat_shop_lights.png",
+   "width": 128,
+   "height": 128
+  },
+  "bld_hat_shop_neon": {
+   "file": "buildings/hat_shop_neon.png",
+   "width": 128,
+   "height": 128
+  },
+  "bld_final4": {
+   "file": "buildings/final4.png",
+   "width": 144,
+   "height": 176,
+   "collision": [
+    4,
+    50,
+    136,
+    126
+   ],
+   "door": [
+    54,
+    148,
+    36,
+    28
+   ]
+  },
+  "bld_final4_lights": {
+   "file": "buildings/final4_lights.png",
+   "width": 144,
+   "height": 176
+  },
+  "bld_final4_neon": {
+   "file": "buildings/final4_neon.png",
+   "width": 144,
+   "height": 176
+  }
+ },
+ "tile_size": 16,
+ "version": 1
+}

@@ -1,73 +1,67 @@
+// Slimeverse town physics: slime feel (instant velocity, volleyball-length hop)
+// scaled to town pixels, collision supplied by the town.
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
 
 function test(name, fn) {
-  try {
-    fn();
-    console.log(`ok - ${name}`);
-  } catch (err) {
-    console.error(`not ok - ${name}`);
-    throw err;
-  }
+  try { fn(); console.log(`ok - ${name}`); } catch (err) { console.error(`not ok - ${name}`); throw err; }
 }
 
 function loadPhysics() {
-  const context = {
-    keysDown: {},
-    KEY_A: 65,
-    KEY_D: 68,
-    KEY_LEFT: 37,
-    KEY_RIGHT: 39,
-    KEY_UP: 38,
-    KEY_DOWN: 40,
-    KEY_W: 87,
-    KEY_SPACE: 32,
-  };
+  const context = { keysDown: {}, KEY_A: 65, KEY_D: 68, KEY_W: 87, KEY_LEFT: 37, KEY_RIGHT: 39, KEY_UP: 38, KEY_DOWN: 40, KEY_SPACE: 32, Math };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('js/slimeverse/prediction.js', 'utf8'), context);
   return context;
 }
+const WORLD = { width: 1536, depth: 640 };
+const still = { left: false, right: false, up: false, down: false, jump: false };
 
-test('render pose extrapolates smoothly between fixed physics steps', () => {
+test('movement is instant, like the volleyball slime, and diagonals are not faster', () => {
   const p = loadPhysics();
-  const pose = p.mvRenderState({ x: 100, y: 1980, z: 200, vx: 8, vy: 0, vz: -6 }, 8, {
-    width: 4500,
-    floorY: 1980,
-    maxZ: 3000,
-  });
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(pose)), { x: 104, y: 1980, z: 197 });
+  const s = { x: 100, y: 0, z: 100, vx: 0, vy: 0, vz: 0, onFloor: true };
+  p.mvApplyInput(s, { ...still, right: true });
+  p.mvStep(s, WORLD);
+  assert.strictEqual(s.x, 100 + p.MV_MOVE);
+  p.mvApplyInput(s, { ...still, right: true, down: true });
+  assert.ok(Math.abs(Math.hypot(s.vx, s.vz) - p.MV_MOVE) < 1e-9);
+  p.mvApplyInput(s, still);
+  assert.strictEqual(s.vx, 0);
 });
 
-test('release before the next fixed step does not extrapolate stale movement', () => {
+test('a hop lasts as long as a volleyball jump and lands back on the ground', () => {
   const p = loadPhysics();
-  const local = { x: 100, y: 1980, z: 200, vx: 7, vy: 0, vz: 0, onFloor: true };
-  p.mvApplyInput(local, { left: false, right: false, fwd: false, back: false, jump: false });
-  const pose = p.mvRenderState(local, 8, {
-    width: 4500,
-    floorY: 1980,
-    maxZ: 3000,
-  });
-  assert.strictEqual(pose.x, 100);
+  const s = { x: 100, y: 0, z: 100, vx: 0, vy: 0, vz: 0, onFloor: true };
+  p.mvApplyInput(s, { ...still, jump: true });
+  let ticks = 0, peak = 0;
+  do { p.mvStep(s, WORLD); p.mvApplyInput(s, still); peak = Math.max(peak, s.y); ticks++; } while (!s.onFloor && ticks < 200);
+  assert.ok(ticks >= 30 && ticks <= 35, 'hop ticks ' + ticks); // volleyball: 2 * 22 / 1.35 ~ 33 ticks
+  assert.ok(peak > 18 && peak < 26, 'hop height ' + peak);
+  assert.strictEqual(s.y, 0);
+});
+
+test('the town decides collisions: a blocked move keeps the slime in place', () => {
+  const p = loadPhysics();
+  const s = { x: 100, y: 0, z: 100, vx: 0, vy: 0, vz: 0, onFloor: true };
+  p.mvApplyInput(s, { ...still, left: true });
+  p.mvStep(s, WORLD, (x, z) => ({ x, y: z }));
+  assert.strictEqual(s.x, 100);
 });
 
 test('local movement is not pulled toward delayed server snapshots', () => {
   const p = loadPhysics();
-  const local = { x: 500, y: 1980, z: 500 };
-  p.mvReconcile(local, { x: 500, y: 1980, z: 150 }, 0.06);
-  assert.strictEqual(local.z, 500);
+  const local = { x: 500, y: 0, z: 300 };
+  p.mvReconcile(local, { x: 520, y: 0, z: 250 });
+  assert.strictEqual(local.z, 300);
+  p.mvReconcile(local, { x: 1400, y: 0, z: 250 });
+  assert.strictEqual(local.x, 1400, 'a teleport-sized jump is accepted');
 });
 
-test('ordinary idle drift is ignored in the social world', () => {
+test('an old-units server height (1980 = ground) never launches a slime into the sky', () => {
   const p = loadPhysics();
-  const local = { x: 500, y: 1980, z: 500 };
-  p.mvReconcile(local, { x: 460, y: 1980, z: 480 }, 0.06);
-  assert.deepStrictEqual(local, { x: 500, y: 1980, z: 500 });
-});
-
-test('spawn-scale drift still hard-syncs', () => {
-  const p = loadPhysics();
-  const local = { x: 2000, y: 1980, z: 1800 };
-  p.mvReconcile(local, { x: 500, y: 1980, z: 200 }, 0.06);
-  assert.deepStrictEqual(local, { x: 500, y: 1980, z: 200 });
+  const local = {};
+  p.mvSyncFromServer(local, { x: 600, y: 1980, z: 200 });
+  assert.strictEqual(local.y, 0);
+  assert.strictEqual(local.onFloor, true);
+  assert.strictEqual(p.mvServerHop(12), 12);
 });
